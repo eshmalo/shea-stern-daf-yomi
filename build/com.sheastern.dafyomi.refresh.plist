@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.sheastern.dafyomi.refresh</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Library/Frameworks/Python.framework/Versions/3.13/bin/python3</string>
+        <string>/Users/elazarshmalo/Desktop/AI Workspace/shea-stern-daf-yomi/build/refresh.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/elazarshmalo/Desktop/AI Workspace/shea-stern-daf-yomi</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- run every hour (3600s) -->
+    <key>StartInterval</key>
+    <integer>3600</integer>
+
+    <!-- also run once when loaded / at login, so it's never stale on boot -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/elazarshmalo/Desktop/AI Workspace/shea-stern-daf-yomi/build/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/elazarshmalo/Desktop/AI Workspace/shea-stern-daf-yomi/build/launchd.err.log</string>
+</dict>
+</plist>

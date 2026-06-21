@@ -57,6 +57,37 @@ python3 ../stern-demo/serve_range.py 4322 .
 
 (Plain `python3 -m http.server` works for everything except media seeking.)
 
+## Auto-update (hourly, end-to-end)
+
+`build/refresh.py` is the one-command pipeline: **pull his TA page → detect newly
+posted shiurim → self-host them with the intro cut → update `manifest.json` +
+`library.json`**. It only processes shiurim that are *new since the last snapshot*
+and not already in the manifest, so a normal run trims just the latest daf and
+disk use stays bounded.
+
+```bash
+python3 build/refresh.py                 # snapshot + self-host any new shiurim (audio+video)
+python3 build/refresh.py --snapshot-only # refresh the catalog only
+python3 build/refresh.py --backfill 25   # ALSO host 25 of the oldest not-yet-hosted (opt-in)
+```
+
+**Installed hourly via launchd** (macOS): `~/Library/LaunchAgents/com.sheastern.dafyomi.refresh.plist`
+(reference copy committed at `build/com.sheastern.dafyomi.refresh.plist`),
+`StartInterval = 3600`, `RunAtLoad = true`. Logs: `build/refresh.log` (per-run)
+and `build/launchd.{out,err}.log` (all `*.log` git-ignored).
+
+```bash
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.sheastern.dafyomi.refresh.plist  # install
+launchctl list | grep sheastern                                                              # verify loaded
+launchctl kickstart -k gui/$(id -u)/com.sheastern.dafyomi.refresh                            # run now
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.sheastern.dafyomi.refresh.plist    # uninstall
+```
+
+> Note: the hourly job keeps the catalog 100% current and self-hosts shiurim
+> **going forward**. It does **not** backfill the full back-catalog by default —
+> self-hosting all ~1,389 shiurim is ~60 GB+ and belongs on S3/B2+CDN (see below),
+> not the laptop. Use `--backfill N` to chip away at the backlog deliberately.
+
 ## Scale note
 
 The native daf text is the full Bavli (~65 MB, on-demand per masechta). Self-hosting the
