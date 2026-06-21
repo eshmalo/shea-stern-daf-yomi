@@ -1,5 +1,15 @@
 # Rabbi Shea Stern · Daf Yomi — native concept
 
+> ## 📌 TODO (deferred): go live on Cloudflare R2 + Pages
+> Deploy the full self-hosted library live on **Cloudflare R2 + Pages**. Audio (all
+> 1,389 shiurim, ~37 GB) is already trimmed and local; the ~221 GB video goes
+> straight to R2. **Blocked on:** user creating the Cloudflare account / R2 bucket
+> + API token + public URL and entering payment. **When ready:** fill
+> `build/cloud.config`, run `backfill_cloud.py --all` (audio) + the video backfill
+> to R2, set `mediaBaseUrl`, optionally move the app to Cloudflare Pages. Migration
+> steps are in **[HOSTING-OPTIONS.md](HOSTING-OPTIONS.md)**.
+> *(Until then, the local-first store + hourly auto-update keep running as-is.)*
+
 A daf-first Daf Yomi app for Rabbi Shea Stern, in a **clean "LaTeX-classic"** style
 (white paper, black serif, restrained). It is built to be **native and independent** —
 the daf, the audio, and the video are all served from our own files; nothing opens an

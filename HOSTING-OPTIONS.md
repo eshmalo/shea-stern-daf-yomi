@@ -1,5 +1,15 @@
 # Hosting & storage options — going live
 
+> ## 📌 TODO (deferred): Deploy live on Cloudflare R2 + Pages
+> Deploy the full self-hosted library live on **Cloudflare R2 + Pages**. Audio (all
+> 1,389 shiurim, ~37 GB) is already trimmed and local; the ~221 GB video goes
+> straight to R2. **Blocked on:** user creating the Cloudflare account / R2 bucket
+> + API token + public URL and entering payment. **When ready:** fill
+> `build/cloud.config`, run `backfill_cloud.py --all` (audio) + the video backfill
+> to R2, set `mediaBaseUrl`, optionally move the app to Cloudflare Pages. Migration
+> steps are in the [Migration plan](#migration-plan-when-you-say-go--r2-path) below.
+
+
 Research + recommendation for serving the Daf Yomi site in production.
 Prices are **2026**, USD unless noted; Hetzner is EUR ex-VAT (≈×1.08 for USD).
 Nothing here has been provisioned — this is research only.
