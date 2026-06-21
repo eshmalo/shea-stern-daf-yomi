@@ -1,0 +1,31 @@
+# --- Heavy self-hosted media (the ~60GB+ audio/video library) ---
+# Regenerate locally with build/selfhost_media.py; never commit the binaries.
+media/*.mp3
+media/*.mp4
+media/*.m4a
+media/*.webm
+media/*.mov
+# ...but DO keep the manifest (small index of what's been self-hosted).
+!media/manifest.json
+
+# --- Content that IS preserved in git (explicit, for clarity) ---
+# data/daf/*.json   (native daf text — kept)
+# data/library.json (catalog snapshot fallback — kept)
+# data/content.json (editable content — kept)
+
+# --- OS / editor junk ---
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# --- Python build/cache ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# --- Logs / scratch ---
+*.log

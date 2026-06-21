@@ -1,0 +1,76 @@
+{
+  "_README": "The ONLY hand-edited file: masthead, about/FAQ/contact, donate (Zelle), sponsor options, and the phone line. Nothing here re-hosts a shiur. Use Editor Mode (pencil, top-left) to edit + download.",
+
+  "masthead": {
+    "hebrew": "שיעורי הדף היומי",
+    "english": "Rabbi Shea Stern",
+    "subtitle": "Daf Yomi · Beis Medrash Ohr Chaim, Monsey",
+    "speakerId": 587
+  },
+
+  "options": {
+    "preferSelfHosted": true,
+    "_preferSelfHosted_note": "When media/manifest.json has our own intro-trimmed copy of a shiur, play that instead of TorahAnytime's.",
+    "defaultTab": "today"
+  },
+
+  "phone": {
+    "label": "Listen by Phone",
+    "number": "+1 (605) 477-2100",
+    "extension": "502",
+    "note": "Call the TorahAnytime listen line, then dial the Rabbi's extension. (Confirm the access number with TorahAnytime before publishing.)"
+  },
+
+  "contact": {
+    "email": "jshmuelstern@gmail.com",
+    "phone": "",
+    "whatsapp": "",
+    "note": "Questions, dedications, or to sponsor a shiur — reach out any time."
+  },
+
+  "donate": {
+    "heading": "Support the Shiur",
+    "blurb": "The Daf Yomi shiur is given and shared completely free of charge. If it has added to your learning, a contribution helps keep it going — and a dedication can be l'ilui nishmas a loved one or as a zechus for a refuah or simcha.",
+    "zelle": {
+      "name": "JOSHUA STERN",
+      "email": "jshmuelstern@gmail.com",
+      "qr": "assets/zelle-qr.jpeg"
+    },
+    "dedicationNote": "To dedicate a day, a masechta, or the whole shiur, email jshmuelstern@gmail.com."
+  },
+
+  "sponsor": {
+    "heading": "Sponsor the Shiur",
+    "blurb": "Dedicate a day of learning — today's daf, an upcoming daf for a yahrtzeit or simcha, or an entire masechta. Your dedication is shared with everyone who learns it.",
+    "amounts": { "daf": "$54", "week": "$180", "masechta": "$540" },
+    "dedicationTypes": ["L'ilui nishmas", "In honor of", "For a refuah shleima for", "As a zechus for", "In memory of"],
+    "note": "After sending your dedication below, complete the sponsorship by Zelle on the Donate page. The Rabbi will confirm and announce the dedication.",
+    "contactEmail": "jshmuelstern@gmail.com"
+  },
+
+  "about": {
+    "heading": "About the Shiur",
+    "paragraphs": [
+      "Rabbi Shea Stern is a Daf Hayomi Maggid Shiur at Scheiner's Beis Medrash Ohr Chaim in Monsey. He learned in Yeshivas Novominsk and is a talmid of R' Dovid Soloveitchik zt\"l, and gives a nightly Oraysa shiur at Khal Bais Avrohom.",
+      "This library brings his entire Daf Yomi cycle together in one place — every daf, in order, following the worldwide Daf Yomi calendar. Yesterday's daf, today's daf, and the daf to come are always one tap away."
+    ],
+    "tradition": {
+      "heading": "Daf Yomi — A Gemara Tradition",
+      "body": "Daf Yomi — literally 'the daily page' — is the worldwide practice of learning the same page of Talmud every day, finishing all of Shas in a seven-and-a-half-year cycle that ends with the Siyum HaShas. The cycle begins with Berachos and ends with Niddah. With this library it's easy to keep pace: listen on the way to work, in the car, on the train, or wherever you are."
+    }
+  },
+
+  "faqs": [
+    { "q": "Are the shiurim free?", "a": "Yes — every shiur is free to listen to." },
+    { "q": "How do I find today's daf?", "a": "Open the Home tab. Today's daf (and yesterday's and tomorrow's) is shown at the top, following the worldwide Daf Yomi calendar." },
+    { "q": "Where can I find an older daf?", "a": "Tap 'Select a Daf' and choose the Seder, then the Masechta, then the daf. Every daf the Rabbi has taught is there." },
+    { "q": "Can I see the actual daf?", "a": "Yes — tap any daf and choose 'Read the daf' to see the full Talmud text (Hebrew, English, or both), served right here in the app." },
+    { "q": "Can I sponsor a shiur?", "a": "Yes — see 'Sponsor the Shiur' in the menu. You can dedicate today's daf, a future daf, or a whole masechta." },
+    { "q": "Does the library update on its own?", "a": "Yes. New shiurim appear automatically as they're posted — there is nothing to refresh or install." }
+  ],
+
+  "lectureNotes": {},
+  "seriesIntros": {
+    "Chullin": "The laws of shechita, kashrus of meat, and the mitzvos of everyday Jewish living."
+  }
+}

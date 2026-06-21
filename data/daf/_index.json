@@ -1,0 +1,187 @@
+{
+  "Berachos": {
+    "file": "data/daf/Berachos.json",
+    "amudim": 125,
+    "kb": 2070
+  },
+  "Shabbos": {
+    "file": "data/daf/Shabbos.json",
+    "amudim": 312,
+    "kb": 3789
+  },
+  "Eruvin": {
+    "file": "data/daf/Eruvin.json",
+    "amudim": 207,
+    "kb": 2516
+  },
+  "Pesachim": {
+    "file": "data/daf/Pesachim.json",
+    "amudim": 240,
+    "kb": 2976
+  },
+  "Yoma": {
+    "file": "data/daf/Yoma.json",
+    "amudim": 173,
+    "kb": 1999
+  },
+  "Sukkah": {
+    "file": "data/daf/Sukkah.json",
+    "amudim": 110,
+    "kb": 1159
+  },
+  "Beitzah": {
+    "file": "data/daf/Beitzah.json",
+    "amudim": 78,
+    "kb": 930
+  },
+  "Rosh Hashanah": {
+    "file": "data/daf/Rosh_Hashanah.json",
+    "amudim": 67,
+    "kb": 808
+  },
+  "Taanis": {
+    "file": "data/daf/Taanis.json",
+    "amudim": 59,
+    "kb": 762
+  },
+  "Megillah": {
+    "file": "data/daf/Megillah.json",
+    "amudim": 61,
+    "kb": 976
+  },
+  "Moed Katan": {
+    "file": "data/daf/Moed_Katan.json",
+    "amudim": 55,
+    "kb": 758
+  },
+  "Chagigah": {
+    "file": "data/daf/Chagigah.json",
+    "amudim": 51,
+    "kb": 630
+  },
+  "Yevamos": {
+    "file": "data/daf/Yevamos.json",
+    "amudim": 242,
+    "kb": 3289
+  },
+  "Kesubos": {
+    "file": "data/daf/Kesubos.json",
+    "amudim": 222,
+    "kb": 2582
+  },
+  "Nedarim": {
+    "file": "data/daf/Nedarim.json",
+    "amudim": 180,
+    "kb": 1212
+  },
+  "Nazir": {
+    "file": "data/daf/Nazir.json",
+    "amudim": 129,
+    "kb": 1076
+  },
+  "Sotah": {
+    "file": "data/daf/Sotah.json",
+    "amudim": 96,
+    "kb": 1297
+  },
+  "Gittin": {
+    "file": "data/daf/Gittin.json",
+    "amudim": 178,
+    "kb": 2245
+  },
+  "Kiddushin": {
+    "file": "data/daf/Kiddushin.json",
+    "amudim": 162,
+    "kb": 2102
+  },
+  "Bava Kamma": {
+    "file": "data/daf/Bava_Kamma.json",
+    "amudim": 236,
+    "kb": 3254
+  },
+  "Bava Metzia": {
+    "file": "data/daf/Bava_Metzia.json",
+    "amudim": 235,
+    "kb": 2969
+  },
+  "Bava Basra": {
+    "file": "data/daf/Bava_Basra.json",
+    "amudim": 350,
+    "kb": 3095
+  },
+  "Sanhedrin": {
+    "file": "data/daf/Sanhedrin.json",
+    "amudim": 224,
+    "kb": 3400
+  },
+  "Makkos": {
+    "file": "data/daf/Makkos.json",
+    "amudim": 46,
+    "kb": 642
+  },
+  "Shevuos": {
+    "file": "data/daf/Shevuos.json",
+    "amudim": 96,
+    "kb": 1221
+  },
+  "Avodah Zarah": {
+    "file": "data/daf/Avodah_Zarah.json",
+    "amudim": 150,
+    "kb": 1691
+  },
+  "Horayos": {
+    "file": "data/daf/Horayos.json",
+    "amudim": 25,
+    "kb": 432
+  },
+  "Zevachim": {
+    "file": "data/daf/Zevachim.json",
+    "amudim": 238,
+    "kb": 2865
+  },
+  "Menachos": {
+    "file": "data/daf/Menachos.json",
+    "amudim": 217,
+    "kb": 2962
+  },
+  "Chullin": {
+    "file": "data/daf/Chullin.json",
+    "amudim": 281,
+    "kb": 3390
+  },
+  "Bechoros": {
+    "file": "data/daf/Bechoros.json",
+    "amudim": 119,
+    "kb": 1564
+  },
+  "Arachin": {
+    "file": "data/daf/Arachin.json",
+    "amudim": 65,
+    "kb": 955
+  },
+  "Temurah": {
+    "file": "data/daf/Temurah.json",
+    "amudim": 65,
+    "kb": 935
+  },
+  "Kerisos": {
+    "file": "data/daf/Kerisos.json",
+    "amudim": 54,
+    "kb": 1010
+  },
+  "Meilah": {
+    "file": "data/daf/Meilah.json",
+    "amudim": 41,
+    "kb": 386
+  },
+  "Tamid": {
+    "file": "data/daf/Tamid.json",
+    "amudim": 17,
+    "kb": 170
+  },
+  "Niddah": {
+    "file": "data/daf/Niddah.json",
+    "amudim": 143,
+    "kb": 2054
+  }
+}

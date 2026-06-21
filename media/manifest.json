@@ -1,0 +1,40 @@
+{
+  "457353": {
+    "video": "media/457353.mp4",
+    "intro_trimmed": 7.5,
+    "bytes": 120461222,
+    "title": "Daf 50 Chullin",
+    "audio": "media/457353.mp3"
+  },
+  "457363": {
+    "audio": "media/457363.mp3",
+    "intro_trimmed": 7.5,
+    "bytes": 51466796,
+    "title": "Daf 51Chullin"
+  },
+  "457050": {
+    "audio": "media/457050.mp3",
+    "intro_trimmed": 7.5,
+    "bytes": 59576508,
+    "title": "Daf 49 Chullin"
+  },
+  "456780": {
+    "audio": "media/456780.mp3",
+    "intro_trimmed": 7.5,
+    "bytes": 59364032,
+    "title": "Daf 48"
+  },
+  "456518": {
+    "audio": "media/456518.mp3",
+    "intro_trimmed": 7.5,
+    "bytes": 48421830,
+    "title": "Daf 47 Chullin"
+  },
+  "457569": {
+    "video": "media/457569.mp4",
+    "intro_trimmed": 7.5,
+    "bytes": 141658580,
+    "title": "Daf 52 Chullin",
+    "audio": "media/457569.mp3"
+  }
+}
