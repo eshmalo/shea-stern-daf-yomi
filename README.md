@@ -88,6 +88,38 @@ launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.sheastern.dafyomi.refr
 > self-hosting all ~1,389 shiurim is ~60 GB+ and belongs on S3/B2+CDN (see below),
 > not the laptop. Use `--backfill N` to chip away at the backlog deliberately.
 
+## Cloud storage + CDN (durable, full back-catalog)
+
+The full self-hosted library (~60 GB+, incl. ~1,129 videos) lives in S3-compatible
+object storage behind a CDN; the manifest stores absolute CDN URLs and the app
+plays them directly (no app code change — it already reads `manifest.audio/video`
+verbatim).
+
+**Recommended provider: Cloudflare R2** — S3-compatible (reuses the installed
+`aws` CLI), **zero egress fees**, and a built-in public URL (`pub-<hash>.r2.dev`)
+so no separate domain/CDN wiring is needed. (Backblaze B2 + Cloudflare is the
+budget alternative; AWS S3 + CloudFront works too but egress costs money.)
+
+**Setup (one time):** copy `build/cloud.config.example` → `build/cloud.config`
+(git-ignored) and fill in the bucket/keys/CDN base, then:
+
+```bash
+python3 build/cloud.py check                       # verify config + bucket reachable
+python3 build/backfill_cloud.py --ids 1,2,3,4,5    # small proof batch
+python3 build/backfill_cloud.py --all              # full back-catalog (resumable)
+```
+
+`backfill_cloud.py` is **resumable & idempotent**: it skips anything already
+uploaded (manifest CDN URL; `--verify` HEAD-checks; `--force` redoes), writes the
+manifest atomically after **each** item, and logs to `build/backfill.log`. It
+uploads an existing local trimmed copy if present, else downloads → trims the
+~7.5s intro → uploads. When `cloud.config` is present, the hourly `refresh.py`
+automatically routes new shiurim to the bucket/CDN instead of local disk.
+
+> Secrets live only in `build/cloud.config` or env vars — **never committed**
+> (git-ignored). `aws` calls pass only these scoped keys and don't touch other
+> AWS credentials on the machine.
+
 ## Scale note
 
 The native daf text is the full Bavli (~65 MB, on-demand per masechta). Self-hosting the

@@ -27,5 +27,12 @@ __pycache__/
 venv/
 env/
 
+# --- Secrets: cloud storage / CDN credentials (NEVER commit) ---
+build/cloud.config
+.env
+
+# --- Media pipeline temp files ---
+media/.tmp/
+
 # --- Logs / scratch ---
 *.log

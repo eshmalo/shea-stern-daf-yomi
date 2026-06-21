@@ -132,22 +132,40 @@ def main():
         log("no shiurim need self-hosting this run — up to date"); return 0
 
     log(f"self-hosting {len(targets)} shiurim: {targets}")
-
-    # 3+4. trim + manifest, via the existing tested script. Audio for all; video where present.
     ids_csv = ",".join(str(i) for i in targets)
-    rc_a = subprocess.call([PY, os.path.join(BUILD, "selfhost_media.py"),
-                            "--speaker", str(args.speaker), "--ids", ids_csv,
-                            "--kind", "audio", "--trim", str(args.trim)])
-    log(f"audio pass exit {rc_a}")
 
-    rc_v = 0
-    if not args.no_video:
-        vids = [str(i) for i in targets if has_video(i)]
-        if vids:
-            rc_v = subprocess.call([PY, os.path.join(BUILD, "selfhost_media.py"),
-                                    "--speaker", str(args.speaker), "--ids", ",".join(vids),
-                                    "--kind", "video", "--trim", str(args.trim)])
-            log(f"video pass ({len(vids)}) exit {rc_v}")
+    # Prefer the cloud path when configured: trim + upload to the bucket/CDN and
+    # point the manifest at CDN URLs. Falls back to LOCAL self-host otherwise.
+    sys.path.insert(0, BUILD)
+    try:
+        import cloud
+        use_cloud = cloud.configured()
+    except Exception:
+        use_cloud = False
+
+    if use_cloud:
+        log("cloud configured -> uploading new shiurim to bucket/CDN")
+        cmd = [PY, os.path.join(BUILD, "backfill_cloud.py"), "--speaker", str(args.speaker),
+               "--ids", ids_csv, "--trim", str(args.trim)]
+        if args.no_video:
+            cmd.append("--no-video")
+        rc_a = subprocess.call(cmd)
+        rc_v = 0
+        log(f"cloud pass exit {rc_a}")
+    else:
+        # 3+4. trim + manifest, via the existing tested script. Audio for all; video where present.
+        rc_a = subprocess.call([PY, os.path.join(BUILD, "selfhost_media.py"),
+                                "--speaker", str(args.speaker), "--ids", ids_csv,
+                                "--kind", "audio", "--trim", str(args.trim)])
+        log(f"local audio pass exit {rc_a}")
+        rc_v = 0
+        if not args.no_video:
+            vids = [str(i) for i in targets if has_video(i)]
+            if vids:
+                rc_v = subprocess.call([PY, os.path.join(BUILD, "selfhost_media.py"),
+                                        "--speaker", str(args.speaker), "--ids", ",".join(vids),
+                                        "--kind", "video", "--trim", str(args.trim)])
+                log(f"local video pass ({len(vids)}) exit {rc_v}")
 
     man = load_manifest()
     log(f"refresh done — manifest now holds {len(man)} self-hosted shiurim")

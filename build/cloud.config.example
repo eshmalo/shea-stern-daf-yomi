@@ -1,0 +1,34 @@
+# Cloud object-storage + CDN config for the Daf Yomi media pipeline.
+#
+# HOW TO USE: copy this file to  build/cloud.config  (which is git-ignored) and
+# fill in real values, OR export the same names as environment variables (env
+# overrides the file). NEVER commit build/cloud.config or real keys.
+#
+# Works with any S3-compatible store (we recommend Cloudflare R2). The pipeline
+# talks to it with the already-installed `aws` CLI via --endpoint-url, using ONLY
+# these keys (it does not touch your other AWS credentials).
+
+# --- S3-compatible endpoint ---
+# Cloudflare R2:  https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+# Backblaze B2:   https://s3.<REGION>.backblazeb2.com   (e.g. s3.us-west-004.backblazeb2.com)
+# AWS S3:         https://s3.<REGION>.amazonaws.com
+S3_ENDPOINT_URL=
+
+# Bucket name you created (e.g. shea-stern-media)
+S3_BUCKET=
+
+# Region. R2 uses: auto   |  B2 uses e.g.: us-west-004  |  S3 uses e.g.: us-east-1
+S3_REGION=auto
+
+# Access key pair scoped to that bucket (read+write).
+# R2: "Manage R2 API Tokens" -> Access Key ID + Secret Access Key
+# B2: "Application Keys" -> keyID + applicationKey
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+
+# Public base URL the SITE will play media from (goes verbatim into manifest.json).
+# R2 public bucket:    https://pub-<HASH>.r2.dev          (enable "Public Development URL")
+# R2 custom domain:    https://media.yourdomain.com
+# B2 + Cloudflare:     https://media.yourdomain.com       (CNAME -> friendly B2 URL)
+# Must serve the object keys exactly as uploaded (flat: <id>.mp3 / <id>.mp4).
+CDN_BASE_URL=
