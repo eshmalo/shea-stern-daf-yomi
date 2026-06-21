@@ -64,6 +64,22 @@ The native daf text is the full Bavli (~65 MB, on-demand per masechta). Self-hos
 the full set belongs on real storage (S3 / Backblaze B2 + CDN); a laptop can host a demo
 subset. `options.preferSelfHosted` (content.json) controls local-vs-stream.
 
+## Source control / backup
+
+This project is a git repo, backed up to a **private** GitHub remote:
+**https://github.com/eshmalo/shea-stern-daf-yomi** (`origin/main`).
+
+The heavy self-hosted media (`media/*.mp3|mp4`, ~554 MB locally / ~60 GB+ at full
+scale) is **excluded by `.gitignore`** and regenerated with `build/selfhost_media.py`;
+only `media/manifest.json` is tracked. Everything else — the app source, the full
+native daf text (`data/daf/*.json`, ~65 MB), the `data/library.json` catalog
+fallback, `data/content.json`, and the build pipelines — is committed so the
+content is fully preserved.
+
+```bash
+git add -A && git commit -m "..." && git push      # back up changes
+```
+
 ## Files
 
 ```
