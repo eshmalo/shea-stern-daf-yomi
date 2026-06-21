@@ -135,7 +135,8 @@ python3 build/backfill_cloud.py --all              # mirror local media/ -> buck
 **Recommended provider: Cloudflare R2** — S3-compatible (reuses the installed
 `aws` CLI), **zero egress**, built-in public URL (`pub-<hash>.r2.dev`, no domain
 needed). B2+Cloudflare or AWS S3+CloudFront also work (same code, different
-config). `backfill_cloud.py` only *uploads files* (skips objects already present);
+config). See **[HOSTING-OPTIONS.md](HOSTING-OPTIONS.md)** for the full 2026
+pricing comparison + recommendation. `backfill_cloud.py` only *uploads files* (skips objects already present);
 it does **not** rewrite the manifest — paths stay relative, so the flip is purely
 `mediaBaseUrl`. Secrets live only in `build/cloud.config`/env, **never committed**.
 
