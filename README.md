@@ -88,37 +88,56 @@ launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.sheastern.dafyomi.refr
 > self-hosting all ~1,389 shiurim is ~60 GB+ and belongs on S3/B2+CDN (see below),
 > not the laptop. Use `--backfill N` to chip away at the backlog deliberately.
 
-## Cloud storage + CDN (durable, full back-catalog)
+## Local-first media store (current) + one-line go-live switch
 
-The full self-hosted library (~60 GB+, incl. ~1,129 videos) lives in S3-compatible
-object storage behind a CDN; the manifest stores absolute CDN URLs and the app
-plays them directly (no app code change — it already reads `manifest.audio/video`
-verbatim).
+Everything we need to operate is stored **locally** under `media/`, intro-trimmed,
+and the design is built so flipping to a real server later is **config-only — no
+reprocessing, no code changes.**
 
-**Recommended provider: Cloudflare R2** — S3-compatible (reuses the installed
-`aws` CLI), **zero egress fees**, and a built-in public URL (`pub-<hash>.r2.dev`)
-so no separate domain/CDN wiring is needed. (Backblaze B2 + Cloudflare is the
-budget alternative; AWS S3 + CloudFront works too but egress costs money.)
+**Portable manifest.** `media/manifest.json` stores **relative** paths
+(`media/<id>.mp3`). The app resolves each through `options.mediaBaseUrl`
+(`data/content.json`):
 
-**Setup (one time):** copy `build/cloud.config.example` → `build/cloud.config`
-(git-ignored) and fill in the bucket/keys/CDN base, then:
+- `mediaBaseUrl: ""` → serve the self-hosted files from **this site** (local). ← current
+- `mediaBaseUrl: "https://media.example.com"` → serve the **same files** from a
+  server/CDN. That single line is the entire go-live change.
+
+**Full local backfill** — `build/backfill.py` downloads + trims the whole
+back-catalog into `media/`:
 
 ```bash
-python3 build/cloud.py check                       # verify config + bucket reachable
-python3 build/backfill_cloud.py --ids 1,2,3,4,5    # small proof batch
-python3 build/backfill_cloud.py --all              # full back-catalog (resumable)
+python3 build/backfill.py --all --no-video        # all audio (~38 GB)  ← running
+python3 build/backfill.py --all                   # audio + video (~260 GB total — needs a big disk)
+python3 build/backfill.py --limit 20              # newest 20 not-yet-done
 ```
 
-`backfill_cloud.py` is **resumable & idempotent**: it skips anything already
-uploaded (manifest CDN URL; `--verify` HEAD-checks; `--force` redoes), writes the
-manifest atomically after **each** item, and logs to `build/backfill.log`. It
-uploads an existing local trimmed copy if present, else downloads → trims the
-~7.5s intro → uploads. When `cloud.config` is present, the hourly `refresh.py`
-automatically routes new shiurim to the bucket/CDN instead of local disk.
+It is **resumable & idempotent** (skips ids already trimmed locally + recorded),
+writes the manifest **atomically after each item**, logs to `build/backfill.log`,
+and has a **disk-floor guard** (`--min-free-gb`, default 15) that stops gracefully
+before filling the drive — just re-run to continue. The hourly `refresh.py` uses
+the same engine for new shiurim.
 
-> Secrets live only in `build/cloud.config` or env vars — **never committed**
-> (git-ignored). `aws` calls pass only these scoped keys and don't touch other
-> AWS credentials on the machine.
+> **Size reality (measured):** audio ≈ 96 kbps → **~38 GB** for all 1,389; video
+> ≈ 651 kbps → **~221 GB**. Audio fits a laptop comfortably; the full video set
+> needs a dedicated disk or cloud (below).
+
+### Going live later (the dormant cloud uploader)
+
+The S3-compatible uploader is committed and **inert until configured**:
+
+```bash
+cp build/cloud.config.example build/cloud.config   # fill in bucket/keys/CDN (git-ignored)
+python3 build/cloud.py check                        # verify bucket reachable
+python3 build/backfill_cloud.py --all              # mirror local media/ -> bucket (keys: media/<id>.<ext>)
+# then set data/content.json options.mediaBaseUrl = "https://<your-cdn-base>"   # one line, done
+```
+
+**Recommended provider: Cloudflare R2** — S3-compatible (reuses the installed
+`aws` CLI), **zero egress**, built-in public URL (`pub-<hash>.r2.dev`, no domain
+needed). B2+Cloudflare or AWS S3+CloudFront also work (same code, different
+config). `backfill_cloud.py` only *uploads files* (skips objects already present);
+it does **not** rewrite the manifest — paths stay relative, so the flip is purely
+`mediaBaseUrl`. Secrets live only in `build/cloud.config`/env, **never committed**.
 
 ## Scale note
 

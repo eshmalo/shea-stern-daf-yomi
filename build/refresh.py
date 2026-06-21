@@ -153,19 +153,14 @@ def main():
         rc_v = 0
         log(f"cloud pass exit {rc_a}")
     else:
-        # 3+4. trim + manifest, via the existing tested script. Audio for all; video where present.
-        rc_a = subprocess.call([PY, os.path.join(BUILD, "selfhost_media.py"),
-                                "--speaker", str(args.speaker), "--ids", ids_csv,
-                                "--kind", "audio", "--trim", str(args.trim)])
-        log(f"local audio pass exit {rc_a}")
+        # LOCAL store (default): idempotent, disk-guarded, relative-path manifest.
+        cmd = [PY, os.path.join(BUILD, "backfill.py"), "--speaker", str(args.speaker),
+               "--ids", ids_csv, "--trim", str(args.trim)]
+        if args.no_video:
+            cmd.append("--no-video")
+        rc_a = subprocess.call(cmd)
         rc_v = 0
-        if not args.no_video:
-            vids = [str(i) for i in targets if has_video(i)]
-            if vids:
-                rc_v = subprocess.call([PY, os.path.join(BUILD, "selfhost_media.py"),
-                                        "--speaker", str(args.speaker), "--ids", ",".join(vids),
-                                        "--kind", "video", "--trim", str(args.trim)])
-                log(f"local video pass ({len(vids)}) exit {rc_v}")
+        log(f"local backfill pass exit {rc_a}")
 
     man = load_manifest()
     log(f"refresh done — manifest now holds {len(man)} self-hosted shiurim")

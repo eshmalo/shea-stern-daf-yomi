@@ -11,6 +11,8 @@
   "options": {
     "preferSelfHosted": true,
     "_preferSelfHosted_note": "When media/manifest.json has our own intro-trimmed copy of a shiur, play that instead of TorahAnytime's.",
+    "mediaBaseUrl": "",
+    "_mediaBaseUrl_note": "GO-LIVE SWITCH. Empty = serve self-hosted media from THIS site (local media/ folder). Set to a server/CDN base (e.g. https://media.example.com) to serve the same files from there — one-line change, no reprocessing. Manifest paths stay relative (media/<id>.mp3).",
     "defaultTab": "today"
   },
 

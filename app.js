@@ -86,11 +86,22 @@ async function boot() {
 async function loadContent() { const l = localStorage.getItem(CFG.contentLocalKey); if (l) { try { return JSON.parse(l); } catch {} } return loadJson(CFG.contentUrl); }
 async function loadJson(u) { try { return await fetch(u).then(r => r.ok ? r.json() : {}); } catch { return {}; } }
 
+// Resolve a manifest media path. Paths are stored RELATIVE ("media/<id>.mp3")
+// so the store is portable: leave options.mediaBaseUrl empty to serve from this
+// site (local), or set it to a server/CDN base to go live — a one-line switch,
+// no reprocessing. (An already-absolute URL in the manifest is used as-is.)
+function mediaUrl(p) {
+  if (!p) return "";
+  if (/^https?:\/\//i.test(p)) return p;
+  const base = (State.content?.options?.mediaBaseUrl || "").replace(/\/+$/, "");
+  return base ? base + "/" + p.replace(/^\/+/, "") : p;
+}
+
 function buildIndex() {
   const m = new Map();
   for (const lec of State.all) {
     const mm = State.media[String(lec.id)];
-    if (mm) { lec.localAudio = mm.audio || ""; lec.localVideo = mm.video || ""; lec.introTrimmed = mm.intro_trimmed; }
+    if (mm) { lec.localAudio = mediaUrl(mm.audio); lec.localVideo = mediaUrl(mm.video); lec.introTrimmed = mm.intro_trimmed; }
     const k = DY.shiurDaf(lec); lec._dk = k;
     if (k && k.daf) { const key = dafKey(k.masechta, k.daf); if (!m.has(key)) m.set(key, []); m.get(key).push(lec); }
   }
