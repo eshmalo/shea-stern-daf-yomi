@@ -309,11 +309,11 @@ html.player-on .reader-body { padding-bottom: calc(186px + env(safe-area-inset-b
   .col-h { font-size: 14px; }
   .daf-toolbar { flex-wrap: wrap; gap: 8px; }
   .seg button { padding: 6px 10px; }
-  /* תוספות · גמרא · רש"י selector (matches the daf's column order, gemara centered) */
-  .daf-col-tabs { display: flex; justify-content: center; gap: 8px; margin: 2px 0 16px; direction: ltr; }
-  .daf-col-tabs button { -webkit-appearance: none; appearance: none; border: 1px solid var(--hair-2); background: var(--paper); color: var(--ink-soft); font-family: var(--serif-he); font-size: 17px; font-weight: 700; min-height: 44px; padding: 7px 22px; border-radius: 999px; transition: background .12s, color .12s, border-color .12s, box-shadow .12s; }
-  .daf-col-tabs button.on { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 7px -2px rgba(116,32,44,.55); }
-  .daf-col-tabs button:not(.on):active { background: var(--paper-2); }
+  /* Column switcher: the two columns you're NOT on, as small serif words (swipe
+     the daf to switch too). Borderless, title-like, gold chevron toward each. */
+  .daf-col-tabs { display: flex; justify-content: center; align-items: baseline; gap: 30px; margin: 0 0 16px; direction: ltr; }
+  .daf-col-tabs .col-tab { -webkit-appearance: none; appearance: none; border: 0; background: none; cursor: pointer; font-family: var(--serif-he); font-size: 21px; font-weight: 700; line-height: 1; color: var(--ink-soft); padding: 8px 6px; letter-spacing: .01em; display: inline-flex; align-items: baseline; gap: 5px; transition: color .14s; }
+  .daf-col-tabs .col-tab:hover, .daf-col-tabs .col-tab:active { color: var(--accent); }
 }
 
 /* ---------- Sponsor ---------- */

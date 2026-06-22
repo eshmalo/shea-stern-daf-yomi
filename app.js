@@ -463,7 +463,7 @@ async function dafBodyHtml(masechta, daf, mode) {
 async function hydrateDaf() {
   const box = $("#dafText"); if (!box) return;
   box.innerHTML = await dafBodyHtml(box.dataset.mas, +box.dataset.daf, box.dataset.mode);
-  applyDafCol(box);
+  applyDafCol(box); attachDafSwipe(box);
 }
 // Step to the previous / next daf, crossing masechta boundaries in Daf Yomi
 // (Shas) order. Returns {masechta, daf} or null at the very start/end of Shas.
@@ -525,11 +525,19 @@ function renderDafLayout(masechta, daf, data, comm) {
 /* Phone-mode column selector for the Tzuras-Hadaf view: instead of scrolling
    through stacked גמרא / רש"י / תוספות, show ONE full-width column at a time.
    Order matches the printed daf: תוספות (left) · גמרא (center) · רש"י (right). */
+// Tzuras-Hadaf columns in spatial (left→right) order: Tosafos (outer-left),
+// Gemara (center), Rashi (inner-right). One shows at a time on phones.
+const DAF_COLS = [["tosafos", "תוספות"], ["gemara", "גמרא"], ["rashi", 'רש"י']];
+const dafColIndex = k => DAF_COLS.findIndex(c => c[0] === k);
+// Phone switcher: show ONLY the two columns you're NOT viewing, as small serif
+// words (you can also swipe the daf left/right to switch). They sit in their real
+// spatial order — Tosafos on the left, Rashi on the right — so the word is on the
+// same side as its column.
 function dafColTabs() {
-  const cur = State._dafCol || "gemara";
-  return `<div class="daf-col-tabs" role="tablist" aria-label="Daf column">` +
-    [["tosafos", "תוספות"], ["gemara", "גמרא"], ["rashi", 'רש"י']].map(([k, l]) =>
-      `<button data-dcol="${k}" role="tab" aria-selected="${k === cur}" class="${k === cur ? "on" : ""}">${l}</button>`).join("") +
+  const ci = dafColIndex(State._dafCol || "gemara");
+  return `<div class="daf-col-tabs" role="tablist" aria-label="Switch daf column — or swipe">` +
+    DAF_COLS.filter((_, i) => i !== ci).map(([k, l]) =>
+      `<button data-dcol="${k}" role="tab" aria-selected="false" class="col-tab">${l}</button>`).join("") +
     `</div>`;
 }
 function applyDafCol(box) {        // reflect the chosen column as a class on the daf container
@@ -537,9 +545,34 @@ function applyDafCol(box) {        // reflect the chosen column as a class on th
   ["gemara", "rashi", "tosafos"].forEach(c => box.classList.toggle("col-" + c, c === col));
 }
 function selectDafCol(col) {
+  if (col === State._dafCol) return;
   State._dafCol = col;
-  [$("#dafText"), $("#rdBody")].forEach(b => b && applyDafCol(b));   // covers the in-page daf and the full-screen reader
-  $$("[data-dcol]").forEach(b => { const on = b.dataset.dcol === col; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
+  [$("#dafText"), $("#rdBody")].forEach(b => {        // covers the in-page daf and the full-screen reader
+    if (!b) return;
+    applyDafCol(b);
+    const tabs = b.querySelector(".daf-col-tabs");
+    if (tabs) tabs.outerHTML = dafColTabs();          // re-render so it now offers the OTHER two columns
+  });
+}
+// Switch columns by swiping the daf: swipe content left → reveal the column to the
+// right, and vice-versa. Clamped to the three columns; only the single-column
+// phone layout is affected (desktop shows all three side-by-side).
+function swipeDafCol(dir) {
+  const ci = dafColIndex(State._dafCol || "gemara");
+  const ni = Math.max(0, Math.min(DAF_COLS.length - 1, ci + dir));
+  if (ni !== ci) selectDafCol(DAF_COLS[ni][0]);
+}
+function attachDafSwipe(box) {
+  if (!box || box._dafSwipe) return; box._dafSwipe = true;
+  let x0 = 0, y0 = 0, t0 = 0;
+  box.addEventListener("touchstart", e => { const t = e.changedTouches[0]; x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); }, { passive: true });
+  box.addEventListener("touchend", e => {
+    if (!window.matchMedia("(max-width: 680px)").matches) return;     // one column shows only on phones
+    if (!box.querySelector(".dafpage-grid")) return;                  // only in the Tzuras-Hadaf "Daf" layout
+    const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
+    if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.4 || Date.now() - t0 > 700) return;   // deliberate horizontal flick
+    swipeDafCol(dx < 0 ? 1 : -1);
+  }, { passive: true });
 }
 
 function renderAmud(seg, mode) {
@@ -627,9 +660,11 @@ async function fillReaderBody(m, d, mode) {
   const html = await dafBodyHtml(m, d, mode);
   const body = $("#rdBody");                                       // ignore if the user flipped again while loading
   if (body && Reader.open && Reader.masechta === m && Reader.daf === d && Reader.mode === mode) {
-    body.innerHTML = html; body.scrollTop = 0; applyDafCol(body);
-    body.querySelectorAll("[data-gemflip]").forEach(b => b.onclick = () => readerFlip(+b.dataset.gemflip));   // the ‹ נד·א › arrows flip the reader
-    body.querySelectorAll("[data-dcol]").forEach(b => b.onclick = () => selectDafCol(b.dataset.dcol));         // phone-mode column selector
+    body.innerHTML = html; body.scrollTop = 0; applyDafCol(body); attachDafSwipe(body);
+    body.onclick = e => {                                            // delegated so the re-rendered column tabs stay live
+      const g = e.target.closest("[data-gemflip]"); if (g) { readerFlip(+g.dataset.gemflip); return; }   // ‹ נד·א › flips the reader
+      const c = e.target.closest("[data-dcol]"); if (c) selectDafCol(c.dataset.dcol);                     // phone-mode column switch
+    };
   }
 }
 
