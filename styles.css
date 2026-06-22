@@ -295,7 +295,7 @@ html.player-on .reader-body { padding-bottom: calc(186px + env(safe-area-inset-b
 .col.side .comm b { color: var(--ink); font-weight: 700; }
 .col-empty { color: var(--hair-2); text-align: center; font-size: 18px; padding: 10px 0; }
 /* the phone column selector is hidden on wider screens (all 3 columns show) */
-.daf-col-tabs { display: none; }
+.daf-colhead { display: none; }
 @media (max-width: 680px) {
   .dafpage { padding: 14px 13px 10px; }
   .dafpage-grid { grid-template-columns: 1fr; gap: 0; }
@@ -306,14 +306,21 @@ html.player-on .reader-body { padding-bottom: calc(186px + env(safe-area-inset-b
   .dafpage-grid .col.side { border-top: 0; padding-top: 0; margin-top: 0; }
   .col.gemara .gem { font-size: 20px; line-height: 1.9; }
   .col.side .comm { font-size: 17px; line-height: 1.8; }
-  .col-h { font-size: 14px; }
+  .col-h { display: none; }   /* the sticky column bar names the column instead */
   .daf-toolbar { flex-wrap: wrap; gap: 8px; }
   .seg button { padding: 6px 10px; }
   /* Column switcher: the two columns you're NOT on, as small serif words (swipe
      the daf to switch too). Borderless, title-like, gold chevron toward each. */
-  .daf-col-tabs { display: flex; justify-content: center; align-items: baseline; gap: 30px; margin: 0 0 16px; direction: ltr; }
-  .daf-col-tabs .col-tab { -webkit-appearance: none; appearance: none; border: 0; background: none; cursor: pointer; font-family: var(--serif-he); font-size: 21px; font-weight: 700; line-height: 1; color: var(--ink-soft); padding: 8px 6px; letter-spacing: .01em; display: inline-flex; align-items: baseline; gap: 5px; transition: color .14s; }
-  .daf-col-tabs .col-tab:hover, .daf-col-tabs .col-tab:active { color: var(--accent); }
+  /* Unified column title bar — current column centred (the title) + the two you can
+     switch to, same serif as the page titles; freezes below the top bar on scroll. */
+  .daf-colhead { display: flex; justify-content: center; align-items: baseline; gap: 26px; direction: ltr;
+    position: -webkit-sticky; position: sticky; top: var(--bar-h, 54px); z-index: 20;
+    margin: 0 0 14px; padding: 11px 6px 9px; background: var(--paper); border-bottom: 1px solid var(--hair); }
+  .reader-body .daf-colhead { top: 0; }   /* the reader body is its own scroll box */
+  .daf-colhead .col-cur, .daf-colhead .col-tab { font-family: var(--serif-he); font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: .01em; }
+  .daf-colhead .col-cur { color: var(--accent); }
+  .daf-colhead .col-tab { -webkit-appearance: none; appearance: none; border: 0; background: none; cursor: pointer; color: var(--ink-faint); padding: 6px 4px; transition: color .14s; }
+  .daf-colhead .col-tab:hover, .daf-colhead .col-tab:active { color: var(--accent); }
 }
 
 /* ---------- Sponsor ---------- */

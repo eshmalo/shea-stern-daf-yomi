@@ -232,8 +232,11 @@ function renderShell() {
   $("#searchBtn").onclick = () => route("search");
   $("#backBtn").onclick = goBack;
   const homeEl = $("#home"); homeEl.onclick = () => route("today"); homeEl.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); route("today"); } };
-  Player.mount(); buildMenu(); setStatus(State._sk || "checking"); updateBackBtn();
+  Player.mount(); buildMenu(); setStatus(State._sk || "checking"); updateBackBtn(); setBarH();
 }
+// The sticky column bar pins just below the top bar — measure the bar so the offset
+// stays exact across font sizes and the iPhone safe-area.
+function setBarH() { const b = $(".bar"); if (b) document.documentElement.style.setProperty("--bar-h", b.offsetHeight + "px"); }
 function buildMenu() {
   const mh = State.content.masthead || {};
   $("#menu").innerHTML = `<div class="mtitle">${esc(mh.hebrew || "")}</div><div class="msub">${esc(mh.english || State.speaker?.name || "")} · ${esc(mh.subtitle || "")}</div>
@@ -520,7 +523,7 @@ function renderDafLayout(masechta, daf, data, comm) {
     first = false;
   }
   if (!html) return `<div class="empty-mini">This amud isn't available.</div>`;
-  return dafColTabs() + html + `<div class="daf-src">Talmud, Rashi &amp; Tosafos — Vilna Edition (public domain) · English Steinsaltz, CC-BY-NC · via Sefaria</div>`;
+  return dafColHead() + html + `<div class="daf-src">Talmud, Rashi &amp; Tosafos — Vilna Edition (public domain) · English Steinsaltz, CC-BY-NC · via Sefaria</div>`;
 }
 /* Phone-mode column selector for the Tzuras-Hadaf view: instead of scrolling
    through stacked גמרא / רש"י / תוספות, show ONE full-width column at a time.
@@ -529,15 +532,18 @@ function renderDafLayout(masechta, daf, data, comm) {
 // Gemara (center), Rashi (inner-right). One shows at a time on phones.
 const DAF_COLS = [["tosafos", "תוספות"], ["gemara", "גמרא"], ["rashi", 'רש"י']];
 const dafColIndex = k => DAF_COLS.findIndex(c => c[0] === k);
-// Phone switcher: show ONLY the two columns you're NOT viewing, as small serif
-// words (you can also swipe the daf left/right to switch). They sit in their real
-// spatial order — Tosafos on the left, Rashi on the right — so the word is on the
-// same side as its column.
-function dafColTabs() {
+// Unified column title bar: the current column's name in the center (the title of
+// what you're reading) flanked by the two columns you can switch to — all in the
+// same serif as the page titles. It sticks to the top while you scroll; you can
+// also swipe the daf left/right. Hidden on desktop, where all three show at once.
+function dafColHead() {
   const ci = dafColIndex(State._dafCol || "gemara");
-  return `<div class="daf-col-tabs" role="tablist" aria-label="Switch daf column — or swipe">` +
-    DAF_COLS.filter((_, i) => i !== ci).map(([k, l]) =>
-      `<button data-dcol="${k}" role="tab" aria-selected="false" class="col-tab">${l}</button>`).join("") +
+  const other = DAF_COLS.map((c, i) => [c, i]).filter(([, i]) => i !== ci);   // ascending index → lower-left, higher-right
+  const opt = o => `<button data-dcol="${o[0][0]}" role="tab" aria-selected="false" class="col-tab">${o[0][1]}</button>`;
+  return `<div class="daf-colhead" role="tablist" aria-label="Daf column — tap a name or swipe">` +
+    opt(other[0]) +
+    `<span class="col-cur" aria-current="true">${DAF_COLS[ci][1]}</span>` +
+    opt(other[1]) +
     `</div>`;
 }
 function applyDafCol(box) {        // reflect the chosen column as a class on the daf container
@@ -546,14 +552,27 @@ function applyDafCol(box) {        // reflect the chosen column as a class on th
 }
 function selectDafCol(col) {
   if (col === State._dafCol) return;
+  saveColScroll(State._dafCol);                       // remember where we were in the column we're leaving
   State._dafCol = col;
   [$("#dafText"), $("#rdBody")].forEach(b => {        // covers the in-page daf and the full-screen reader
     if (!b) return;
     applyDafCol(b);
-    const tabs = b.querySelector(".daf-col-tabs");
-    if (tabs) tabs.outerHTML = dafColTabs();          // re-render so it now offers the OTHER two columns
+    const head = b.querySelector(".daf-colhead");
+    if (head) head.outerHTML = dafColHead();          // re-render: current name (center) + the OTHER two
   });
+  restoreColScroll(col);                              // jump back to where we left off in this column
 }
+// Per-column scroll memory so switching back and forth keeps your place in each
+// column. Keyed by view + daf + column, so a different daf starts fresh.
+function dafScrollEl() { return Reader.open ? $("#rdBody") : null; }   // null → the window scrolls
+function curDafScroll() { const el = dafScrollEl(); return el ? el.scrollTop : (window.scrollY || 0); }
+function setDafScroll(y) { const el = dafScrollEl(); if (el) el.scrollTop = y; else window.scrollTo(0, y); }
+function colScrollKey(col) {
+  if (Reader.open) return `r:${Reader.masechta}:${Reader.daf}:${col}`;
+  const b = $("#dafText"); return `p:${b ? b.dataset.mas : ""}:${b ? b.dataset.daf : ""}:${col}`;
+}
+function saveColScroll(col) { if (!col) return; State._colScroll = State._colScroll || {}; State._colScroll[colScrollKey(col)] = curDafScroll(); }
+function restoreColScroll(col) { const y = (State._colScroll || {})[colScrollKey(col)] || 0; requestAnimationFrame(() => setDafScroll(y)); }
 // Switch columns by swiping the daf: swipe content left → reveal the column to the
 // right, and vice-versa. Clamped to the three columns; only the single-column
 // phone layout is affected (desktop shows all three side-by-side).
@@ -1000,4 +1019,5 @@ window.addEventListener("keydown", e => {
   }
   if (e.key === "Escape") closeMenu();
 });
+window.addEventListener("resize", () => setBarH());
 boot();
