@@ -37,3 +37,6 @@ media/.stream_tmp/
 
 # --- Logs / scratch ---
 *.log
+
+# daily-run marker for update_all.py (once/day Sefaria gate)
+build/.sefaria_last_run

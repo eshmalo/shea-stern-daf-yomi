@@ -9207,5 +9207,12 @@
     "audio": "media/48924.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf Yomi: Nazir Daf 62"
+  },
+  "457789": {
+    "audio": "media/457789.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 53 Chullin",
+    "video": "media/457789.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }

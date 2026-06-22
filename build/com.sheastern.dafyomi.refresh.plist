@@ -20,14 +20,12 @@
         <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
 
-    <!-- run once per day, at 04:30 local time -->
-    <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>4</integer>
-        <key>Minute</key>
-        <integer>30</integer>
-    </dict>
+    <!-- poll hourly: a newly-posted daf is intro-trimmed, de-watermarked, and on
+         R2 within the hour instead of waiting up to a full day. The catalog poll is
+         cheap; heavy media work only runs when a new shiur actually appears, and the
+         Sefaria mirror self-limits to once per day (see update_all.py). -->
+    <key>StartInterval</key>
+    <integer>3600</integer>
 
     <!-- also run once when loaded / at login, so it's never stale on boot -->
     <key>RunAtLoad</key>

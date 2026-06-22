@@ -49,22 +49,60 @@ def run(label, cmd):
     return rc
 
 
+SEF_MARKER = os.path.join(BUILD, ".sefaria_last_run")
+
+
+def _today():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def sefaria_due():
+    # The Sefaria corpus changes slowly; mirror it at most once per (UTC) day so the
+    # frequent lecture polls stay light. Returns True if it hasn't run yet today.
+    try:
+        return open(SEF_MARKER).read().strip() != _today()
+    except Exception:
+        return True
+
+
+def mark_sefaria():
+    try:
+        open(SEF_MARKER, "w").write(_today())
+    except Exception:
+        pass
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-media", action="store_true", help="refresh catalog + texts only (skip media processing)")
     ap.add_argument("--sefaria-prefixes", default="json/,schemas/", help="which Sefaria bucket trees to keep current")
     ap.add_argument("--sefaria-min-free-gb", type=float, default=8.0)
+    ap.add_argument("--force-sefaria", action="store_true", help="mirror Sefaria even if already done today")
+    ap.add_argument("--no-sefaria", action="store_true", help="skip the Sefaria mirror entirely")
     args = ap.parse_args()
 
-    log("================= daily update: start =================")
+    log("================= update: start =================")
+    # Lectures EVERY run: a newly-posted shiur is intro-trimmed, de-watermarked
+    # (video), and uploaded to R2 promptly — not left showing the raw TA logo.
     lec = [PY, os.path.join(BUILD, "refresh.py")]
     if args.no_media:
         lec.append("--snapshot-only")
     rc_lec = run("lectures", lec)
-    rc_sef = run("sefaria", [PY, os.path.join(BUILD, "fetch_sefaria.py"),
-                             "--prefixes", args.sefaria_prefixes,
-                             "--min-free-gb", str(args.sefaria_min_free_gb)])
-    log(f"================= daily update: done (lectures {rc_lec}, sefaria {rc_sef}) =================")
+
+    # Sefaria texts: heavy bucket scan, so cap at once per day.
+    rc_sef = 0
+    if args.no_sefaria:
+        log("sefaria: skipped (--no-sefaria)")
+    elif args.force_sefaria or sefaria_due():
+        rc_sef = run("sefaria", [PY, os.path.join(BUILD, "fetch_sefaria.py"),
+                                 "--prefixes", args.sefaria_prefixes,
+                                 "--min-free-gb", str(args.sefaria_min_free_gb)])
+        if rc_sef == 0:
+            mark_sefaria()
+    else:
+        log("sefaria: already current today — skipped (runs once/day)")
+
+    log(f"================= update: done (lectures {rc_lec}, sefaria {rc_sef}) =================")
     return 0 if rc_lec == 0 and rc_sef == 0 else 1
 
 
