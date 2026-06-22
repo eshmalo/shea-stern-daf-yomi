@@ -311,12 +311,16 @@ html.player-on .reader-body { padding-bottom: calc(186px + env(safe-area-inset-b
   .seg button { padding: 6px 10px; }
   /* Column switcher: the two columns you're NOT on, as small serif words (swipe
      the daf to switch too). Borderless, title-like, gold chevron toward each. */
-  /* Unified column title bar — current column centred (the title) + the two you can
-     switch to, same serif as the page titles; freezes below the top bar on scroll. */
-  .daf-colhead { display: flex; justify-content: center; align-items: baseline; gap: 26px; direction: ltr;
+  /* Sticky daf header: the daf-flip row (‹ חולין נג ›) over the column switcher
+     (current column centred + the two you can switch to). Freezes below the top
+     bar on scroll; swipe the daf to switch columns too. */
+  .daf-colhead { display: flex; flex-direction: column; align-items: center; gap: 6px; direction: ltr;
     position: -webkit-sticky; position: sticky; top: var(--bar-h, 54px); z-index: 20;
-    margin: 0 0 14px; padding: 11px 6px 9px; background: var(--paper); border-bottom: 1px solid var(--hair); }
+    margin: 0 0 14px; padding: 9px 6px; background: var(--paper); border-bottom: 1px solid var(--hair); }
   .reader-body .daf-colhead { top: 0; }   /* the reader body is its own scroll box */
+  .daf-flip-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .daf-flip-lbl { font-family: var(--serif-he); direction: rtl; font-size: 18px; font-weight: 700; color: var(--accent); }
+  .daf-cols-row { display: flex; align-items: baseline; justify-content: center; gap: 26px; }
   .daf-colhead .col-cur, .daf-colhead .col-tab { font-family: var(--serif-he); font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: .01em; }
   .daf-colhead .col-cur { color: var(--accent); }
   .daf-colhead .col-tab { -webkit-appearance: none; appearance: none; border: 0; background: none; cursor: pointer; color: var(--ink-faint); padding: 6px 4px; transition: color .14s; }

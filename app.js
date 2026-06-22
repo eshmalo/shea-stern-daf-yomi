@@ -515,15 +515,13 @@ function dafPage(daf, amud, seg, c, labelHtml) {
 }
 function renderDafLayout(masechta, daf, data, comm) {
   comm = comm || {};
-  let html = "", first = true;
+  let html = "";
   for (const amud of [daf + "a", daf + "b"]) {
     const seg = data[amud]; if (!seg) continue;
-    const txt = esc(heAmud(daf, amud));
-    html += dafPage(daf, amud, seg, comm[amud], first ? flipLabel("dafpage-label", txt, masechta, daf) : `<div class="dafpage-label">${txt}</div>`);
-    first = false;
+    html += dafPage(daf, amud, seg, comm[amud], `<div class="dafpage-label">${esc(heAmud(daf, amud))}</div>`);   // plain amud marker; the daf-flip control lives in the sticky header
   }
   if (!html) return `<div class="empty-mini">This amud isn't available.</div>`;
-  return dafColHead() + html + `<div class="daf-src">Talmud, Rashi &amp; Tosafos — Vilna Edition (public domain) · English Steinsaltz, CC-BY-NC · via Sefaria</div>`;
+  return dafColHead(masechta, daf) + html + `<div class="daf-src">Talmud, Rashi &amp; Tosafos — Vilna Edition (public domain) · English Steinsaltz, CC-BY-NC · via Sefaria</div>`;
 }
 /* Phone-mode column selector for the Tzuras-Hadaf view: instead of scrolling
    through stacked גמרא / רש"י / תוספות, show ONE full-width column at a time.
@@ -536,15 +534,20 @@ const dafColIndex = k => DAF_COLS.findIndex(c => c[0] === k);
 // what you're reading) flanked by the two columns you can switch to — all in the
 // same serif as the page titles. It sticks to the top while you scroll; you can
 // also swipe the daf left/right. Hidden on desktop, where all three show at once.
-function dafColHead() {
+function dafColHead(masechta, daf) {
   const ci = dafColIndex(State._dafCol || "gemara");
   const other = DAF_COLS.map((c, i) => [c, i]).filter(([, i]) => i !== ci);   // ascending index → lower-left, higher-right
   const opt = o => `<button data-dcol="${o[0][0]}" role="tab" aria-selected="false" class="col-tab">${o[0][1]}</button>`;
-  return `<div class="daf-colhead" role="tablist" aria-label="Daf column — tap a name or swipe">` +
-    opt(other[0]) +
-    `<span class="col-cur" aria-current="true">${DAF_COLS[ci][1]}</span>` +
-    opt(other[1]) +
-    `</div>`;
+  const dis = d => dafStep(masechta, daf, d) ? "" : " disabled";
+  const dafLbl = `${DY.BYEN[masechta] ? DY.BYEN[masechta].he : masechta} ${window.HebCal ? window.HebCal.gematria(daf) : daf}`;
+  return `<div class="daf-colhead">
+    <div class="daf-flip-row">
+      <button class="pageflip prev" data-gemflip="-1" aria-label="Previous daf" title="Previous daf"${dis(-1)}>‹</button>
+      <span class="daf-flip-lbl">${esc(dafLbl)}</span>
+      <button class="pageflip next" data-gemflip="1" aria-label="Next daf" title="Next daf"${dis(1)}>›</button>
+    </div>
+    <div class="daf-cols-row" role="tablist" aria-label="Daf column — tap a name or swipe">${opt(other[0])}<span class="col-cur" aria-current="true">${DAF_COLS[ci][1]}</span>${opt(other[1])}</div>
+  </div>`;
 }
 function applyDafCol(box) {        // reflect the chosen column as a class on the daf container
   const col = State._dafCol || "gemara";
@@ -554,12 +557,10 @@ function selectDafCol(col) {
   if (col === State._dafCol) return;
   saveColScroll(State._dafCol);                       // remember where we were in the column we're leaving
   State._dafCol = col;
-  [$("#dafText"), $("#rdBody")].forEach(b => {        // covers the in-page daf and the full-screen reader
-    if (!b) return;
-    applyDafCol(b);
-    const head = b.querySelector(".daf-colhead");
-    if (head) head.outerHTML = dafColHead();          // re-render: current name (center) + the OTHER two
-  });
+  const dt = $("#dafText");                            // in-page daf
+  if (dt) { applyDafCol(dt); const h = dt.querySelector(".daf-colhead"); if (h) h.outerHTML = dafColHead(dt.dataset.mas, +dt.dataset.daf); }
+  const rb = $("#rdBody");                             // full-screen reader (its own daf)
+  if (rb && Reader.open) { applyDafCol(rb); const h = rb.querySelector(".daf-colhead"); if (h) h.outerHTML = dafColHead(Reader.masechta, Reader.daf); }
   restoreColScroll(col);                              // jump back to where we left off in this column
 }
 // Per-column scroll memory so switching back and forth keeps your place in each
