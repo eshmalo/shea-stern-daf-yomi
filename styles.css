@@ -84,6 +84,7 @@ main#view { flex: 1 0 auto; width: 100%; }
   -webkit-backdrop-filter: saturate(1.1) blur(8px);
   backdrop-filter: saturate(1.1) blur(8px);
   border-bottom: 1px solid var(--hair);
+  transition: transform .25s ease;
 }
 .bar .ic-btn { border: 0; background: none; font-size: 19px; color: var(--ink-soft); min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; padding: 5px 7px; line-height: 1; border-radius: 6px; transition: background .12s, color .12s; }
 .bar .ic-btn:hover { background: var(--paper-2); color: var(--ink); }
@@ -472,4 +473,33 @@ footer a { color: var(--ink-soft); }
   body { font-size: 17.5px; }
   .titlepage { padding-top: 28px; }
   .daf-progress { flex-direction: column; gap: 7px; }
+}
+
+/* ===== phone: compact chrome + collapse-on-scroll (maximize reading space) ===== */
+@media (max-width: 680px) {
+  /* tighter top bar */
+  .bar { padding-top: calc(5px + env(safe-area-inset-top, 0px)); padding-bottom: 5px; gap: 6px; }
+
+  /* tighter sticky daf header */
+  .daf-colhead { gap: 3px; padding: 6px 6px 7px; margin: 0 0 12px; }
+  .daf-flip-lbl { font-size: 16px; }
+  .daf-colhead .col-cur, .daf-colhead .col-tab { font-size: 19px; }
+  .daf-cols-row { gap: 22px; }
+  .daf-flip-row { overflow: hidden; max-height: 44px; transition: max-height .22s ease, opacity .18s ease; }
+
+  /* compact bottom player */
+  .player { padding: 7px 16px calc(8px + env(safe-area-inset-bottom, 0px)); }
+  .player .now { font-size: 13px; margin-bottom: 5px; }
+  .player .scrub { gap: 9px; }
+  .player .ctrls { gap: 14px; margin-top: 5px; }
+  .player .ctrls button { min-width: 40px; min-height: 40px; }
+  .player .ctrls .pp { width: 42px; height: 42px; }
+  .player .x { top: 5px; }
+  #app.player-active { padding-bottom: calc(126px + env(safe-area-inset-bottom, 0px)); }
+  .toast-wrap { bottom: calc(118px + env(safe-area-inset-bottom, 0px)); }
+
+  /* collapse-on-scroll: hide the app bar + daf-flip row, leaving a thin column switcher */
+  html.dy-min .bar { transform: translateY(-100%); }
+  html.dy-min .daf-colhead { top: 0; }
+  html.dy-min .daf-flip-row { max-height: 0; opacity: 0; margin: 0; pointer-events: none; }
 }

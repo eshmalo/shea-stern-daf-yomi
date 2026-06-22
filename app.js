@@ -284,6 +284,7 @@ window.addEventListener("popstate", e => {
 function rerender() {
   const v = $("#view"); if (!v) return;
   $$("#view video").forEach(vid => { try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {} });   // flush any in-page video before the view is replaced (no detached audio)
+  resetReadMin();                                            // a fresh view starts with full top chrome
   const r = State.route;
   const fn = { today: viewToday, browse: viewBrowse, seder: viewSeder, masechta: viewMasechta, daf: viewDaf, topics: viewTopics, category: viewCategory, search: viewSearch, mystuff: viewMyStuff, sponsor: viewSponsor, about: viewAbout, donate: viewDonate }[r.name] || viewToday;
   v.innerHTML = `<div class="view">${fn(r)}</div>`;
@@ -574,6 +575,27 @@ function colScrollKey(col) {
 }
 function saveColScroll(col) { if (!col) return; State._colScroll = State._colScroll || {}; State._colScroll[colScrollKey(col)] = curDafScroll(); }
 function restoreColScroll(col) { const y = (State._colScroll || {})[colScrollKey(col)] || 0; requestAnimationFrame(() => setDafScroll(y)); }
+
+/* ---------- phone: collapse the top chrome while reading the daf ----------
+   Scrolling DOWN hides the app bar + the daf-flip row (leaving just the thin
+   column switcher); scrolling UP — or returning to the top — brings them back.
+   Only on phones, and only on the daf view / reader. */
+let _lastReadY = 0, _minLockUntil = 0;
+function resetReadMin() { document.documentElement.classList.remove("dy-min"); _lastReadY = 0; _minLockUntil = 0; }
+function onReadScroll() {
+  const html = document.documentElement;
+  const onDaf = Reader.open || (State.route && State.route.name === "daf");
+  if (!onDaf || !window.matchMedia("(max-width: 680px)").matches) { html.classList.remove("dy-min"); _lastReadY = 0; return; }
+  const y = Reader.open ? ($("#rdBody") ? $("#rdBody").scrollTop : 0) : (window.scrollY || 0);
+  const now = Date.now(), min = html.classList.contains("dy-min");
+  if (now < _minLockUntil) { _lastReadY = y; return; }       // brief settle window after a toggle — avoids reflow-induced flapping
+  let changed = false;
+  if (y <= 60) { if (min) { html.classList.remove("dy-min"); changed = true; } }                  // near the top → full chrome
+  else if (y > _lastReadY + 6) { if (!min) { html.classList.add("dy-min"); changed = true; } }     // moving down → minimize
+  else if (y < _lastReadY - 6) { if (min) { html.classList.remove("dy-min"); changed = true; } }   // moving up → restore
+  if (changed) _minLockUntil = now + 350;
+  _lastReadY = y;
+}
 // Switch columns by swiping the daf: swipe content left → reveal the column to the
 // right, and vice-versa. Clamped to the three columns; only the single-column
 // phone layout is affected (desktop shows all three side-by-side).
@@ -593,6 +615,7 @@ function attachDafSwipe(box) {
     if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.4 || Date.now() - t0 > 700) return;   // deliberate horizontal flick
     swipeDafCol(dx < 0 ? 1 : -1);
   }, { passive: true });
+  if (box.id === "rdBody") box.addEventListener("scroll", onReadScroll, { passive: true });   // the reader body scrolls itself
 }
 
 function renderAmud(seg, mode) {
@@ -635,6 +658,7 @@ function openReader(masechta, daf, mode) {
   document.documentElement.classList.add("reader-open");
   renderReader();
   $("#view")?.setAttribute("inert", "");                // background content is inert; the player (z-index above the reader) stays controllable
+  resetReadMin();                                       // reader opens at the top with full chrome
   setTimeout(() => $("#rdClose")?.focus(), 0);           // move focus into the overlay
   try { history.pushState({ ...history.state, reader: true }, ""); } catch {}  // Back / Esc closes the reader first
 }
@@ -644,6 +668,7 @@ function hideReader() {
   const r = $("#reader"); if (r) { r.hidden = true; r.setAttribute("aria-hidden", "true"); }
   document.documentElement.classList.remove("reader-open");
   $("#view")?.removeAttribute("inert");
+  resetReadMin();
   try { _readerOpener && _readerOpener.focus(); } catch {}   // restore focus to whatever opened the reader
   syncInpageRead(Reader.masechta, Reader.daf);   // leave the in-page reader where we stopped
 }
@@ -1021,4 +1046,5 @@ window.addEventListener("keydown", e => {
   if (e.key === "Escape") closeMenu();
 });
 window.addEventListener("resize", () => setBarH());
+window.addEventListener("scroll", onReadScroll, { passive: true });
 boot();
