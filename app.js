@@ -176,6 +176,7 @@ function buildMenu() {
     <nav>
       <button class="mi" data-route="today">Today's Daf</button>
       <button class="mi" data-route="browse">Browse Shas</button>
+      <button class="mi" data-route="topics">Parsha &amp; Shiurim</button>
       <button class="mi" data-route="search">Search</button>
       <button class="mi" data-route="mystuff">My Stuff</button>
       <button class="mi accent" data-route="sponsor">Sponsor a Daf</button>
@@ -200,7 +201,7 @@ function route(name, params = {}) {
 function rerender() {
   const v = $("#view"); if (!v) return;
   const r = State.route;
-  const fn = { today: viewToday, browse: viewBrowse, seder: viewSeder, masechta: viewMasechta, daf: viewDaf, search: viewSearch, mystuff: viewMyStuff, sponsor: viewSponsor, about: viewAbout, donate: viewDonate }[r.name] || viewToday;
+  const fn = { today: viewToday, browse: viewBrowse, seder: viewSeder, masechta: viewMasechta, daf: viewDaf, topics: viewTopics, category: viewCategory, search: viewSearch, mystuff: viewMyStuff, sponsor: viewSponsor, about: viewAbout, donate: viewDonate }[r.name] || viewToday;
   v.innerHTML = `<div class="view">${fn(r)}</div>`;
   wireView(r);
   if (r.name === "daf") hydrateDaf(r);
@@ -236,7 +237,8 @@ function viewToday() {
         <a data-daf="${esc(tm.dy.masechta)}|${tm.dy.daf}">Tomorrow · <span class="nm">${esc(tm.dy.he)} ${esc(heDaf(tm.dy.daf))}</span> ›</a>
       </div>
     </div>
-    ${recentSection()}`;
+    ${recentSection()}
+    ${moreSection()}`;
 }
 function recentSection() {
   const recent = State.all.filter(l => l._dk && l._dk.daf).slice(0, 7);
@@ -342,6 +344,43 @@ function viewMyStuff() {
   return `<div class="pagetitle">My Stuff</div>` + sec("Continue", pr, "Play a shiur and it appears here.") + sec("Saved", fav, "Tap ☆ on a daf to save it.");
 }
 
+/* ---------- Shiurim (non-daf: parsha, holidays, machshava, …) ---------- */
+const isDafShiur = l => (l._dk && l._dk.daf) || /daf yomi|daily talmud/i.test(l.category || "");
+function prettyCat(c) { return ({ "Parasha/Torah Portion": "Parsha", "Daf Yomi/Daily Talmud": "Daf Yomi", "Eulogies/Hespedim": "Hespedim", "Jewish Understanding": "Machshava", "Teshuvah/Repentance": "Teshuvah" })[c] || c; }
+function nonDafCats() {
+  const m = new Map();
+  for (const l of State.all) { if (isDafShiur(l)) continue; const c = l.category || "Other"; m.set(c, (m.get(c) || 0) + 1); }
+  return [...m.entries()].map(([name, count]) => ({ name, pretty: prettyCat(name), count })).sort((a, b) => b.count - a.count);
+}
+function viewTopics() {
+  const cats = nonDafCats();
+  if (!cats.length) return `<div class="pagetitle">Shiurim</div><div class="empty-mini">No shiurim found yet.</div>`;
+  return `<div class="pagetitle">Shiurim</div><p class="lead">Beyond the daily daf — parsha, holidays, and more.</p>
+    <div class="cat-list">${cats.map(c => `<button class="cat-row" data-cat="${esc(c.name)}"><span class="nm">${esc(c.pretty)}</span><span class="ct">${c.count} shiurim ›</span></button>`).join("")}</div>`;
+}
+function viewCategory(r) {
+  const cat = r.cat, pretty = prettyCat(cat);
+  const list = State.all.filter(l => l.category === cat && !isDafShiur(l)).sort((a, b) => (b.posted || "").localeCompare(a.posted || ""));
+  const back = crumbs([["Shiurim", "topics"]], pretty);
+  if (!list.length) return back + `<div class="empty-mini">No shiurim in this category yet.</div>`;
+  let body;
+  if (/paras|holiday/i.test(cat)) {                 // group by parsha / yom tov (the series)
+    const groups = {};
+    for (const l of list) (groups[l.series || "—"] ||= []).push(l);
+    const names = Object.keys(groups).sort((a, b) => Math.max(...groups[b].map(x => Date.parse(x.posted || 0) || 0)) - Math.max(...groups[a].map(x => Date.parse(x.posted || 0) || 0)));
+    body = names.map(nm => `<div class="topic-group">${esc(nm)}</div><div class="rows">${groups[nm].map(rowHtml).join("")}</div>`).join("");
+  } else {
+    body = `<div class="rows">${list.map(rowHtml).join("")}</div>`;
+  }
+  return back + `<div class="pagetitle" style="margin-top:6px">${esc(pretty)}</div>${body}`;
+}
+function moreSection() {
+  const nondaf = State.all.filter(l => !isDafShiur(l)).slice(0, 4);
+  if (!nondaf.length) return "";
+  return `<div class="section">Parsha &amp; more</div><div class="rows">${nondaf.map(rowHtml).join("")}</div>
+    <p class="center" style="margin-top:14px"><a class="textlink" data-route="topics">All shiurim →</a></p>`;
+}
+
 /* ---------- Sponsor ---------- */
 function viewSponsor() {
   const s = State.content.sponsor || {}, amt = s.amounts || {}, sp = State.sponsor;
@@ -421,6 +460,7 @@ function wireView(r) {
   const v = $("#view");
   v.querySelectorAll("[data-seder]").forEach(b => b.onclick = () => route("seder", { seder: b.dataset.seder }));
   v.querySelectorAll("[data-masechta]").forEach(b => b.onclick = () => route("masechta", { masechta: b.dataset.masechta }));
+  v.querySelectorAll("[data-cat]").forEach(b => b.onclick = () => route("category", { cat: b.dataset.cat }));
   v.querySelectorAll("[data-daf]").forEach(b => b.onclick = () => route("daf", { id: b.dataset.daf }));
   v.querySelectorAll("[data-go]").forEach(a => a.onclick = () => route(a.dataset.go, JSON.parse(a.dataset.p || "{}")));
   v.querySelectorAll("[data-route]").forEach(b => b.onclick = () => route(b.dataset.route));

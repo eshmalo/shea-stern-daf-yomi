@@ -121,6 +121,14 @@ button { font-family: inherit; cursor: pointer; }
 .mas .ct { font-family: var(--sans); direction: ltr; font-size: 11.5px; color: var(--ink-faint); }
 .mas.empty .nm { color: var(--ink-faint); }
 
+/* ---------- Shiurim (non-daf categories) ---------- */
+.cat-list { margin-top: 6px; }
+.cat-row { display: flex; justify-content: space-between; align-items: baseline; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--hair); background: none; padding: 15px 2px; font-size: 18px; color: var(--ink); }
+.cat-row:hover { background: #faf8f3; }
+.cat-row .nm { font-weight: 600; }
+.cat-row .ct { color: var(--ink-faint); font-size: 13px; }
+.topic-group { font-size: 16px; font-weight: 700; margin: 22px 0 4px; padding-bottom: 4px; border-bottom: 1px solid var(--rule); }
+
 /* ---------- Masechta: daf grid (LaTeX table feel) ---------- */
 .crumbs { font-size: 13px; color: var(--ink-faint); margin: 6px 0 2px; }
 .crumbs a { color: var(--ink-soft); } .crumbs b { color: var(--ink); }

@@ -33,6 +33,7 @@ build/cloud.config
 
 # --- Media pipeline temp files ---
 media/.tmp/
+media/.stream_tmp/
 
 # --- Logs / scratch ---
 *.log
