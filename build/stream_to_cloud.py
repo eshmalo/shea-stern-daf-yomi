@@ -94,6 +94,7 @@ def main():
     ap.add_argument("--trim", type=float, default=7.5)
     ap.add_argument("--min-free-gb", type=float, default=5.0, help="stop if free disk would drop below this")
     ap.add_argument("--force", action="store_true", help="re-upload even if already in the bucket")
+    ap.add_argument("--delogo", default="", help="ffmpeg delogo box 'x=..:y=..:w=..:h=..' to erase the TA watermark (video only; forces a re-encode)")
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
 
@@ -133,13 +134,15 @@ def main():
         if not src:
             log(f"[{n}/{len(ids)}] {lid}: no {args.kind} url"); continue
         key = f"media/{lid}.{ext}"
-        if not args.force and cloud.exists(key):
-            ent = manifest.get(str(lid), {})
+        ent0 = manifest.get(str(lid), {})
+        delogo_done = args.kind == "video" and args.delogo and ent0.get("delogo") == args.delogo and ent0.get("video") == key
+        if not args.force and (delogo_done or (not (args.kind == "video" and args.delogo) and cloud.exists(key))):
+            ent = ent0
             if ent.get(args.kind) != key:                 # ensure manifest records it
                 ent[args.kind] = key; ent["intro_trimmed"] = args.trim; ent["title"] = x.get("title", "")
                 manifest[str(lid)] = ent; save_manifest(manifest)
             skipped += 1
-            if n % 25 == 0: log(f"[{n}/{len(ids)}] … {skipped} already in bucket")
+            if n % 25 == 0: log(f"[{n}/{len(ids)}] … {skipped} already done")
             continue
 
         raw_path = os.path.join(TMP, f"{lid}.src.{ext}")
@@ -147,15 +150,21 @@ def main():
         try:
             log(f"[{n}/{len(ids)}] {lid}: {x.get('title','')[:42]} … download")
             download(src, raw_path)
-            cmd = ["ffmpeg", "-y", "-loglevel", "error", "-ss", str(args.trim), "-i", raw_path, "-c", "copy"]
-            if args.kind == "video":
-                cmd += ["-movflags", "+faststart"]
-            cmd += [out_path]
-            if subprocess.call(cmd) != 0:                 # fallback: re-encode if stream-copy fails
-                cmd = ["ffmpeg", "-y", "-loglevel", "error", "-ss", str(args.trim), "-i", raw_path]
-                cmd += (["-c:a", "libmp3lame", "-q:a", "4"] if args.kind == "audio" else ["-movflags", "+faststart"])
-                cmd += [out_path]
-                subprocess.check_call(cmd)
+            head = ["ffmpeg", "-y", "-loglevel", "error", "-ss", str(args.trim), "-i", raw_path]
+            if args.kind == "video" and args.delogo:
+                # burn out the bottom-left TorahAnytime watermark — re-encode video (delogo
+                # can't stream-copy), audio copied untouched. Hardware encoder for speed,
+                # libx264 as a portable fallback.
+                vf = ["-vf", f"delogo={args.delogo}"]
+                cmd = head + vf + ["-c:v", "h264_videotoolbox", "-b:v", "900k", "-c:a", "copy", "-movflags", "+faststart", out_path]
+                if subprocess.call(cmd) != 0:
+                    cmd = head + vf + ["-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "copy", "-movflags", "+faststart", out_path]
+                    subprocess.check_call(cmd)
+            else:
+                cmd = head + ["-c", "copy"] + (["-movflags", "+faststart"] if args.kind == "video" else []) + [out_path]
+                if subprocess.call(cmd) != 0:             # fallback: re-encode if stream-copy fails
+                    cmd = head + (["-c:a", "libmp3lame", "-q:a", "4"] if args.kind == "audio" else ["-movflags", "+faststart"]) + [out_path]
+                    subprocess.check_call(cmd)
             os.remove(raw_path)
             mb = os.path.getsize(out_path) // (1 << 20)
             log(f"          upload {mb} MB -> s3://…/{key}")
@@ -164,6 +173,8 @@ def main():
             ent[args.kind] = key                          # RELATIVE path (mediaBaseUrl resolves it)
             ent["intro_trimmed"] = args.trim
             ent["title"] = x.get("title", "")
+            if args.kind == "video" and args.delogo:
+                ent["delogo"] = args.delogo               # mark watermark-removed (makes the pass resumable)
             manifest[str(lid)] = ent
             save_manifest(manifest)
             done += 1

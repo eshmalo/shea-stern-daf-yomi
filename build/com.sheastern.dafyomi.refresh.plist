@@ -8,7 +8,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/Library/Frameworks/Python.framework/Versions/3.13/bin/python3</string>
-        <string>/Users/elazarshmalo/Desktop/AI Workspace/shea-stern-daf-yomi/build/refresh.py</string>
+        <string>/Users/elazarshmalo/Desktop/AI Workspace/shea-stern-daf-yomi/build/update_all.py</string>
     </array>
 
     <key>WorkingDirectory</key>
@@ -20,9 +20,14 @@
         <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
 
-    <!-- run every hour (3600s) -->
-    <key>StartInterval</key>
-    <integer>3600</integer>
+    <!-- run once per day, at 04:30 local time -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>4</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
 
     <!-- also run once when loaded / at login, so it's never stale on boot -->
     <key>RunAtLoad</key>

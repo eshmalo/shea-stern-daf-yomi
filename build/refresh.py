@@ -93,6 +93,7 @@ def main():
     ap.add_argument("--no-video", action="store_true", help="audio only (skip video copies)")
     ap.add_argument("--snapshot-only", action="store_true", help="refresh catalog only, no media")
     ap.add_argument("--trim", type=float, default=7.5)
+    ap.add_argument("--delogo", default="x=1:y=288:w=96:h=71", help="ffmpeg delogo box to erase the TA watermark from new videos ('' to disable)")
     args = ap.parse_args()
 
     log(f"refresh start (speaker {args.speaker}, max {args.max}, backfill {args.backfill}, video {not args.no_video})")
@@ -144,14 +145,21 @@ def main():
         use_cloud = False
 
     if use_cloud:
-        log("cloud configured -> uploading new shiurim to bucket/CDN")
-        cmd = [PY, os.path.join(BUILD, "backfill_cloud.py"), "--speaker", str(args.speaker),
-               "--ids", ids_csv, "--trim", str(args.trim)]
-        if args.no_video:
-            cmd.append("--no-video")
-        rc_a = subprocess.call(cmd)
+        # Process new shiurim exactly like the catalog: intro trimmed + (video)
+        # the TA watermark removed, then uploaded to the bucket/CDN. Uses
+        # stream_to_cloud.py (disk-light, resumable) — one pass per kind.
+        log("cloud configured -> uploading new shiurim to bucket/CDN (intro-trim + de-watermark)")
+        ST = os.path.join(BUILD, "stream_to_cloud.py")
+        rc_a = subprocess.call([PY, ST, "--speaker", str(args.speaker), "--kind", "audio",
+                                "--ids", ids_csv, "--trim", str(args.trim)])
         rc_v = 0
-        log(f"cloud pass exit {rc_a}")
+        if not args.no_video:
+            vcmd = [PY, ST, "--speaker", str(args.speaker), "--kind", "video",
+                    "--ids", ids_csv, "--trim", str(args.trim)]
+            if args.delogo:
+                vcmd += ["--delogo", args.delogo]
+            rc_v = subprocess.call(vcmd)
+        log(f"cloud pass exit (audio {rc_a}, video {rc_v})")
     else:
         # LOCAL store (default): idempotent, disk-guarded, relative-path manifest.
         cmd = [PY, os.path.join(BUILD, "backfill.py"), "--speaker", str(args.speaker),

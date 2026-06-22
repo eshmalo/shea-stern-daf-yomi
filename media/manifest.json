@@ -4,7 +4,8 @@
     "intro_trimmed": 7.5,
     "bytes": 120461222,
     "title": "Daf 50 Chullin",
-    "audio": "media/457353.mp3"
+    "audio": "media/457353.mp3",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "457363": {
     "audio": "media/457363.mp3",
@@ -17,58 +18,67 @@
     "intro_trimmed": 7.5,
     "bytes": 59576508,
     "title": "Daf 49 Chullin",
-    "video": "media/457050.mp4"
+    "video": "media/457050.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "456780": {
     "audio": "media/456780.mp3",
     "intro_trimmed": 7.5,
     "bytes": 59364032,
     "title": "Daf 48",
-    "video": "media/456780.mp4"
+    "video": "media/456780.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "456518": {
     "audio": "media/456518.mp3",
     "intro_trimmed": 7.5,
     "bytes": 48421830,
     "title": "Daf 47 Chullin",
-    "video": "media/456518.mp4"
+    "video": "media/456518.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "457569": {
     "video": "media/457569.mp4",
     "intro_trimmed": 7.5,
     "bytes": 141658580,
     "title": "Daf 52 Chullin",
-    "audio": "media/457569.mp3"
+    "audio": "media/457569.mp3",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "457360": {
     "audio": "media/457360.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Korach: Unique Roles of Kohanim Leviimh",
-    "video": "media/457360.mp4"
+    "video": "media/457360.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "456205": {
     "audio": "media/456205.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 46 Chullin",
-    "video": "media/456205.mp4"
+    "video": "media/456205.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "455892": {
     "audio": "media/455892.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 45 Chullin",
-    "video": "media/455892.mp4"
+    "video": "media/455892.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "455705": {
     "audio": "media/455705.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 43 Chullin",
-    "video": "media/455705.mp4"
+    "video": "media/455705.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "455709": {
     "audio": "media/455709.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Shelach: Seeing with a wider \u05d1\u05dc\u05d9\u05e7!",
-    "video": "media/455709.mp4"
+    "video": "media/455709.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "455711": {
     "audio": "media/455711.mp3",
@@ -79,25 +89,29 @@
     "audio": "media/455414.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 42 Chullin",
-    "video": "media/455414.mp4"
+    "video": "media/455414.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "455050": {
     "audio": "media/455050.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 41 Chullin",
-    "video": "media/455050.mp4"
+    "video": "media/455050.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "454793": {
     "audio": "media/454793.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 40 Chullin",
-    "video": "media/454793.mp4"
+    "video": "media/454793.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "454258": {
     "audio": "media/454258.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 38 Chullin",
-    "video": "media/454258.mp4"
+    "video": "media/454258.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "454261": {
     "audio": "media/454261.mp3",
@@ -108,85 +122,99 @@
     "audio": "media/454062.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Be'halot'cha:Yidden and The Torah Traveling",
-    "video": "media/454062.mp4"
+    "video": "media/454062.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "454036": {
     "audio": "media/454036.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 36 Chullin",
-    "video": "media/454036.mp4"
+    "video": "media/454036.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "453796": {
     "audio": "media/453796.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 35 Chullin",
-    "video": "media/453796.mp4"
+    "video": "media/453796.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "453458": {
     "audio": "media/453458.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 34 Chullin",
-    "video": "media/453458.mp4"
+    "video": "media/453458.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "453051": {
     "audio": "media/453051.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 33 Chullin",
-    "video": "media/453051.mp4"
+    "video": "media/453051.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "452727": {
     "audio": "media/452727.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 32 Chullin",
-    "video": "media/452727.mp4"
+    "video": "media/452727.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "452534": {
     "audio": "media/452534.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 31 Chullin",
-    "video": "media/452534.mp4"
+    "video": "media/452534.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "452456": {
     "audio": "media/452456.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 30 Chullin",
-    "video": "media/452456.mp4"
+    "video": "media/452456.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "452294": {
     "audio": "media/452294.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 29 Chullin",
-    "video": "media/452294.mp4"
+    "video": "media/452294.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "452299": {
     "audio": "media/452299.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Naso: Brachah Gashmiyus-Ruchniyus-Inner Peace",
-    "video": "media/452299.mp4"
+    "video": "media/452299.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "451952": {
     "audio": "media/451952.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 28 Chullin",
-    "video": "media/451952.mp4"
+    "video": "media/451952.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "451620": {
     "audio": "media/451620.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 27 Chullin ",
-    "video": "media/451620.mp4"
+    "video": "media/451620.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "451322": {
     "audio": "media/451322.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 26 Chullin",
-    "video": "media/451322.mp4"
+    "video": "media/451322.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "451094": {
     "audio": "media/451094.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 25 Chullin",
-    "video": "media/451094.mp4"
+    "video": "media/451094.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "450863": {
     "audio": "media/450863.mp3",
@@ -197,73 +225,85 @@
     "audio": "media/450862.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 24 Chullin",
-    "video": "media/450862.mp4"
+    "video": "media/450862.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "450680": {
     "audio": "media/450680.mp3",
     "intro_trimmed": 7.5,
     "title": "Matan Torah \u05e2\u05dd \u05e7\u05d3\u05d5\u05e9",
-    "video": "media/450680.mp4"
+    "video": "media/450680.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "449972": {
     "audio": "media/449972.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 19 Chullin",
-    "video": "media/449972.mp4"
+    "video": "media/449972.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "449944": {
     "audio": "media/449944.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 18 Chullin",
-    "video": "media/449944.mp4"
+    "video": "media/449944.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "449457": {
     "audio": "media/449457.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 17 Chullin",
-    "video": "media/449457.mp4"
+    "video": "media/449457.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "449230": {
     "audio": "media/449230.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 15 Chullin",
-    "video": "media/449230.mp4"
+    "video": "media/449230.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "449212": {
     "audio": "media/449212.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Bamidbar: Hashem Counts every Yid!",
-    "video": "media/449212.mp4"
+    "video": "media/449212.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "448870": {
     "audio": "media/448870.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 14 Chullin",
-    "video": "media/448870.mp4"
+    "video": "media/448870.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "448626": {
     "audio": "media/448626.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 13 Chullin",
-    "video": "media/448626.mp4"
+    "video": "media/448626.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "448331": {
     "audio": "media/448331.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 12 Chullin",
-    "video": "media/448331.mp4"
+    "video": "media/448331.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "448051": {
     "audio": "media/448051.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 11 Chullin",
-    "video": "media/448051.mp4"
+    "video": "media/448051.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "447861": {
     "audio": "media/447861.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 10 Chullin",
-    "video": "media/447861.mp4"
+    "video": "media/447861.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "447767": {
     "audio": "media/447767.mp3",
@@ -274,67 +314,78 @@
     "audio": "media/447668.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 8 Chullin",
-    "video": "media/447668.mp4"
+    "video": "media/447668.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "447669": {
     "audio": "media/447669.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Bechukotai: \u05ea\u05d5\u05db\u05d7\u05d4 \u05d0\u05d5 \u05e7\u05dc\u05dc\u05d5\u05ea",
-    "video": "media/447669.mp4"
+    "video": "media/447669.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "447195": {
     "audio": "media/447195.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 7 Chullin",
-    "video": "media/447195.mp4"
+    "video": "media/447195.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "447194": {
     "audio": "media/447194.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 6 Chullin",
-    "video": "media/447194.mp4"
+    "video": "media/447194.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "446867": {
     "audio": "media/446867.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 5 Chullin",
-    "video": "media/446867.mp4"
+    "video": "media/446867.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "446862": {
     "audio": "media/446862.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 6 Chullin",
-    "video": "media/446862.mp4"
+    "video": "media/446862.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "446357": {
     "audio": "media/446357.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 4 Chullin",
-    "video": "media/446357.mp4"
+    "video": "media/446357.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "446079": {
     "audio": "media/446079.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 3 Chullin",
-    "video": "media/446079.mp4"
+    "video": "media/446079.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "445894": {
     "audio": "media/445894.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Emor: This World or Next!",
-    "video": "media/445894.mp4"
+    "video": "media/445894.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "445883": {
     "audio": "media/445883.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 2 Chullin",
-    "video": "media/445883.mp4"
+    "video": "media/445883.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "445881": {
     "audio": "media/445881.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 110 Menachot",
-    "video": "media/445881.mp4"
+    "video": "media/445881.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "445572": {
     "audio": "media/445572.mp3",
@@ -345,121 +396,141 @@
     "audio": "media/445325.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 108 Menachot",
-    "video": "media/445325.mp4"
+    "video": "media/445325.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "445034": {
     "audio": "media/445034.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 107 Menachot",
-    "video": "media/445034.mp4"
+    "video": "media/445034.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "444816": {
     "audio": "media/444816.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf  106 Menachot",
-    "video": "media/444816.mp4"
+    "video": "media/444816.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "444551": {
     "audio": "media/444551.mp3",
     "intro_trimmed": 7.5,
     "title": "daf  105 Menachot",
-    "video": "media/444551.mp4"
+    "video": "media/444551.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "444346": {
     "audio": "media/444346.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Achrei Mot: \u05d0\u05d9\u05e1\u05d5\u05e8 \u05d3\u05dd and Semichah R' Chaim",
-    "video": "media/444346.mp4"
+    "video": "media/444346.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "444321": {
     "audio": "media/444321.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 103 and Semichah from R' Chaim",
-    "video": "media/444321.mp4"
+    "video": "media/444321.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "444006": {
     "audio": "media/444006.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 102 Menqachos",
-    "video": "media/444006.mp4"
+    "video": "media/444006.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "443716": {
     "audio": "media/443716.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 101 Menachot",
-    "video": "media/443716.mp4"
+    "video": "media/443716.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "443456": {
     "audio": "media/443456.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 100 Menachot",
-    "video": "media/443456.mp4"
+    "video": "media/443456.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "443081": {
     "audio": "media/443081.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 99 Menachot",
-    "video": "media/443081.mp4"
+    "video": "media/443081.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "442852": {
     "audio": "media/442852.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 98 ",
-    "video": "media/442852.mp4"
+    "video": "media/442852.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "442614": {
     "audio": "media/442614.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 96 Menachos",
-    "video": "media/442614.mp4"
+    "video": "media/442614.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "442618": {
     "audio": "media/442618.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Metzora: Loshon Hora-Tov",
-    "video": "media/442618.mp4"
+    "video": "media/442618.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "442334": {
     "audio": "media/442334.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 95 Menachos",
-    "video": "media/442334.mp4"
+    "video": "media/442334.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "442093": {
     "audio": "media/442093.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 94 Menachos",
-    "video": "media/442093.mp4"
+    "video": "media/442093.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "441838": {
     "audio": "media/441838.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 93 Menachos",
-    "video": "media/441838.mp4"
+    "video": "media/441838.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "441649": {
     "audio": "media/441649.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 92",
-    "video": "media/441649.mp4"
+    "video": "media/441649.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "441471": {
     "audio": "media/441471.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 91",
-    "video": "media/441471.mp4"
+    "video": "media/441471.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "441392": {
     "audio": "media/441392.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 90 Menachot",
-    "video": "media/441392.mp4"
+    "video": "media/441392.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "441299": {
     "audio": "media/441299.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 89 Menachot",
-    "video": "media/441299.mp4"
+    "video": "media/441299.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "441139": {
     "audio": "media/441139.mp3",
@@ -480,25 +551,29 @@
     "audio": "media/441094.mp3",
     "intro_trimmed": 7.5,
     "title": "Pesach:Omer, \u05d2\u05d0\u05d5\u05dc\u05d4-\u05e4\u05dc\u05d0\u05d9\u05dd",
-    "video": "media/441094.mp4"
+    "video": "media/441094.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "441058": {
     "audio": "media/441058.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 86 Menachot",
-    "video": "media/441058.mp4"
+    "video": "media/441058.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "440895": {
     "audio": "media/440895.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 85 Menachot",
-    "video": "media/440895.mp4"
+    "video": "media/440895.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "440734": {
     "audio": "media/440734.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 84 Menachot",
-    "video": "media/440734.mp4"
+    "video": "media/440734.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "440673": {
     "audio": "media/440673.mp3",
@@ -514,121 +589,141 @@
     "audio": "media/440671.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 83 Menachot",
-    "video": "media/440671.mp4"
+    "video": "media/440671.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "440517": {
     "audio": "media/440517.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 80",
-    "video": "media/440517.mp4"
+    "video": "media/440517.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "440246": {
     "audio": "media/440246.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 79",
-    "video": "media/440246.mp4"
+    "video": "media/440246.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "439982": {
     "audio": "media/439982.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 78",
-    "video": "media/439982.mp4"
+    "video": "media/439982.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "439740": {
     "audio": "media/439740.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 77 Menachot",
-    "video": "media/439740.mp4"
+    "video": "media/439740.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "439656": {
     "audio": "media/439656.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 76 Menachot",
-    "video": "media/439656.mp4"
+    "video": "media/439656.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "439564": {
     "audio": "media/439564.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Tzav: Todah every day.",
-    "video": "media/439564.mp4"
+    "video": "media/439564.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "439544": {
     "audio": "media/439544.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 75 Menachot",
-    "video": "media/439544.mp4"
+    "video": "media/439544.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "439267": {
     "audio": "media/439267.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 74 Menachot",
-    "video": "media/439267.mp4"
+    "video": "media/439267.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "439017": {
     "audio": "media/439017.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 73 Menachot",
-    "video": "media/439017.mp4"
+    "video": "media/439017.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "438805": {
     "audio": "media/438805.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 72 Menachot",
-    "video": "media/438805.mp4"
+    "video": "media/438805.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "438601": {
     "audio": "media/438601.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 71 Menachot",
-    "video": "media/438601.mp4"
+    "video": "media/438601.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "438352": {
     "audio": "media/438352.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 70 Menachot",
-    "video": "media/438352.mp4"
+    "video": "media/438352.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "438063": {
     "audio": "media/438063.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 68 Menachot",
-    "video": "media/438063.mp4"
+    "video": "media/438063.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "438062": {
     "audio": "media/438062.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Vayikra: Reason of Korbonos ",
-    "video": "media/438062.mp4"
+    "video": "media/438062.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "437800": {
     "audio": "media/437800.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 67 Menachos",
-    "video": "media/437800.mp4"
+    "video": "media/437800.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "437366": {
     "audio": "media/437366.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 66 Menachos",
-    "video": "media/437366.mp4"
+    "video": "media/437366.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "437026": {
     "audio": "media/437026.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 65",
-    "video": "media/437026.mp4"
+    "video": "media/437026.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "436712": {
     "audio": "media/436712.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 64",
-    "video": "media/436712.mp4"
+    "video": "media/436712.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "436482": {
     "audio": "media/436482.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 63",
-    "video": "media/436482.mp4"
+    "video": "media/436482.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "436398": {
     "audio": "media/436398.mp3",
@@ -639,79 +734,92 @@
     "audio": "media/436301.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 61 Menachot",
-    "video": "media/436301.mp4"
+    "video": "media/436301.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "436303": {
     "audio": "media/436303.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Vayakhel: Secret of \u05e0\u05e9\u05de\u05d4 \u05d9\u05ea\u05d9\u05e8\u05d4",
-    "video": "media/436303.mp4"
+    "video": "media/436303.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "435992": {
     "audio": "media/435992.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 60 Menachot ",
-    "video": "media/435992.mp4"
+    "video": "media/435992.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "435745": {
     "audio": "media/435745.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 59 Menachot ",
-    "video": "media/435745.mp4"
+    "video": "media/435745.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "435462": {
     "audio": "media/435462.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 58 Menachot ",
-    "video": "media/435462.mp4"
+    "video": "media/435462.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "435244": {
     "audio": "media/435244.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 57 Menachot",
-    "video": "media/435244.mp4"
+    "video": "media/435244.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "435062": {
     "audio": "media/435062.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 56 Menachot",
-    "video": "media/435062.mp4"
+    "video": "media/435062.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "434956": {
     "audio": "media/434956.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 55 Menachot",
-    "video": "media/434956.mp4"
+    "video": "media/434956.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "434848": {
     "audio": "media/434848.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 54 Menachot",
-    "video": "media/434848.mp4"
+    "video": "media/434848.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "434846": {
     "audio": "media/434846.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Ki Tisa: Shabbos",
-    "video": "media/434846.mp4"
+    "video": "media/434846.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "434525": {
     "audio": "media/434525.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 53 Menachot",
-    "video": "media/434525.mp4"
+    "video": "media/434525.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "434311": {
     "audio": "media/434311.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 52 Menachot",
-    "video": "media/434311.mp4"
+    "video": "media/434311.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "434183": {
     "audio": "media/434183.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 51 Menachot",
-    "video": "media/434183.mp4"
+    "video": "media/434183.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "433994": {
     "audio": "media/433994.mp3",
@@ -722,43 +830,50 @@
     "audio": "media/433702.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 49 Menachot",
-    "video": "media/433702.mp4"
+    "video": "media/433702.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "433607": {
     "audio": "media/433607.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 48 Menachot",
-    "video": "media/433607.mp4"
+    "video": "media/433607.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "433485": {
     "audio": "media/433485.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 47 Menachot",
-    "video": "media/433485.mp4"
+    "video": "media/433485.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "433486": {
     "audio": "media/433486.mp3",
     "intro_trimmed": 7.5,
     "title": "Purim: \u05e8\u05e6\u05d5\u05d9 \u05dc\u05e8\u05d1 \u05d0\u05d7\u05d9\u05d5 Story Rogatchover",
-    "video": "media/433486.mp4"
+    "video": "media/433486.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "433247": {
     "audio": "media/433247.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 46 Menachot",
-    "video": "media/433247.mp4"
+    "video": "media/433247.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "432913": {
     "audio": "media/432913.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 445 Menachot",
-    "video": "media/432913.mp4"
+    "video": "media/432913.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "432651": {
     "audio": "media/432651.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 44 Menachot",
-    "video": "media/432651.mp4"
+    "video": "media/432651.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "432359": {
     "audio": "media/432359.mp3",
@@ -768,123 +883,158 @@
   "432150": {
     "audio": "media/432150.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 41 Menachot"
+    "title": "Daf 41 Menachot",
+    "video": "media/432150.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "432144": {
     "audio": "media/432144.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 42 Menachot",
-    "video": "media/432144.mp4"
+    "video": "media/432144.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "431974": {
     "audio": "media/431974.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 40 Menachot"
+    "title": "Daf 40 Menachot",
+    "video": "media/431974.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "431918": {
     "audio": "media/431918.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Terumah:Talmud Chacham todays \u05db\u05e8\u05d1\u05d9\u05dd"
+    "title": "Parasha Terumah:Talmud Chacham todays \u05db\u05e8\u05d1\u05d9\u05dd",
+    "video": "media/431918.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "431617": {
     "audio": "media/431617.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 39 Menachos"
+    "title": "Daf 39 Menachos",
+    "video": "media/431617.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "431316": {
     "audio": "media/431316.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 38 Menachos "
+    "title": "Daf 38 Menachos ",
+    "video": "media/431316.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "430777": {
     "audio": "media/430777.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 36 Menachos "
+    "title": "Daf 36 Menachos ",
+    "video": "media/430777.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "430555": {
     "audio": "media/430555.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 35 Menachot"
+    "title": "Daf 35 Menachot",
+    "video": "media/430555.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "430224": {
     "audio": "media/430224.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 33 Menachot"
+    "title": "Daf 33 Menachot",
+    "video": "media/430224.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "430228": {
     "audio": "media/430228.mp3",
     "intro_trimmed": 7.5,
-    "title": "Purim: Maharal"
+    "title": "Purim: Maharal",
+    "video": "media/430228.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "429884": {
     "audio": "media/429884.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 32 Menachot"
+    "title": "Daf 32 Menachot",
+    "video": "media/429884.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "429602": {
     "audio": "media/429602.mp3",
     "intro_trimmed": 7.5,
-    "title": "I Need Your Attention for a Moment"
+    "title": "I Need Your Attention for a Moment",
+    "video": "media/429602.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "429352": {
     "audio": "media/429352.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 28 Menachot"
+    "title": "Daf 28 Menachot",
+    "video": "media/429352.mp4"
   },
   "429277": {
     "audio": "media/429277.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 30 Menachot"
+    "title": "Daf 30 Menachot",
+    "video": "media/429277.mp4"
   },
   "428996": {
     "audio": "media/428996.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 29 Menachot"
+    "title": "Daf 29 Menachot",
+    "video": "media/428996.mp4"
   },
   "428626": {
     "audio": "media/428626.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 27 Menachot"
+    "title": "Daf 27 Menachot",
+    "video": "media/428626.mp4"
   },
   "428440": {
     "audio": "media/428440.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 26 Menachot "
+    "title": "Daf 26 Menachot ",
+    "video": "media/428440.mp4"
   },
   "428442": {
     "audio": "media/428442.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Yitro: Eliezer-Eved Avrohom?"
+    "title": "Parasha Yitro: Eliezer-Eved Avrohom?",
+    "video": "media/428442.mp4"
   },
   "428141": {
     "audio": "media/428141.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 25 Menachot "
+    "title": "Daf 25 Menachot ",
+    "video": "media/428141.mp4"
   },
   "427768": {
     "audio": "media/427768.mp3",
     "intro_trimmed": 7.5,
-    "title": "I Need Your Attention for a Moment"
+    "title": "I Need Your Attention for a Moment",
+    "video": "media/427768.mp4"
   },
   "427815": {
     "audio": "media/427815.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 24 Menachot "
+    "title": "Daf 24 Menachot ",
+    "video": "media/427815.mp4"
   },
   "427500": {
     "audio": "media/427500.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 23 Menachot"
+    "title": "Daf 23 Menachot",
+    "video": "media/427500.mp4"
   },
   "427221": {
     "audio": "media/427221.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 22 Menachot"
+    "title": "Daf 22 Menachot",
+    "video": "media/427221.mp4"
   },
   "427002": {
     "audio": "media/427002.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 21 Menachot"
+    "title": "Daf 21 Menachot",
+    "video": "media/427002.mp4"
   },
   "426888": {
     "audio": "media/426888.mp3",
@@ -894,37 +1044,44 @@
   "426701": {
     "audio": "media/426701.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 19 Menachot"
+    "title": "Daf 19 Menachot",
+    "video": "media/426701.mp4"
   },
   "426703": {
     "audio": "media/426703.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Beshalach: \u05d4\u05d9\u05d3\u05d5\u05e8 \u05de\u05e6\u05d5\u05d4 33%"
+    "title": "Parasha Beshalach: \u05d4\u05d9\u05d3\u05d5\u05e8 \u05de\u05e6\u05d5\u05d4 33%",
+    "video": "media/426703.mp4"
   },
   "426361": {
     "audio": "media/426361.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 18 Menachot"
+    "title": "Daf 18 Menachot",
+    "video": "media/426361.mp4"
   },
   "426052": {
     "audio": "media/426052.mp3",
     "intro_trimmed": 7.5,
-    "title": "Your Responsibility"
+    "title": "Your Responsibility",
+    "video": "media/426052.mp4"
   },
   "426004": {
     "audio": "media/426004.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 17 Menachot"
+    "title": "Daf 17 Menachot",
+    "video": "media/426004.mp4"
   },
   "425705": {
     "audio": "media/425705.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 16 Menachot"
+    "title": "Daf 16 Menachot",
+    "video": "media/425705.mp4"
   },
   "425300": {
     "audio": "media/425300.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 15 Menachot"
+    "title": "Daf 15 Menachot",
+    "video": "media/425300.mp4"
   },
   "425039": {
     "audio": "media/425039.mp3",
@@ -934,177 +1091,212 @@
   "424769": {
     "audio": "media/424769.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 12 Menachot"
+    "title": "Daf 12 Menachot",
+    "video": "media/424769.mp4"
   },
   "424768": {
     "audio": "media/424768.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Bo: \u05e8\u05e2\u05d4 \u05e0\u05d2\u05d3 \u05e4\u05e0\u05d9\u05db\u05dd"
+    "title": "Parasha Bo: \u05e8\u05e2\u05d4 \u05e0\u05d2\u05d3 \u05e4\u05e0\u05d9\u05db\u05dd",
+    "video": "media/424768.mp4"
   },
   "424431": {
     "audio": "media/424431.mp3",
     "intro_trimmed": 7.5,
-    "title": "Menachot Daf 11"
+    "title": "Menachot Daf 11",
+    "video": "media/424431.mp4"
   },
   "423976": {
     "audio": "media/423976.mp3",
     "intro_trimmed": 7.5,
-    "title": "Menachot Daf 10"
+    "title": "Menachot Daf 10",
+    "video": "media/423976.mp4"
   },
   "423675": {
     "audio": "media/423675.mp3",
     "intro_trimmed": 7.5,
-    "title": "Menachot Daf 9"
+    "title": "Menachot Daf 9",
+    "video": "media/423675.mp4"
   },
   "423391": {
     "audio": "media/423391.mp3",
     "intro_trimmed": 7.5,
-    "title": "Menachot Daf 8"
+    "title": "Menachot Daf 8",
+    "video": "media/423391.mp4"
   },
   "423070": {
     "audio": "media/423070.mp3",
     "intro_trimmed": 7.5,
-    "title": "Menachot Daf 7"
+    "title": "Menachot Daf 7",
+    "video": "media/423070.mp4"
   },
   "422873": {
     "audio": "media/422873.mp3",
     "intro_trimmed": 7.5,
-    "title": "Menachot Daf 5"
+    "title": "Menachot Daf 5",
+    "video": "media/422873.mp4"
   },
   "422869": {
     "audio": "media/422869.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Va'eira: Ein Od Milvado, Fake news!"
+    "title": "Parasha Va'eira: Ein Od Milvado, Fake news!",
+    "video": "media/422869.mp4"
   },
   "422558": {
     "audio": "media/422558.mp3",
     "intro_trimmed": 7.5,
-    "title": "Menachot Daf 4"
+    "title": "Menachot Daf 4",
+    "video": "media/422558.mp4"
   },
   "422280": {
     "audio": "media/422280.mp3",
     "intro_trimmed": 7.5,
-    "title": "Menachot Daf 3"
+    "title": "Menachot Daf 3",
+    "video": "media/422280.mp4"
   },
   "421951": {
     "audio": "media/421951.mp3",
     "intro_trimmed": 7.5,
-    "title": "Menachot Daf 2;Hakdamh to Masechtah"
+    "title": "Menachot Daf 2;Hakdamh to Masechtah",
+    "video": "media/421951.mp4"
   },
   "421646": {
     "audio": "media/421646.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 120"
+    "title": "Zevachim Daf 120",
+    "video": "media/421646.mp4"
   },
   "421395": {
     "audio": "media/421395.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 119"
+    "title": "Zevachim Daf 119",
+    "video": "media/421395.mp4"
   },
   "421134": {
     "audio": "media/421134.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 117"
+    "title": "Zevachim Daf 117",
+    "video": "media/421134.mp4"
   },
   "421135": {
     "audio": "media/421135.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Shemot: \u05d5\u05d9\u05de\u05ea \u05de\u05dc\u05da \u05de\u05e6\u05e8\u05d9\u05dd"
+    "title": "Parasha Shemot: \u05d5\u05d9\u05de\u05ea \u05de\u05dc\u05da \u05de\u05e6\u05e8\u05d9\u05dd",
+    "video": "media/421135.mp4"
   },
   "420790": {
     "audio": "media/420790.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 116"
+    "title": "Zevachim Daf 116",
+    "video": "media/420790.mp4"
   },
   "420502": {
     "audio": "media/420502.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 115"
+    "title": "Zevachim Daf 115",
+    "video": "media/420502.mp4"
   },
   "420210": {
     "audio": "media/420210.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 114"
+    "title": "Zevachim Daf 114",
+    "video": "media/420210.mp4"
   },
   "419971": {
     "audio": "media/419971.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 113"
+    "title": "Zevachim Daf 113",
+    "video": "media/419971.mp4"
   },
   "419707": {
     "audio": "media/419707.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 112"
+    "title": "Zevachim Daf 112",
+    "video": "media/419707.mp4"
   },
   "419430": {
     "audio": "media/419430.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayechi: Partner Zevulan and Yissaschar "
+    "title": "Parasha Vayechi: Partner Zevulan and Yissaschar ",
+    "video": "media/419430.mp4"
   },
   "419428": {
     "audio": "media/419428.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 110"
+    "title": "Zevachim Daf 110",
+    "video": "media/419428.mp4"
   },
   "419087": {
     "audio": "media/419087.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 109"
+    "title": "Zevachim Daf 109",
+    "video": "media/419087.mp4"
   },
   "418756": {
     "audio": "media/418756.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 108"
+    "title": "Zevachim Daf 108",
+    "video": "media/418756.mp4"
   },
   "418261": {
     "audio": "media/418261.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 106"
+    "title": "Zevachim Daf 106",
+    "video": "media/418261.mp4"
   },
   "418047": {
     "audio": "media/418047.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 105"
+    "title": "Zevachim Daf 105",
+    "video": "media/418047.mp4"
   },
   "417840": {
     "audio": "media/417840.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 104"
+    "title": "Zevachim Daf 104",
+    "video": "media/417840.mp4"
   },
   "417625": {
     "audio": "media/417625.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 103"
+    "title": "Zevachim Daf 103",
+    "video": "media/417625.mp4"
   },
   "417627": {
     "audio": "media/417627.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayigash: Emunah Chakirah or Peshutah."
+    "title": "Parasha Vayigash: Emunah Chakirah or Peshutah.",
+    "video": "media/417627.mp4"
   },
   "417340": {
     "audio": "media/417340.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 102"
+    "title": "Zevachim Daf 102",
+    "video": "media/417340.mp4"
   },
   "417110": {
     "audio": "media/417110.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 101"
+    "title": "Zevachim Daf 101",
+    "video": "media/417110.mp4"
   },
   "416842": {
     "audio": "media/416842.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 100"
+    "title": "Zevachim Daf 100",
+    "video": "media/416842.mp4"
   },
   "416652": {
     "audio": "media/416652.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 99"
+    "title": "Zevachim Daf 99",
+    "video": "media/416652.mp4"
   },
   "416466": {
     "audio": "media/416466.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 98"
+    "title": "Zevachim Daf 98",
+    "video": "media/416466.mp4"
   },
   "416393": {
     "audio": "media/416393.mp3",
@@ -1114,32 +1306,38 @@
   "416276": {
     "audio": "media/416276.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 96"
+    "title": "Zevachim Daf 96",
+    "video": "media/416276.mp4"
   },
   "416279": {
     "audio": "media/416279.mp3",
     "intro_trimmed": 7.5,
-    "title": "Chanukah: Thanking Essence of a Yid"
+    "title": "Chanukah: Thanking Essence of a Yid",
+    "video": "media/416279.mp4"
   },
   "415954": {
     "audio": "media/415954.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 95"
+    "title": "Zevachim Daf 95",
+    "video": "media/415954.mp4"
   },
   "415720": {
     "audio": "media/415720.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 94"
+    "title": "Zevachim Daf 94",
+    "video": "media/415720.mp4"
   },
   "415490": {
     "audio": "media/415490.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 93"
+    "title": "Zevachim Daf 93",
+    "video": "media/415490.mp4"
   },
   "415261": {
     "audio": "media/415261.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 92"
+    "title": "Zevachim Daf 92",
+    "video": "media/415261.mp4"
   },
   "414958": {
     "audio": "media/414958.mp3",
@@ -1164,12 +1362,14 @@
   "413456": {
     "audio": "media/413456.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 86"
+    "title": "Zevachim Daf 86",
+    "video": "media/413456.mp4"
   },
   "412054": {
     "audio": "media/412054.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 85"
+    "title": "Zevachim Daf 85",
+    "video": "media/412054.mp4"
   },
   "411704": {
     "audio": "media/411704.mp3",
@@ -1179,67 +1379,80 @@
   "411551": {
     "audio": "media/411551.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 82"
+    "title": "Zevachim Daf 82",
+    "video": "media/411551.mp4"
   },
   "411552": {
     "audio": "media/411552.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayishlach: Dinah trade with Yosef."
+    "title": "Parasha Vayishlach: Dinah trade with Yosef.",
+    "video": "media/411552.mp4"
   },
   "411170": {
     "audio": "media/411170.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 81"
+    "title": "Zevachim Daf 81",
+    "video": "media/411170.mp4"
   },
   "410871": {
     "audio": "media/410871.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 80"
+    "title": "Zevachim Daf 80",
+    "video": "media/410871.mp4"
   },
   "410554": {
     "audio": "media/410554.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 79"
+    "title": "Zevachim Daf 79",
+    "video": "media/410554.mp4"
   },
   "409981": {
     "audio": "media/409981.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 77"
+    "title": "Zevachim Daf 77",
+    "video": "media/409981.mp4"
   },
   "409772": {
     "audio": "media/409772.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 75"
+    "title": "Zevachim Daf 75",
+    "video": "media/409772.mp4"
   },
   "409774": {
     "audio": "media/409774.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayetzei: Yidishkeit is Geshmak!"
+    "title": "Parasha Vayetzei: Yidishkeit is Geshmak!",
+    "video": "media/409774.mp4"
   },
   "409434": {
     "audio": "media/409434.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 74"
+    "title": "Zevachim Daf 74",
+    "video": "media/409434.mp4"
   },
   "409115": {
     "audio": "media/409115.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 73"
+    "title": "Zevachim Daf 73",
+    "video": "media/409115.mp4"
   },
   "408832": {
     "audio": "media/408832.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 72"
+    "title": "Zevachim Daf 72",
+    "video": "media/408832.mp4"
   },
   "408598": {
     "audio": "media/408598.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 71"
+    "title": "Zevachim Daf 71",
+    "video": "media/408598.mp4"
   },
   "408307": {
     "audio": "media/408307.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 70"
+    "title": "Zevachim Daf 70",
+    "video": "media/408307.mp4"
   },
   "408176": {
     "audio": "media/408176.mp3",
@@ -1249,97 +1462,116 @@
   "407918": {
     "audio": "media/407918.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 68"
+    "title": "Zevachim Daf 68",
+    "video": "media/407918.mp4"
   },
   "407920": {
     "audio": "media/407920.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Toldot: Past and Future Generations!"
+    "title": "Parasha Toldot: Past and Future Generations!",
+    "video": "media/407920.mp4"
   },
   "407284": {
     "audio": "media/407284.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 66"
+    "title": "Zevachim Daf 66",
+    "video": "media/407284.mp4"
   },
   "406717": {
     "audio": "media/406717.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 64"
+    "title": "Zevachim Daf 64",
+    "video": "media/406717.mp4"
   },
   "406438": {
     "audio": "media/406438.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 63"
+    "title": "Zevachim Daf 63",
+    "video": "media/406438.mp4"
   },
   "406143": {
     "audio": "media/406143.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 61"
+    "title": "Zevachim Daf 61",
+    "video": "media/406143.mp4"
   },
   "406138": {
     "audio": "media/406138.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Chayei Sara: Blessing of Everything!"
+    "title": "Parasha Chayei Sara: Blessing of Everything!",
+    "video": "media/406138.mp4"
   },
   "405822": {
     "audio": "media/405822.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 60"
+    "title": "Zevachim Daf 60",
+    "video": "media/405822.mp4"
   },
   "405592": {
     "audio": "media/405592.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 59"
+    "title": "Zevachim Daf 59",
+    "video": "media/405592.mp4"
   },
   "405314": {
     "audio": "media/405314.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 58"
+    "title": "Zevachim Daf 58",
+    "video": "media/405314.mp4"
   },
   "405074": {
     "audio": "media/405074.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 57"
+    "title": "Zevachim Daf 57",
+    "video": "media/405074.mp4"
   },
   "404819": {
     "audio": "media/404819.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 56"
+    "title": "Zevachim Daf 56",
+    "video": "media/404819.mp4"
   },
   "404605": {
     "audio": "media/404605.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 54"
+    "title": "Zevachim Daf 54",
+    "video": "media/404605.mp4"
   },
   "404611": {
     "audio": "media/404611.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayeira: Hachnasas Orchim, Malachim?"
+    "title": "Parasha Vayeira: Hachnasas Orchim, Malachim?",
+    "video": "media/404611.mp4"
   },
   "404221": {
     "audio": "media/404221.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 53"
+    "title": "Zevachim Daf 53",
+    "video": "media/404221.mp4"
   },
   "403972": {
     "audio": "media/403972.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 52"
+    "title": "Zevachim Daf 52",
+    "video": "media/403972.mp4"
   },
   "403681": {
     "audio": "media/403681.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 51"
+    "title": "Zevachim Daf 51",
+    "video": "media/403681.mp4"
   },
   "403471": {
     "audio": "media/403471.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 50"
+    "title": "Zevachim Daf 50",
+    "video": "media/403471.mp4"
   },
   "403260": {
     "audio": "media/403260.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 49"
+    "title": "Zevachim Daf 49",
+    "video": "media/403260.mp4"
   },
   "403140": {
     "audio": "media/403140.mp3",
@@ -1359,92 +1591,110 @@
   "402624": {
     "audio": "media/402624.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 46"
+    "title": "Zevachim Daf 46",
+    "video": "media/402624.mp4"
   },
   "402285": {
     "audio": "media/402285.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 45"
+    "title": "Zevachim Daf 45",
+    "video": "media/402285.mp4"
   },
   "402053": {
     "audio": "media/402053.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 44"
+    "title": "Zevachim Daf 44",
+    "video": "media/402053.mp4"
   },
   "401867": {
     "audio": "media/401867.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 43"
+    "title": "Zevachim Daf 43",
+    "video": "media/401867.mp4"
   },
   "401654": {
     "audio": "media/401654.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 42"
+    "title": "Zevachim Daf 42",
+    "video": "media/401654.mp4"
   },
   "401526": {
     "audio": "media/401526.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 41"
+    "title": "Zevachim Daf 41",
+    "video": "media/401526.mp4"
   },
   "401396": {
     "audio": "media/401396.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 40"
+    "title": "Zevachim Daf 40",
+    "video": "media/401396.mp4"
   },
   "401394": {
     "audio": "media/401394.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Noch: \u05d3\u05d5\u05e8 \u05d4\u05e4\u05dc\u05d2\u05d4"
+    "title": "Parasha Noch: \u05d3\u05d5\u05e8 \u05d4\u05e4\u05dc\u05d2\u05d4",
+    "video": "media/401394.mp4"
   },
   "401046": {
     "audio": "media/401046.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 39"
+    "title": "Zevachim Daf 39",
+    "video": "media/401046.mp4"
   },
   "400589": {
     "audio": "media/400589.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 38"
+    "title": "Zevachim Daf 38",
+    "video": "media/400589.mp4"
   },
   "400389": {
     "audio": "media/400389.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 37"
+    "title": "Zevachim Daf 37",
+    "video": "media/400389.mp4"
   },
   "400199": {
     "audio": "media/400199.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 36"
+    "title": "Zevachim Daf 36",
+    "video": "media/400199.mp4"
   },
   "399923": {
     "audio": "media/399923.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 35"
+    "title": "Zevachim Daf 35",
+    "video": "media/399923.mp4"
   },
   "399849": {
     "audio": "media/399849.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 34"
+    "title": "Zevachim Daf 34",
+    "video": "media/399849.mp4"
   },
   "399716": {
     "audio": "media/399716.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 33"
+    "title": "Zevachim Daf 33",
+    "video": "media/399716.mp4"
   },
   "399723": {
     "audio": "media/399723.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Bereishit: Kayin and Hevel; Chasam Sofer"
+    "title": "Parasha Bereishit: Kayin and Hevel; Chasam Sofer",
+    "video": "media/399723.mp4"
   },
   "399469": {
     "audio": "media/399469.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 32"
+    "title": "Zevachim Daf 32",
+    "video": "media/399469.mp4"
   },
   "399272": {
     "audio": "media/399272.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 29"
+    "title": "Zevachim Daf 29",
+    "video": "media/399272.mp4"
   },
   "399271": {
     "audio": "media/399271.mp3",
@@ -1454,7 +1704,8 @@
   "399018": {
     "audio": "media/399018.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 28"
+    "title": "Zevachim Daf 28",
+    "video": "media/399018.mp4"
   },
   "398926": {
     "audio": "media/398926.mp3",
@@ -1464,12 +1715,14 @@
   "398828": {
     "audio": "media/398828.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 26"
+    "title": "Zevachim Daf 26",
+    "video": "media/398828.mp4"
   },
   "398690": {
     "audio": "media/398690.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 25"
+    "title": "Zevachim Daf 25",
+    "video": "media/398690.mp4"
   },
   "398395": {
     "audio": "media/398395.mp3",
@@ -1479,7 +1732,8 @@
   "398203": {
     "audio": "media/398203.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 21"
+    "title": "Zevachim Daf 21",
+    "video": "media/398203.mp4"
   },
   "398110": {
     "audio": "media/398110.mp3",
@@ -1489,12 +1743,14 @@
   "397973": {
     "audio": "media/397973.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 19"
+    "title": "Zevachim Daf 19",
+    "video": "media/397973.mp4"
   },
   "397974": {
     "audio": "media/397974.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha: 7 Mitzvahs: Morality or Torah."
+    "title": "Parasha: 7 Mitzvahs: Morality or Torah.",
+    "video": "media/397974.mp4"
   },
   "397862": {
     "audio": "media/397862.mp3",
@@ -1504,17 +1760,20 @@
   "397719": {
     "audio": "media/397719.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 17"
+    "title": "Zevachim Daf 17",
+    "video": "media/397719.mp4"
   },
   "397375": {
     "audio": "media/397375.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 16"
+    "title": "Zevachim Daf 16",
+    "video": "media/397375.mp4"
   },
   "397142": {
     "audio": "media/397142.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 15"
+    "title": "Zevachim Daf 15",
+    "video": "media/397142.mp4"
   },
   "396840": {
     "audio": "media/396840.mp3",
@@ -1524,17 +1783,20 @@
   "396704": {
     "audio": "media/396704.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 12"
+    "title": "Zevachim Daf 12",
+    "video": "media/396704.mp4"
   },
   "396705": {
     "audio": "media/396705.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shabboas Teshuvah: \u05e7\u05d7 \u05d8\u05d5\u05d1-Little Mitzvahs"
+    "title": "Shabboas Teshuvah: \u05e7\u05d7 \u05d8\u05d5\u05d1-Little Mitzvahs",
+    "video": "media/396705.mp4"
   },
   "396419": {
     "audio": "media/396419.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 11"
+    "title": "Zevachim Daf 11",
+    "video": "media/396419.mp4"
   },
   "396300": {
     "audio": "media/396300.mp3",
@@ -1544,12 +1806,14 @@
   "396155": {
     "audio": "media/396155.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 8"
+    "title": "Zevachim Daf 8",
+    "video": "media/396155.mp4"
   },
   "395663": {
     "audio": "media/395663.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 7"
+    "title": "Zevachim Daf 7",
+    "video": "media/395663.mp4"
   },
   "395574": {
     "audio": "media/395574.mp3",
@@ -1559,27 +1823,32 @@
   "395412": {
     "audio": "media/395412.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 5"
+    "title": "Zevachim Daf 5",
+    "video": "media/395412.mp4"
   },
   "395415": {
     "audio": "media/395415.mp3",
     "intro_trimmed": 7.5,
-    "title": "\u05dc\u05d3\u05d5\u05d3 \u05d4' \u05d0\u05d5\u05e8\u05d9 \u05d5\u05d9\u05e9\u05e2\u05d9: \u05de\u05dc\u05d1\u05d9\"\u05dd"
+    "title": "\u05dc\u05d3\u05d5\u05d3 \u05d4' \u05d0\u05d5\u05e8\u05d9 \u05d5\u05d9\u05e9\u05e2\u05d9: \u05de\u05dc\u05d1\u05d9\"\u05dd",
+    "video": "media/395415.mp4"
   },
   "395029": {
     "audio": "media/395029.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 4"
+    "title": "Zevachim Daf 4",
+    "video": "media/395029.mp4"
   },
   "394756": {
     "audio": "media/394756.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 3"
+    "title": "Zevachim Daf 3",
+    "video": "media/394756.mp4"
   },
   "394458": {
     "audio": "media/394458.mp3",
     "intro_trimmed": 7.5,
-    "title": "Zevachim Daf 2"
+    "title": "Zevachim Daf 2",
+    "video": "media/394458.mp4"
   },
   "394471": {
     "audio": "media/394471.mp3",
@@ -1589,12 +1858,14 @@
   "394223": {
     "audio": "media/394223.mp3",
     "intro_trimmed": 7.5,
-    "title": "Horayot Daf 14"
+    "title": "Horayot Daf 14",
+    "video": "media/394223.mp4"
   },
   "393898": {
     "audio": "media/393898.mp3",
     "intro_trimmed": 7.5,
-    "title": "Horayot Daf 13"
+    "title": "Horayot Daf 13",
+    "video": "media/393898.mp4"
   },
   "393804": {
     "audio": "media/393804.mp3",
@@ -1604,37 +1875,44 @@
   "393678": {
     "audio": "media/393678.mp3",
     "intro_trimmed": 7.5,
-    "title": "Horayot Daf 11"
+    "title": "Horayot Daf 11",
+    "video": "media/393678.mp4"
   },
   "393674": {
     "audio": "media/393674.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Ki Tavo: Tzedaka_Rachamim."
+    "title": "Parasha Ki Tavo: Tzedaka_Rachamim.",
+    "video": "media/393674.mp4"
   },
   "393215": {
     "audio": "media/393215.mp3",
     "intro_trimmed": 7.5,
-    "title": "Horayot Daf 9"
+    "title": "Horayot Daf 9",
+    "video": "media/393215.mp4"
   },
   "392840": {
     "audio": "media/392840.mp3",
     "intro_trimmed": 7.5,
-    "title": "Horayot Daf 8"
+    "title": "Horayot Daf 8",
+    "video": "media/392840.mp4"
   },
   "392537": {
     "audio": "media/392537.mp3",
     "intro_trimmed": 7.5,
-    "title": "Horayot Daf 7"
+    "title": "Horayot Daf 7",
+    "video": "media/392537.mp4"
   },
   "392279": {
     "audio": "media/392279.mp3",
     "intro_trimmed": 7.5,
-    "title": "Horayot Daf 6"
+    "title": "Horayot Daf 6",
+    "video": "media/392279.mp4"
   },
   "392199": {
     "audio": "media/392199.mp3",
     "intro_trimmed": 7.5,
-    "title": "Horayot Daf 5"
+    "title": "Horayot Daf 5",
+    "video": "media/392199.mp4"
   },
   "392083": {
     "audio": "media/392083.mp3",
@@ -1644,37 +1922,44 @@
   "392081": {
     "audio": "media/392081.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Ki Tetzei: \u05de\u05e6\u05d5\u05d4 \u05d2\u05d5\u05e8\u05e8\u05ea \u05de\u05e6\u05d5\u05d4"
+    "title": "Parasha Ki Tetzei: \u05de\u05e6\u05d5\u05d4 \u05d2\u05d5\u05e8\u05e8\u05ea \u05de\u05e6\u05d5\u05d4",
+    "video": "media/392081.mp4"
   },
   "391789": {
     "audio": "media/391789.mp3",
     "intro_trimmed": 7.5,
-    "title": "Horayot Daf 3"
+    "title": "Horayot Daf 3",
+    "video": "media/391789.mp4"
   },
   "391518": {
     "audio": "media/391518.mp3",
     "intro_trimmed": 7.5,
-    "title": "Horayat:Daf 2"
+    "title": "Horayat:Daf 2",
+    "video": "media/391518.mp4"
   },
   "391289": {
     "audio": "media/391289.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 76"
+    "title": "Avodah Zarah Daf 76",
+    "video": "media/391289.mp4"
   },
   "391290": {
     "audio": "media/391290.mp3",
     "intro_trimmed": 7.5,
-    "title": "Hadran Avodah Zarah: Microwave: Moon "
+    "title": "Hadran Avodah Zarah: Microwave: Moon ",
+    "video": "media/391290.mp4"
   },
   "390987": {
     "audio": "media/390987.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 75"
+    "title": "Avodah Zarah Daf 75",
+    "video": "media/390987.mp4"
   },
   "390786": {
     "audio": "media/390786.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 74"
+    "title": "Avodah Zarah Daf 74",
+    "video": "media/390786.mp4"
   },
   "390719": {
     "audio": "media/390719.mp3",
@@ -1684,32 +1969,38 @@
   "390602": {
     "audio": "media/390602.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 72"
+    "title": "Avodah Zarah Daf 72",
+    "video": "media/390602.mp4"
   },
   "390599": {
     "audio": "media/390599.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Shoftim: Bittul to our Gedolim!"
+    "title": "Parasha Shoftim: Bittul to our Gedolim!",
+    "video": "media/390599.mp4"
   },
   "390343": {
     "audio": "media/390343.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 71"
+    "title": "Avodah Zarah Daf 71",
+    "video": "media/390343.mp4"
   },
   "390050": {
     "audio": "media/390050.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 70"
+    "title": "Avodah Zarah Daf 70",
+    "video": "media/390050.mp4"
   },
   "389814": {
     "audio": "media/389814.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 69"
+    "title": "Avodah Zarah Daf 69",
+    "video": "media/389814.mp4"
   },
   "389573": {
     "audio": "media/389573.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 68"
+    "title": "Avodah Zarah Daf 68",
+    "video": "media/389573.mp4"
   },
   "389439": {
     "audio": "media/389439.mp3",
@@ -1719,27 +2010,32 @@
   "389227": {
     "audio": "media/389227.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 65"
+    "title": "Avodah Zarah Daf 65",
+    "video": "media/389227.mp4"
   },
   "389228": {
     "audio": "media/389228.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parsha Re'eh: Makom Hamikdash when was Chosen?"
+    "title": "Parsha Re'eh: Makom Hamikdash when was Chosen?",
+    "video": "media/389228.mp4"
   },
   "389028": {
     "audio": "media/389028.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 64"
+    "title": "Avodah Zarah Daf 64",
+    "video": "media/389028.mp4"
   },
   "388854": {
     "audio": "media/388854.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 63"
+    "title": "Avodah Zarah Daf 63",
+    "video": "media/388854.mp4"
   },
   "388613": {
     "audio": "media/388613.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 62"
+    "title": "Avodah Zarah Daf 62",
+    "video": "media/388613.mp4"
   },
   "388384": {
     "audio": "media/388384.mp3",
@@ -1764,7 +2060,8 @@
   "387518": {
     "audio": "media/387518.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 56"
+    "title": "Avodah Zarah Daf 56",
+    "video": "media/387518.mp4"
   },
   "387507": {
     "audio": "media/387507.mp3",
@@ -1779,12 +2076,14 @@
   "387035": {
     "audio": "media/387035.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah  lZarah Daf 53"
+    "title": "Avodah  lZarah Daf 53",
+    "video": "media/387035.mp4"
   },
   "386967": {
     "audio": "media/386967.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha V'etchanan: Moshe Rabbeinu Tefillahs."
+    "title": "Parasha V'etchanan: Moshe Rabbeinu Tefillahs.",
+    "video": "media/386967.mp4"
   },
   "386968": {
     "audio": "media/386968.mp3",
@@ -1794,172 +2093,206 @@
   "386435": {
     "audio": "media/386435.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 50"
+    "title": "Avodah Zarah Daf 50",
+    "video": "media/386435.mp4"
   },
   "386432": {
     "audio": "media/386432.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 49"
+    "title": "Avodah Zarah Daf 49",
+    "video": "media/386432.mp4"
   },
   "386211": {
     "audio": "media/386211.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 48"
+    "title": "Avodah Zarah Daf 48",
+    "video": "media/386211.mp4"
   },
   "386002": {
     "audio": "media/386002.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 47"
+    "title": "Avodah Zarah Daf 47",
+    "video": "media/386002.mp4"
   },
   "385955": {
     "audio": "media/385955.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 46"
+    "title": "Avodah Zarah Daf 46",
+    "video": "media/385955.mp4"
   },
   "385498": {
     "audio": "media/385498.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 44"
+    "title": "Avodah Zarah Daf 44",
+    "video": "media/385498.mp4"
   },
   "385500": {
     "audio": "media/385500.mp3",
     "intro_trimmed": 7.5,
-    "title": "Beis Hamikdash: Physical or Pnimiyus."
+    "title": "Beis Hamikdash: Physical or Pnimiyus.",
+    "video": "media/385500.mp4"
   },
   "385224": {
     "audio": "media/385224.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 43"
+    "title": "Avodah Zarah Daf 43",
+    "video": "media/385224.mp4"
   },
   "384982": {
     "audio": "media/384982.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 42"
+    "title": "Avodah Zarah Daf 42",
+    "video": "media/384982.mp4"
   },
   "384481": {
     "audio": "media/384481.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 40"
+    "title": "Avodah Zarah Daf 40",
+    "video": "media/384481.mp4"
   },
   "384250": {
     "audio": "media/384250.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 39"
+    "title": "Avodah Zarah Daf 39",
+    "video": "media/384250.mp4"
   },
   "384177": {
     "audio": "media/384177.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 38"
+    "title": "Avodah Zarah Daf 38",
+    "video": "media/384177.mp4"
   },
   "384028": {
     "audio": "media/384028.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 37"
+    "title": "Avodah Zarah Daf 37",
+    "video": "media/384028.mp4"
   },
   "384029": {
     "audio": "media/384029.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Masay: Eretz Yisrael Place for Everyone!"
+    "title": "Parasha Masay: Eretz Yisrael Place for Everyone!",
+    "video": "media/384029.mp4"
   },
   "383699": {
     "audio": "media/383699.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 36"
+    "title": "Avodah Zarah Daf 36",
+    "video": "media/383699.mp4"
   },
   "383435": {
     "audio": "media/383435.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 35"
+    "title": "Avodah Zarah Daf 35",
+    "video": "media/383435.mp4"
   },
   "383193": {
     "audio": "media/383193.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 34"
+    "title": "Avodah Zarah Daf 34",
+    "video": "media/383193.mp4"
   },
   "382946": {
     "audio": "media/382946.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 33"
+    "title": "Avodah Zarah Daf 33",
+    "video": "media/382946.mp4"
   },
   "382713": {
     "audio": "media/382713.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 32"
+    "title": "Avodah Zarah Daf 32",
+    "video": "media/382713.mp4"
   },
   "382532": {
     "audio": "media/382532.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 30"
+    "title": "Avodah Zarah Daf 30",
+    "video": "media/382532.mp4"
   },
   "382534": {
     "audio": "media/382534.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Pinchas:\u05d5' \u05e7\u05d8\u05d9\u05e2\u05d0 \u05d9\u05e2\u05e7\u05d5\u05d1-\u05d0\u05dc\u05d9\u05d4"
+    "title": "Parasha Pinchas:\u05d5' \u05e7\u05d8\u05d9\u05e2\u05d0 \u05d9\u05e2\u05e7\u05d5\u05d1-\u05d0\u05dc\u05d9\u05d4",
+    "video": "media/382534.mp4"
   },
   "382100": {
     "audio": "media/382100.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 29"
+    "title": "Avodah Zarah Daf 29",
+    "video": "media/382100.mp4"
   },
   "381859": {
     "audio": "media/381859.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 28"
+    "title": "Avodah Zarah Daf 28",
+    "video": "media/381859.mp4"
   },
   "381602": {
     "audio": "media/381602.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 27"
+    "title": "Avodah Zarah Daf 27",
+    "video": "media/381602.mp4"
   },
   "381363": {
     "audio": "media/381363.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 26"
+    "title": "Avodah Zarah Daf 26",
+    "video": "media/381363.mp4"
   },
   "381135": {
     "audio": "media/381135.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 25"
+    "title": "Avodah Zarah Daf 25",
+    "video": "media/381135.mp4"
   },
   "381072": {
     "audio": "media/381072.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 24"
+    "title": "Avodah Zarah Daf 24",
+    "video": "media/381072.mp4"
   },
   "380938": {
     "audio": "media/380938.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 23"
+    "title": "Avodah Zarah Daf 23",
+    "video": "media/380938.mp4"
   },
   "380940": {
     "audio": "media/380940.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashah Balak: Small or Big, \u05e9\u05dd \u05e7\u05dc \u05d5\u05d4\u05d5\u05d9\u05d5\u05d4"
+    "title": "Parashah Balak: Small or Big, \u05e9\u05dd \u05e7\u05dc \u05d5\u05d4\u05d5\u05d9\u05d5\u05d4",
+    "video": "media/380940.mp4"
   },
   "380587": {
     "audio": "media/380587.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 22"
+    "title": "Avodah Zarah Daf 22",
+    "video": "media/380587.mp4"
   },
   "380332": {
     "audio": "media/380332.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 21"
+    "title": "Avodah Zarah Daf 21",
+    "video": "media/380332.mp4"
   },
   "380042": {
     "audio": "media/380042.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 20"
+    "title": "Avodah Zarah Daf 20",
+    "video": "media/380042.mp4"
   },
   "379789": {
     "audio": "media/379789.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 19"
+    "title": "Avodah Zarah Daf 19",
+    "video": "media/379789.mp4"
   },
   "379598": {
     "audio": "media/379598.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 18"
+    "title": "Avodah Zarah Daf 18",
+    "video": "media/379598.mp4"
   },
   "379531": {
     "audio": "media/379531.mp3",
@@ -1969,62 +2302,74 @@
   "379424": {
     "audio": "media/379424.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 16"
+    "title": "Avodah Zarah Daf 16",
+    "video": "media/379424.mp4"
   },
   "379427": {
     "audio": "media/379427.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Chukat: Chukim base of the Torah."
+    "title": "Parasha Chukat: Chukim base of the Torah.",
+    "video": "media/379427.mp4"
   },
   "378675": {
     "audio": "media/378675.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 13"
+    "title": "Avodah Zarah Daf 13",
+    "video": "media/378675.mp4"
   },
   "378489": {
     "audio": "media/378489.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 12"
+    "title": "Avodah Zarah Daf 12",
+    "video": "media/378489.mp4"
   },
   "378297": {
     "audio": "media/378297.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 11"
+    "title": "Avodah Zarah Daf 11",
+    "video": "media/378297.mp4"
   },
   "378124": {
     "audio": "media/378124.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 9"
+    "title": "Avodah Zarah Daf 9",
+    "video": "media/378124.mp4"
   },
   "378127": {
     "audio": "media/378127.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parsha Korach: Apikores:Matan Torah?"
+    "title": "Parsha Korach: Apikores:Matan Torah?",
+    "video": "media/378127.mp4"
   },
   "377862": {
     "audio": "media/377862.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 8"
+    "title": "Avodah Zarah Daf 8",
+    "video": "media/377862.mp4"
   },
   "377610": {
     "audio": "media/377610.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 7"
+    "title": "Avodah Zarah Daf 7",
+    "video": "media/377610.mp4"
   },
   "377302": {
     "audio": "media/377302.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 6"
+    "title": "Avodah Zarah Daf 6",
+    "video": "media/377302.mp4"
   },
   "377071": {
     "audio": "media/377071.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 5"
+    "title": "Avodah Zarah Daf 5",
+    "video": "media/377071.mp4"
   },
   "376909": {
     "audio": "media/376909.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 4"
+    "title": "Avodah Zarah Daf 4",
+    "video": "media/376909.mp4"
   },
   "376812": {
     "audio": "media/376812.mp3",
@@ -2034,72 +2379,86 @@
   "376674": {
     "audio": "media/376674.mp3",
     "intro_trimmed": 7.5,
-    "title": "Avodah Zarah Daf 2"
+    "title": "Avodah Zarah Daf 2",
+    "video": "media/376674.mp4"
   },
   "376678": {
     "audio": "media/376678.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parsha Shelach: Seeing Is believing? or  We see what we Believe."
+    "title": "Parsha Shelach: Seeing Is believing? or  We see what we Believe.",
+    "video": "media/376678.mp4"
   },
   "376162": {
     "audio": "media/376162.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 48"
+    "title": "Shavuot Daf 48",
+    "video": "media/376162.mp4"
   },
   "375929": {
     "audio": "media/375929.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 47"
+    "title": "Shavuot Daf 47",
+    "video": "media/375929.mp4"
   },
   "375614": {
     "audio": "media/375614.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 46"
+    "title": "Shavuot Daf 46",
+    "video": "media/375614.mp4"
   },
   "375405": {
     "audio": "media/375405.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 45"
+    "title": "Shavuot Daf 45",
+    "video": "media/375405.mp4"
   },
   "375333": {
     "audio": "media/375333.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 44"
+    "title": "Shavuot Daf 44",
+    "video": "media/375333.mp4"
   },
   "375183": {
     "audio": "media/375183.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 43"
+    "title": "Shavuot Daf 43",
+    "video": "media/375183.mp4"
   },
   "375184": {
     "audio": "media/375184.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Be'halot'cha:Klal Yisrael Travels in Galus."
+    "title": "Parasha Be'halot'cha:Klal Yisrael Travels in Galus.",
+    "video": "media/375184.mp4"
   },
   "374871": {
     "audio": "media/374871.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 42"
+    "title": "Shavuot Daf 42",
+    "video": "media/374871.mp4"
   },
   "374652": {
     "audio": "media/374652.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 41"
+    "title": "Shavuot Daf 41",
+    "video": "media/374652.mp4"
   },
   "374358": {
     "audio": "media/374358.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 40"
+    "title": "Shavuot Daf 40",
+    "video": "media/374358.mp4"
   },
   "374156": {
     "audio": "media/374156.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 39"
+    "title": "Shavuot Daf 39",
+    "video": "media/374156.mp4"
   },
   "373972": {
     "audio": "media/373972.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 38"
+    "title": "Shavuot Daf 38",
+    "video": "media/373972.mp4"
   },
   "373812": {
     "audio": "media/373812.mp3",
@@ -2114,17 +2473,20 @@
   "373532": {
     "audio": "media/373532.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 35"
+    "title": "Shavuot Daf 35",
+    "video": "media/373532.mp4"
   },
   "373295": {
     "audio": "media/373295.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 34"
+    "title": "Shavuot Daf 34",
+    "video": "media/373295.mp4"
   },
   "373078": {
     "audio": "media/373078.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 31"
+    "title": "Shavuot Daf 31",
+    "video": "media/373078.mp4"
   },
   "372996": {
     "audio": "media/372996.mp3",
@@ -2134,37 +2496,44 @@
   "372820": {
     "audio": "media/372820.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 29"
+    "title": "Shavuot Daf 29",
+    "video": "media/372820.mp4"
   },
   "372822": {
     "audio": "media/372822.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Bamidbar: Counting Individuals!"
+    "title": "Parasha Bamidbar: Counting Individuals!",
+    "video": "media/372822.mp4"
   },
   "372498": {
     "audio": "media/372498.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 28"
+    "title": "Shavuot Daf 28",
+    "video": "media/372498.mp4"
   },
   "372192": {
     "audio": "media/372192.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 27"
+    "title": "Shavuot Daf 27",
+    "video": "media/372192.mp4"
   },
   "371957": {
     "audio": "media/371957.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 26"
+    "title": "Shavuot Daf 26",
+    "video": "media/371957.mp4"
   },
   "371686": {
     "audio": "media/371686.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 25"
+    "title": "Shavuot Daf 25",
+    "video": "media/371686.mp4"
   },
   "371473": {
     "audio": "media/371473.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 24"
+    "title": "Shavuot Daf 24",
+    "video": "media/371473.mp4"
   },
   "371384": {
     "audio": "media/371384.mp3",
@@ -2174,37 +2543,44 @@
   "371283": {
     "audio": "media/371283.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 22"
+    "title": "Shavuot Daf 22",
+    "video": "media/371283.mp4"
   },
   "371284": {
     "audio": "media/371284.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Behar: \u05de\u05d4 \u05e0\u05d0\u05db\u05dc \u05d1\u05e9\u05e0\u05d4 \u05d4\u05e9\u05d1\u05d9\u05e2\u05d9\u05ea"
+    "title": "Parasha Behar: \u05de\u05d4 \u05e0\u05d0\u05db\u05dc \u05d1\u05e9\u05e0\u05d4 \u05d4\u05e9\u05d1\u05d9\u05e2\u05d9\u05ea",
+    "video": "media/371284.mp4"
   },
   "370978": {
     "audio": "media/370978.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 21"
+    "title": "Shavuot Daf 21",
+    "video": "media/370978.mp4"
   },
   "370716": {
     "audio": "media/370716.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 20"
+    "title": "Shavuot Daf 20",
+    "video": "media/370716.mp4"
   },
   "370408": {
     "audio": "media/370408.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 19"
+    "title": "Shavuot Daf 19",
+    "video": "media/370408.mp4"
   },
   "370137": {
     "audio": "media/370137.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 18"
+    "title": "Shavuot Daf 18",
+    "video": "media/370137.mp4"
   },
   "369869": {
     "audio": "media/369869.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 17"
+    "title": "Shavuot Daf 17",
+    "video": "media/369869.mp4"
   },
   "369637": {
     "audio": "media/369637.mp3",
@@ -2219,97 +2595,116 @@
   "369358": {
     "audio": "media/369358.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 14"
+    "title": "Shavuot Daf 14",
+    "video": "media/369358.mp4"
   },
   "368810": {
     "audio": "media/368810.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 12"
+    "title": "Shavuot Daf 12",
+    "video": "media/368810.mp4"
   },
   "368534": {
     "audio": "media/368534.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 11"
+    "title": "Shavuot Daf 11",
+    "video": "media/368534.mp4"
   },
   "368289": {
     "audio": "media/368289.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 10"
+    "title": "Shavuot Daf 10",
+    "video": "media/368289.mp4"
   },
   "368045": {
     "audio": "media/368045.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 8"
+    "title": "Shavuot Daf 8",
+    "video": "media/368045.mp4"
   },
   "368046": {
     "audio": "media/368046.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Kedoshim: Reb Moshe: Innate Kedushah "
+    "title": "Parasha Kedoshim: Reb Moshe: Innate Kedushah ",
+    "video": "media/368046.mp4"
   },
   "367757": {
     "audio": "media/367757.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 7"
+    "title": "Shavuot Daf 7",
+    "video": "media/367757.mp4"
   },
   "367566": {
     "audio": "media/367566.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 6"
+    "title": "Shavuot Daf 6",
+    "video": "media/367566.mp4"
   },
   "367339": {
     "audio": "media/367339.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 5"
+    "title": "Shavuot Daf 5",
+    "video": "media/367339.mp4"
   },
   "366978": {
     "audio": "media/366978.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 4"
+    "title": "Shavuot Daf 4",
+    "video": "media/366978.mp4"
   },
   "366692": {
     "audio": "media/366692.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 3"
+    "title": "Shavuot Daf 3",
+    "video": "media/366692.mp4"
   },
   "366601": {
     "audio": "media/366601.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot Daf 2"
+    "title": "Shavuot Daf 2",
+    "video": "media/366601.mp4"
   },
   "366473": {
     "audio": "media/366473.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 24"
+    "title": "Makkot Daf 24",
+    "video": "media/366473.mp4"
   },
   "366477": {
     "audio": "media/366477.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parsha Tazria-Metzora: Negaim-Hidden Treasures for Tzadikim!"
+    "title": "Parsha Tazria-Metzora: Negaim-Hidden Treasures for Tzadikim!",
+    "video": "media/366477.mp4"
   },
   "366187": {
     "audio": "media/366187.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 23"
+    "title": "Makkot Daf 23",
+    "video": "media/366187.mp4"
   },
   "365910": {
     "audio": "media/365910.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 22"
+    "title": "Makkot Daf 22",
+    "video": "media/365910.mp4"
   },
   "365652": {
     "audio": "media/365652.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 21"
+    "title": "Makkot Daf 21",
+    "video": "media/365652.mp4"
   },
   "365384": {
     "audio": "media/365384.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 19"
+    "title": "Makkot Daf 19",
+    "video": "media/365384.mp4"
   },
   "365382": {
     "audio": "media/365382.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 20"
+    "title": "Makkot Daf 20",
+    "video": "media/365382.mp4"
   },
   "365108": {
     "audio": "media/365108.mp3",
@@ -2319,57 +2714,68 @@
   "364976": {
     "audio": "media/364976.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parsha Shemini: \u05de\u05d0\u05db\u05dc\u05d5\u05ea \u05d0\u05e1\u05d5\u05e8\u05d5\u05ea \u05d8\u05d5\u05de\u05d0\u05ea \u05d4\u05e0\u05e4\u05e9"
+    "title": "Parsha Shemini: \u05de\u05d0\u05db\u05dc\u05d5\u05ea \u05d0\u05e1\u05d5\u05e8\u05d5\u05ea \u05d8\u05d5\u05de\u05d0\u05ea \u05d4\u05e0\u05e4\u05e9",
+    "video": "media/364976.mp4"
   },
   "364974": {
     "audio": "media/364974.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 17"
+    "title": "Makkot Daf 17",
+    "video": "media/364974.mp4"
   },
   "364684": {
     "audio": "media/364684.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 16"
+    "title": "Makkot Daf 16",
+    "video": "media/364684.mp4"
   },
   "364417": {
     "audio": "media/364417.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 15"
+    "title": "Makkot Daf 15",
+    "video": "media/364417.mp4"
   },
   "364204": {
     "audio": "media/364204.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 14"
+    "title": "Makkot Daf 14",
+    "video": "media/364204.mp4"
   },
   "363917": {
     "audio": "media/363917.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 13"
+    "title": "Makkot Daf 13",
+    "video": "media/363917.mp4"
   },
   "363769": {
     "audio": "media/363769.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 10"
+    "title": "Makkot Daf 10",
+    "video": "media/363769.mp4"
   },
   "363770": {
     "audio": "media/363770.mp3",
     "intro_trimmed": 7.5,
-    "title": "Pesach: What Yom Tov will we Celebrate when Mashiach comes?"
+    "title": "Pesach: What Yom Tov will we Celebrate when Mashiach comes?",
+    "video": "media/363770.mp4"
   },
   "363577": {
     "audio": "media/363577.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 9"
+    "title": "Makkot Daf 9",
+    "video": "media/363577.mp4"
   },
   "363438": {
     "audio": "media/363438.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 8"
+    "title": "Makkot Daf 8",
+    "video": "media/363438.mp4"
   },
   "363241": {
     "audio": "media/363241.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 7"
+    "title": "Makkot Daf 7",
+    "video": "media/363241.mp4"
   },
   "363167": {
     "audio": "media/363167.mp3",
@@ -2379,47 +2785,56 @@
   "363105": {
     "audio": "media/363105.mp3",
     "intro_trimmed": 7.5,
-    "title": "Makkot Daf 3"
+    "title": "Makkot Daf 3",
+    "video": "media/363105.mp4"
   },
   "362835": {
     "audio": "media/362835.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 2"
+    "title": "Daf 2",
+    "video": "media/362835.mp4"
   },
   "362449": {
     "audio": "media/362449.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 113"
+    "title": "Sanhedrin Daf 113",
+    "video": "media/362449.mp4"
   },
   "362163": {
     "audio": "media/362163.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 112"
+    "title": "Sanhedrin Daf 112",
+    "video": "media/362163.mp4"
   },
   "362058": {
     "audio": "media/362058.mp3",
     "intro_trimmed": 7.5,
-    "title": "Haggadah Shel Pesach"
+    "title": "Haggadah Shel Pesach",
+    "video": "media/362058.mp4"
   },
   "361895": {
     "audio": "media/361895.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 111"
+    "title": "Sanhedrin Daf 111",
+    "video": "media/361895.mp4"
   },
   "361672": {
     "audio": "media/361672.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 110"
+    "title": "Sanhedrin Daf 110",
+    "video": "media/361672.mp4"
   },
   "361439": {
     "audio": "media/361439.mp3",
     "intro_trimmed": 7.5,
-    "title": "Pesach: \u05dc\u05d7\u05dd \u05e2\u05e0\u05d9-\u05d7\u05d9\u05e8\u05d5\u05ea "
+    "title": "Pesach: \u05dc\u05d7\u05dd \u05e2\u05e0\u05d9-\u05d7\u05d9\u05e8\u05d5\u05ea ",
+    "video": "media/361439.mp4"
   },
   "361407": {
     "audio": "media/361407.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 108"
+    "title": "Sanhedrin Daf 108",
+    "video": "media/361407.mp4"
   },
   "361241": {
     "audio": "media/361241.mp3",
@@ -2429,27 +2844,32 @@
   "361127": {
     "audio": "media/361127.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 107"
+    "title": "Sanhedrin Daf 107",
+    "video": "media/361127.mp4"
   },
   "360873": {
     "audio": "media/360873.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 106"
+    "title": "Sanhedrin Daf 106",
+    "video": "media/360873.mp4"
   },
   "360627": {
     "audio": "media/360627.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 105"
+    "title": "Sanhedrin Daf 105",
+    "video": "media/360627.mp4"
   },
   "360362": {
     "audio": "media/360362.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 104"
+    "title": "Sanhedrin Daf 104",
+    "video": "media/360362.mp4"
   },
   "360182": {
     "audio": "media/360182.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 103"
+    "title": "Sanhedrin Daf 103",
+    "video": "media/360182.mp4"
   },
   "360097": {
     "audio": "media/360097.mp3",
@@ -2459,87 +2879,104 @@
   "359988": {
     "audio": "media/359988.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 101"
+    "title": "Sanhedrin Daf 101",
+    "video": "media/359988.mp4"
   },
   "359989": {
     "audio": "media/359989.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parshah Pekudei-Chodesh: Geulah only with Spiritual."
+    "title": "Parshah Pekudei-Chodesh: Geulah only with Spiritual.",
+    "video": "media/359989.mp4"
   },
   "359657": {
     "audio": "media/359657.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 100"
+    "title": "Sanhedrin Daf 100",
+    "video": "media/359657.mp4"
   },
   "359426": {
     "audio": "media/359426.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 99"
+    "title": "Sanhedrin Daf 99",
+    "video": "media/359426.mp4"
   },
   "359182": {
     "audio": "media/359182.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 98"
+    "title": "Sanhedrin Daf 98",
+    "video": "media/359182.mp4"
   },
   "358984": {
     "audio": "media/358984.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 97"
+    "title": "Sanhedrin Daf 97",
+    "video": "media/358984.mp4"
   },
   "358752": {
     "audio": "media/358752.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 96"
+    "title": "Sanhedrin Daf 96",
+    "video": "media/358752.mp4"
   },
   "358677": {
     "audio": "media/358677.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 95"
+    "title": "Sanhedrin Daf 95",
+    "video": "media/358677.mp4"
   },
   "358539": {
     "audio": "media/358539.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 94"
+    "title": "Sanhedrin Daf 94",
+    "video": "media/358539.mp4"
   },
   "358540": {
     "audio": "media/358540.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayakhel: \u05e0\u05d3\u05d1\u05ea \u05e0\u05e9\u05d9\u05dd \u05d1\u05e9\u05de\u05d7\u05d4!"
+    "title": "Parasha Vayakhel: \u05e0\u05d3\u05d1\u05ea \u05e0\u05e9\u05d9\u05dd \u05d1\u05e9\u05de\u05d7\u05d4!",
+    "video": "media/358540.mp4"
   },
   "358256": {
     "audio": "media/358256.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 93"
+    "title": "Sanhedrin Daf 93",
+    "video": "media/358256.mp4"
   },
   "357998": {
     "audio": "media/357998.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 92"
+    "title": "Sanhedrin Daf 92",
+    "video": "media/357998.mp4"
   },
   "357754": {
     "audio": "media/357754.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 91"
+    "title": "Sanhedrin Daf 91",
+    "video": "media/357754.mp4"
   },
   "357542": {
     "audio": "media/357542.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 90"
+    "title": "Sanhedrin Daf 90",
+    "video": "media/357542.mp4"
   },
   "357362": {
     "audio": "media/357362.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 89"
+    "title": "Sanhedrin Daf 89",
+    "video": "media/357362.mp4"
   },
   "357237": {
     "audio": "media/357237.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 87"
+    "title": "Sanhedrin Daf 87",
+    "video": "media/357237.mp4"
   },
   "356753": {
     "audio": "media/356753.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 85"
+    "title": "Sanhedrin Daf 85",
+    "video": "media/356753.mp4"
   },
   "356445": {
     "audio": "media/356445.mp3",
@@ -2549,52 +2986,62 @@
   "356141": {
     "audio": "media/356141.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 83"
+    "title": "Sanhedrin Daf 83",
+    "video": "media/356141.mp4"
   },
   "355951": {
     "audio": "media/355951.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 82"
+    "title": "Sanhedrin Daf 82",
+    "video": "media/355951.mp4"
   },
   "355769": {
     "audio": "media/355769.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 80"
+    "title": "Sanhedrin Daf 80",
+    "video": "media/355769.mp4"
   },
   "355767": {
     "audio": "media/355767.mp3",
     "intro_trimmed": 7.5,
-    "title": "Purim: End of Nissim!"
+    "title": "Purim: End of Nissim!",
+    "video": "media/355767.mp4"
   },
   "355436": {
     "audio": "media/355436.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 79"
+    "title": "Sanhedrin Daf 79",
+    "video": "media/355436.mp4"
   },
   "355180": {
     "audio": "media/355180.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 78"
+    "title": "Sanhedrin Daf 78",
+    "video": "media/355180.mp4"
   },
   "354920": {
     "audio": "media/354920.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 77"
+    "title": "Sanhedrin Daf 77",
+    "video": "media/354920.mp4"
   },
   "354723": {
     "audio": "media/354723.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 76"
+    "title": "Sanhedrin Daf 76",
+    "video": "media/354723.mp4"
   },
   "354486": {
     "audio": "media/354486.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 75"
+    "title": "Sanhedrin Daf 75",
+    "video": "media/354486.mp4"
   },
   "353099": {
     "audio": "media/353099.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 68"
+    "title": "Sanhedrin Daf 68",
+    "video": "media/353099.mp4"
   },
   "353023": {
     "audio": "media/353023.mp3",
@@ -2604,12 +3051,14 @@
   "352904": {
     "audio": "media/352904.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 66"
+    "title": "Sanhedrin Daf 66",
+    "video": "media/352904.mp4"
   },
   "352905": {
     "audio": "media/352905.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Mishpatim: Morality Only from \u05e1\u05d9\u05e0\u05d9"
+    "title": "Parasha Mishpatim: Morality Only from \u05e1\u05d9\u05e0\u05d9",
+    "video": "media/352905.mp4"
   },
   "352649": {
     "audio": "media/352649.mp3",
@@ -2619,87 +3068,104 @@
   "352396": {
     "audio": "media/352396.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 64"
+    "title": "Sanhedrin Daf 64",
+    "video": "media/352396.mp4"
   },
   "352147": {
     "audio": "media/352147.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 63"
+    "title": "Sanhedrin Daf 63",
+    "video": "media/352147.mp4"
   },
   "351938": {
     "audio": "media/351938.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 62"
+    "title": "Sanhedrin Daf 62",
+    "video": "media/351938.mp4"
   },
   "351729": {
     "audio": "media/351729.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 61"
+    "title": "Sanhedrin Daf 61",
+    "video": "media/351729.mp4"
   },
   "351490": {
     "audio": "media/351490.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 59"
+    "title": "Sanhedrin Daf 59",
+    "video": "media/351490.mp4"
   },
   "351491": {
     "audio": "media/351491.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parsha Yitro:\u05e2\u05d1\u05d3 \u05d0\u05d5 \u05d1\u05df"
+    "title": "Parsha Yitro:\u05e2\u05d1\u05d3 \u05d0\u05d5 \u05d1\u05df",
+    "video": "media/351491.mp4"
   },
   "351177": {
     "audio": "media/351177.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 58"
+    "title": "Sanhedrin Daf 58",
+    "video": "media/351177.mp4"
   },
   "350880": {
     "audio": "media/350880.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 57"
+    "title": "Sanhedrin Daf 57",
+    "video": "media/350880.mp4"
   },
   "350606": {
     "audio": "media/350606.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 56"
+    "title": "Sanhedrin Daf 56",
+    "video": "media/350606.mp4"
   },
   "349704": {
     "audio": "media/349704.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 55"
+    "title": "Sanhedrin Daf 55",
+    "video": "media/349704.mp4"
   },
   "349465": {
     "audio": "media/349465.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 54"
+    "title": "Sanhedrin Daf 54",
+    "video": "media/349465.mp4"
   },
   "349378": {
     "audio": "media/349378.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 53"
+    "title": "Sanhedrin Daf 53",
+    "video": "media/349378.mp4"
   },
   "349223": {
     "audio": "media/349223.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 52"
+    "title": "Sanhedrin Daf 52",
+    "video": "media/349223.mp4"
   },
   "349221": {
     "audio": "media/349221.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Beshalach: \u05e2\u05d9\u05e7\u05e8 \u05e9\u05d9\u05e8\u05d4 \u05d1\u05dc\u05d1-\u05d9\u05e9\u05de\u05d7 \u05de\u05e9\u05d4"
+    "title": "Parasha Beshalach: \u05e2\u05d9\u05e7\u05e8 \u05e9\u05d9\u05e8\u05d4 \u05d1\u05dc\u05d1-\u05d9\u05e9\u05de\u05d7 \u05de\u05e9\u05d4",
+    "video": "media/349221.mp4"
   },
   "349117": {
     "audio": "media/349117.mp3",
     "intro_trimmed": 7.5,
-    "title": "Anytime is NOW"
+    "title": "Anytime is NOW",
+    "video": "media/349117.mp4"
   },
   "348927": {
     "audio": "media/348927.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 51"
+    "title": "Sanhedrin Daf 51",
+    "video": "media/348927.mp4"
   },
   "348705": {
     "audio": "media/348705.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 50"
+    "title": "Sanhedrin Daf 50",
+    "video": "media/348705.mp4"
   },
   "348224": {
     "audio": "media/348224.mp3",
@@ -2714,32 +3180,38 @@
   "347735": {
     "audio": "media/347735.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 45"
+    "title": "Sanhedrin Daf 45",
+    "video": "media/347735.mp4"
   },
   "347734": {
     "audio": "media/347734.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Bo: Months Bavel Names."
+    "title": "Parasha Bo: Months Bavel Names.",
+    "video": "media/347734.mp4"
   },
   "347261": {
     "audio": "media/347261.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 43"
+    "title": "Sanhedrin Daf 43",
+    "video": "media/347261.mp4"
   },
   "347053": {
     "audio": "media/347053.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 42"
+    "title": "Sanhedrin Daf 42",
+    "video": "media/347053.mp4"
   },
   "346814": {
     "audio": "media/346814.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 41"
+    "title": "Sanhedrin Daf 41",
+    "video": "media/346814.mp4"
   },
   "346639": {
     "audio": "media/346639.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 40"
+    "title": "Sanhedrin Daf 40",
+    "video": "media/346639.mp4"
   },
   "346580": {
     "audio": "media/346580.mp3",
@@ -2749,87 +3221,104 @@
   "346447": {
     "audio": "media/346447.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 38"
+    "title": "Sanhedrin Daf 38",
+    "video": "media/346447.mp4"
   },
   "346454": {
     "audio": "media/346454.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Va'eira: Chap the Moment"
+    "title": "Parasha Va'eira: Chap the Moment",
+    "video": "media/346454.mp4"
   },
   "346171": {
     "audio": "media/346171.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 37"
+    "title": "Sanhedrin Daf 37",
+    "video": "media/346171.mp4"
   },
   "345959": {
     "audio": "media/345959.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 36"
+    "title": "Sanhedrin Daf 36",
+    "video": "media/345959.mp4"
   },
   "345736": {
     "audio": "media/345736.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 35"
+    "title": "Sanhedrin Daf 35",
+    "video": "media/345736.mp4"
   },
   "345539": {
     "audio": "media/345539.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 34"
+    "title": "Sanhedrin Daf 34",
+    "video": "media/345539.mp4"
   },
   "345339": {
     "audio": "media/345339.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 33"
+    "title": "Sanhedrin Daf 33",
+    "video": "media/345339.mp4"
   },
   "345127": {
     "audio": "media/345127.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 31"
+    "title": "Sanhedrin Daf 31",
+    "video": "media/345127.mp4"
   },
   "345129": {
     "audio": "media/345129.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Shemot:Ten Names of Moshe!"
+    "title": "Parasha Shemot:Ten Names of Moshe!",
+    "video": "media/345129.mp4"
   },
   "344846": {
     "audio": "media/344846.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 30"
+    "title": "Sanhedrin Daf 30",
+    "video": "media/344846.mp4"
   },
   "344592": {
     "audio": "media/344592.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 29"
+    "title": "Sanhedrin Daf 29",
+    "video": "media/344592.mp4"
   },
   "344332": {
     "audio": "media/344332.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 28"
+    "title": "Sanhedrin Daf 28",
+    "video": "media/344332.mp4"
   },
   "344110": {
     "audio": "media/344110.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 27"
+    "title": "Sanhedrin Daf 27",
+    "video": "media/344110.mp4"
   },
   "343855": {
     "audio": "media/343855.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 26"
+    "title": "Sanhedrin Daf 26",
+    "video": "media/343855.mp4"
   },
   "343680": {
     "audio": "media/343680.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 24"
+    "title": "Sanhedrin Daf 24",
+    "video": "media/343680.mp4"
   },
   "343681": {
     "audio": "media/343681.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayechi:\u05d9\u05e9\u05d9\u05de\u05da \u05db\u05d0\u05e4\u05e8\u05d9\u05dd \u05d5\u05de\u05e0\u05e9\u05d4"
+    "title": "Parasha Vayechi:\u05d9\u05e9\u05d9\u05de\u05da \u05db\u05d0\u05e4\u05e8\u05d9\u05dd \u05d5\u05de\u05e0\u05e9\u05d4",
+    "video": "media/343681.mp4"
   },
   "343388": {
     "audio": "media/343388.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 23"
+    "title": "Sanhedrin Daf 23",
+    "video": "media/343388.mp4"
   },
   "343141": {
     "audio": "media/343141.mp3",
@@ -2839,17 +3328,20 @@
   "342893": {
     "audio": "media/342893.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 21"
+    "title": "Sanhedrin Daf 21",
+    "video": "media/342893.mp4"
   },
   "342688": {
     "audio": "media/342688.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 20"
+    "title": "Sanhedrin Daf 20",
+    "video": "media/342688.mp4"
   },
   "342481": {
     "audio": "media/342481.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 19"
+    "title": "Sanhedrin Daf 19",
+    "video": "media/342481.mp4"
   },
   "342351": {
     "audio": "media/342351.mp3",
@@ -2859,37 +3351,44 @@
   "342241": {
     "audio": "media/342241.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 17"
+    "title": "Sanhedrin Daf 17",
+    "video": "media/342241.mp4"
   },
   "342237": {
     "audio": "media/342237.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayigash:70 \u05e0\u05e4\u05e9\u05d5\u05ea"
+    "title": "Parasha Vayigash:70 \u05e0\u05e4\u05e9\u05d5\u05ea",
+    "video": "media/342237.mp4"
   },
   "341950": {
     "audio": "media/341950.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 16"
+    "title": "Sanhedrin Daf 16",
+    "video": "media/341950.mp4"
   },
   "341671": {
     "audio": "media/341671.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 15"
+    "title": "Sanhedrin Daf 15",
+    "video": "media/341671.mp4"
   },
   "341480": {
     "audio": "media/341480.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 14"
+    "title": "Sanhedrin Daf 14",
+    "video": "media/341480.mp4"
   },
   "341276": {
     "audio": "media/341276.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 13"
+    "title": "Sanhedrin Daf 13",
+    "video": "media/341276.mp4"
   },
   "341102": {
     "audio": "media/341102.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 12"
+    "title": "Sanhedrin Daf 12",
+    "video": "media/341102.mp4"
   },
   "341036": {
     "audio": "media/341036.mp3",
@@ -2904,62 +3403,74 @@
   "340948": {
     "audio": "media/340948.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 10"
+    "title": "Sanhedrin Daf 10",
+    "video": "media/340948.mp4"
   },
   "340697": {
     "audio": "media/340697.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 9"
+    "title": "Sanhedrin Daf 9",
+    "video": "media/340697.mp4"
   },
   "340416": {
     "audio": "media/340416.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 8"
+    "title": "Sanhedrin Daf 8",
+    "video": "media/340416.mp4"
   },
   "340137": {
     "audio": "media/340137.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 7"
+    "title": "Sanhedrin Daf 7",
+    "video": "media/340137.mp4"
   },
   "339936": {
     "audio": "media/339936.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 6"
+    "title": "Sanhedrin Daf 6",
+    "video": "media/339936.mp4"
   },
   "339760": {
     "audio": "media/339760.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 5"
+    "title": "Sanhedrin Daf 5",
+    "video": "media/339760.mp4"
   },
   "339521": {
     "audio": "media/339521.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 3"
+    "title": "Sanhedrin Daf 3",
+    "video": "media/339521.mp4"
   },
   "339522": {
     "audio": "media/339522.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayeshev: \u05d9\u05d5\u05e1\u05e3 \u05e0\u05e1\u05d9\u05d5\u05df \u05d4\u05e2\u05d5\u05e0\u05d9 \u05d5\u05d4\u05e2\u05d5\u05e9\u05e8"
+    "title": "Parasha Vayeshev: \u05d9\u05d5\u05e1\u05e3 \u05e0\u05e1\u05d9\u05d5\u05df \u05d4\u05e2\u05d5\u05e0\u05d9 \u05d5\u05d4\u05e2\u05d5\u05e9\u05e8",
+    "video": "media/339522.mp4"
   },
   "339257": {
     "audio": "media/339257.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sanhedrin Daf 2"
+    "title": "Sanhedrin Daf 2",
+    "video": "media/339257.mp4"
   },
   "338990": {
     "audio": "media/338990.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 176"
+    "title": "Bava Batra Daf 176",
+    "video": "media/338990.mp4"
   },
   "338706": {
     "audio": "media/338706.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 175"
+    "title": "Bava Batra Daf 175",
+    "video": "media/338706.mp4"
   },
   "338304": {
     "audio": "media/338304.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 173"
+    "title": "Bava Batra Daf 173",
+    "video": "media/338304.mp4"
   },
   "338221": {
     "audio": "media/338221.mp3",
@@ -2979,57 +3490,68 @@
   "337798": {
     "audio": "media/337798.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 170"
+    "title": "Bava Batra Daf 170",
+    "video": "media/337798.mp4"
   },
   "337609": {
     "audio": "media/337609.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 169"
+    "title": "Bava Batra Daf 169",
+    "video": "media/337609.mp4"
   },
   "337390": {
     "audio": "media/337390.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 168"
+    "title": "Bava Batra Daf 168",
+    "video": "media/337390.mp4"
   },
   "337173": {
     "audio": "media/337173.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 167"
+    "title": "Bava Batra Daf 167",
+    "video": "media/337173.mp4"
   },
   "336910": {
     "audio": "media/336910.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 166"
+    "title": "Bava Batra Daf 166",
+    "video": "media/336910.mp4"
   },
   "336724": {
     "audio": "media/336724.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 164"
+    "title": "Bava Batra Daf 164",
+    "video": "media/336724.mp4"
   },
   "336725": {
     "audio": "media/336725.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayetzei: Internalizing our \u05d4\u05ea\u05e2\u05d5\u05e8\u05e8\u05d5\u05ea"
+    "title": "Parasha Vayetzei: Internalizing our \u05d4\u05ea\u05e2\u05d5\u05e8\u05e8\u05d5\u05ea",
+    "video": "media/336725.mp4"
   },
   "336465": {
     "audio": "media/336465.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 163"
+    "title": "Bava Batra Daf 163",
+    "video": "media/336465.mp4"
   },
   "336191": {
     "audio": "media/336191.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 162"
+    "title": "Bava Batra Daf 162",
+    "video": "media/336191.mp4"
   },
   "335958": {
     "audio": "media/335958.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 161"
+    "title": "Bava Batra Daf 161",
+    "video": "media/335958.mp4"
   },
   "335749": {
     "audio": "media/335749.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 160"
+    "title": "Bava Batra Daf 160",
+    "video": "media/335749.mp4"
   },
   "335460": {
     "audio": "media/335460.mp3",
@@ -3039,37 +3561,44 @@
   "335354": {
     "audio": "media/335354.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 157"
+    "title": "Bava Batra Daf 157",
+    "video": "media/335354.mp4"
   },
   "335356": {
     "audio": "media/335356.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Toldot: Yakov and Esuv Who is Bechor?-Gra."
+    "title": "Parasha Toldot: Yakov and Esuv Who is Bechor?-Gra.",
+    "video": "media/335356.mp4"
   },
   "335041": {
     "audio": "media/335041.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 156"
+    "title": "Bava Batra Daf 156",
+    "video": "media/335041.mp4"
   },
   "334788": {
     "audio": "media/334788.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 155"
+    "title": "Bava Batra Daf 155",
+    "video": "media/334788.mp4"
   },
   "334543": {
     "audio": "media/334543.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 154"
+    "title": "Bava Batra Daf 154",
+    "video": "media/334543.mp4"
   },
   "334285": {
     "audio": "media/334285.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 153"
+    "title": "Bava Batra Daf 153",
+    "video": "media/334285.mp4"
   },
   "334080": {
     "audio": "media/334080.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 152"
+    "title": "Bava Batra Daf 152",
+    "video": "media/334080.mp4"
   },
   "334003": {
     "audio": "media/334003.mp3",
@@ -3079,67 +3608,80 @@
   "333849": {
     "audio": "media/333849.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 150"
+    "title": "Bava Batra Daf 150",
+    "video": "media/333849.mp4"
   },
   "333850": {
     "audio": "media/333850.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Chayei Sara: \u05d1\u05e8\u05d5\u05da:Living For Others!"
+    "title": "Parasha Chayei Sara: \u05d1\u05e8\u05d5\u05da:Living For Others!",
+    "video": "media/333850.mp4"
   },
   "333547": {
     "audio": "media/333547.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 149"
+    "title": "Bava Batra Daf 149",
+    "video": "media/333547.mp4"
   },
   "333285": {
     "audio": "media/333285.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 148"
+    "title": "Bava Batra Daf 148",
+    "video": "media/333285.mp4"
   },
   "333019": {
     "audio": "media/333019.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 147"
+    "title": "Bava Batra Daf 147",
+    "video": "media/333019.mp4"
   },
   "332793": {
     "audio": "media/332793.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 146"
+    "title": "Bava Batra Daf 146",
+    "video": "media/332793.mp4"
   },
   "332529": {
     "audio": "media/332529.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 145"
+    "title": "Bava Batra Daf 145",
+    "video": "media/332529.mp4"
   },
   "332307": {
     "audio": "media/332307.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 143"
+    "title": "Bava Batra Daf 143",
+    "video": "media/332307.mp4"
   },
   "332311": {
     "audio": "media/332311.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayeira:\u05e0\u05e1\u05d9\u05d5\u05df Bring out the Best!"
+    "title": "Parasha Vayeira:\u05e0\u05e1\u05d9\u05d5\u05df Bring out the Best!",
+    "video": "media/332311.mp4"
   },
   "331991": {
     "audio": "media/331991.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 142"
+    "title": "Bava Batra Daf 142",
+    "video": "media/331991.mp4"
   },
   "331769": {
     "audio": "media/331769.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 141"
+    "title": "Bava Batra Daf 141",
+    "video": "media/331769.mp4"
   },
   "331544": {
     "audio": "media/331544.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 140"
+    "title": "Bava Batra Daf 140",
+    "video": "media/331544.mp4"
   },
   "331283": {
     "audio": "media/331283.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 139"
+    "title": "Bava Batra Daf 139",
+    "video": "media/331283.mp4"
   },
   "331043": {
     "audio": "media/331043.mp3",
@@ -3149,37 +3691,44 @@
   "330928": {
     "audio": "media/330928.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 136"
+    "title": "Bava Batra Daf 136",
+    "video": "media/330928.mp4"
   },
   "330927": {
     "audio": "media/330927.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Lech Lecha: Eretz Yisrael From Avrohom?"
+    "title": "Parasha Lech Lecha: Eretz Yisrael From Avrohom?",
+    "video": "media/330927.mp4"
   },
   "330648": {
     "audio": "media/330648.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 135"
+    "title": "Bava Batra Daf 135",
+    "video": "media/330648.mp4"
   },
   "330402": {
     "audio": "media/330402.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 134"
+    "title": "Bava Batra Daf 134",
+    "video": "media/330402.mp4"
   },
   "330160": {
     "audio": "media/330160.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 133"
+    "title": "Bava Batra Daf 133",
+    "video": "media/330160.mp4"
   },
   "329911": {
     "audio": "media/329911.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 132"
+    "title": "Bava Batra Daf 132",
+    "video": "media/329911.mp4"
   },
   "329713": {
     "audio": "media/329713.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 131"
+    "title": "Bava Batra Daf 131",
+    "video": "media/329713.mp4"
   },
   "329643": {
     "audio": "media/329643.mp3",
@@ -3189,17 +3738,20 @@
   "329555": {
     "audio": "media/329555.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 129"
+    "title": "Bava Batra Daf 129",
+    "video": "media/329555.mp4"
   },
   "329552": {
     "audio": "media/329552.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Noach:\u05e6\u05d3\u05d9\u05e7 \u05ea\u05de\u05d9\u05dd \u05d1\u05d3\u05d5\u05e8\u05d5\u05ea\u05d9\u05d5"
+    "title": "Parasha Noach:\u05e6\u05d3\u05d9\u05e7 \u05ea\u05de\u05d9\u05dd \u05d1\u05d3\u05d5\u05e8\u05d5\u05ea\u05d9\u05d5",
+    "video": "media/329552.mp4"
   },
   "329306": {
     "audio": "media/329306.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 128"
+    "title": "Bava Batra Daf 128",
+    "video": "media/329306.mp4"
   },
   "329070": {
     "audio": "media/329070.mp3",
@@ -3209,62 +3761,74 @@
   "328869": {
     "audio": "media/328869.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 126"
+    "title": "Bava Batra Daf 126",
+    "video": "media/328869.mp4"
   },
   "328696": {
     "audio": "media/328696.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 125"
+    "title": "Bava Batra Daf 125",
+    "video": "media/328696.mp4"
   },
   "328530": {
     "audio": "media/328530.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 124"
+    "title": "Bava Batra Daf 124",
+    "video": "media/328530.mp4"
   },
   "328357": {
     "audio": "media/328357.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 120"
+    "title": "Bava Batra Daf 120",
+    "video": "media/328357.mp4"
   },
   "328171": {
     "audio": "media/328171.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 119"
+    "title": "Bava Batra Daf 119",
+    "video": "media/328171.mp4"
   },
   "328025": {
     "audio": "media/328025.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 118"
+    "title": "Bava Batra Daf 118",
+    "video": "media/328025.mp4"
   },
   "327889": {
     "audio": "media/327889.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 117"
+    "title": "Bava Batra Daf 117",
+    "video": "media/327889.mp4"
   },
   "327710": {
     "audio": "media/327710.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 113"
+    "title": "Bava Batra Daf 113",
+    "video": "media/327710.mp4"
   },
   "327712": {
     "audio": "media/327712.mp3",
     "intro_trimmed": 7.5,
-    "title": "\u05e1\u05d5\u05db\u05d4:\u05d3\u05d9\u05e8\u05ea \u05e2\u05e8\u05d0\u05d9 \u05d5\u05d6\u05db\u05e8 \u05dc\u05e2\u05e0\u05e0\u05d9 \u05db\u05d1\u05d5\u05d3"
+    "title": "\u05e1\u05d5\u05db\u05d4:\u05d3\u05d9\u05e8\u05ea \u05e2\u05e8\u05d0\u05d9 \u05d5\u05d6\u05db\u05e8 \u05dc\u05e2\u05e0\u05e0\u05d9 \u05db\u05d1\u05d5\u05d3",
+    "video": "media/327712.mp4"
   },
   "327461": {
     "audio": "media/327461.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 112"
+    "title": "Bava Batra Daf 112",
+    "video": "media/327461.mp4"
   },
   "327208": {
     "audio": "media/327208.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 111"
+    "title": "Bava Batra Daf 111",
+    "video": "media/327208.mp4"
   },
   "327070": {
     "audio": "media/327070.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 110"
+    "title": "Bava Batra Daf 110",
+    "video": "media/327070.mp4"
   },
   "326989": {
     "audio": "media/326989.mp3",
@@ -3274,67 +3838,80 @@
   "326928": {
     "audio": "media/326928.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 108"
+    "title": "Bava Batra Daf 108",
+    "video": "media/326928.mp4"
   },
   "326929": {
     "audio": "media/326929.mp3",
     "intro_trimmed": 7.5,
-    "title": "Yom Kippur: \u05ea\u05e9\u05d5\u05d1\u05d4 \u05de\u05d0\u05d4\u05d1\u05d4 \u05d5\u05d9\u05e8\u05d0\u05d4"
+    "title": "Yom Kippur: \u05ea\u05e9\u05d5\u05d1\u05d4 \u05de\u05d0\u05d4\u05d1\u05d4 \u05d5\u05d9\u05e8\u05d0\u05d4",
+    "video": "media/326929.mp4"
   },
   "326643": {
     "audio": "media/326643.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 107"
+    "title": "Bava Batra Daf 107",
+    "video": "media/326643.mp4"
   },
   "326373": {
     "audio": "media/326373.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 106"
+    "title": "Bava Batra Daf 106",
+    "video": "media/326373.mp4"
   },
   "326158": {
     "audio": "media/326158.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 105"
+    "title": "Bava Batra Daf 105",
+    "video": "media/326158.mp4"
   },
   "325923": {
     "audio": "media/325923.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 104"
+    "title": "Bava Batra Daf 104",
+    "video": "media/325923.mp4"
   },
   "325737": {
     "audio": "media/325737.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 103"
+    "title": "Bava Batra Daf 103",
+    "video": "media/325737.mp4"
   },
   "325660": {
     "audio": "media/325660.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 102"
+    "title": "Bava Batra Daf 102",
+    "video": "media/325660.mp4"
   },
   "325574": {
     "audio": "media/325574.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 99"
+    "title": "Bava Batra Daf 99",
+    "video": "media/325574.mp4"
   },
   "325575": {
     "audio": "media/325575.mp3",
     "intro_trimmed": 7.5,
-    "title": "\u05d9\u05d2' \u05de\u05d3\u05d5\u05ea \u05d4\u05e8\u05d7\u05de\u05d9\u05dd-Our Iron Dome!"
+    "title": "\u05d9\u05d2' \u05de\u05d3\u05d5\u05ea \u05d4\u05e8\u05d7\u05de\u05d9\u05dd-Our Iron Dome!",
+    "video": "media/325575.mp4"
   },
   "325254": {
     "audio": "media/325254.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 98"
+    "title": "Bava Batra Daf 98",
+    "video": "media/325254.mp4"
   },
   "324990": {
     "audio": "media/324990.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 97"
+    "title": "Bava Batra Daf 97",
+    "video": "media/324990.mp4"
   },
   "324540": {
     "audio": "media/324540.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat Nitzavim-Vayelech: \u05e2\u05e8\u05d1\u05d5\u05ea"
+    "title": "Parashat Nitzavim-Vayelech: \u05e2\u05e8\u05d1\u05d5\u05ea",
+    "video": "media/324540.mp4"
   },
   "324538": {
     "audio": "media/324538.mp3",
@@ -3344,27 +3921,32 @@
   "324235": {
     "audio": "media/324235.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 93"
+    "title": "Bava Batra Daf 93",
+    "video": "media/324235.mp4"
   },
   "323987": {
     "audio": "media/323987.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 92"
+    "title": "Bava Batra Daf 92",
+    "video": "media/323987.mp4"
   },
   "323723": {
     "audio": "media/323723.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 91"
+    "title": "Bava Batra Daf 91",
+    "video": "media/323723.mp4"
   },
   "323742": {
     "audio": "media/323742.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 90"
+    "title": "Bava Batra Daf 90",
+    "video": "media/323742.mp4"
   },
   "323292": {
     "audio": "media/323292.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 89"
+    "title": "Bava Batra Daf 89",
+    "video": "media/323292.mp4"
   },
   "323217": {
     "audio": "media/323217.mp3",
@@ -3374,37 +3956,44 @@
   "323092": {
     "audio": "media/323092.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 87"
+    "title": "Bava Batra Daf 87",
+    "video": "media/323092.mp4"
   },
   "323090": {
     "audio": "media/323090.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat Ki Tavo:Shofar \u05e2\u05d5\u05e8\u05d5 \"\u05d9\u05e9\u05e0\u05d9\u05dd \u05d5\u05de\u05ea\u05e8\u05d3\u05de\u05ea\u05db\u05dd\""
+    "title": "Parashat Ki Tavo:Shofar \u05e2\u05d5\u05e8\u05d5 \"\u05d9\u05e9\u05e0\u05d9\u05dd \u05d5\u05de\u05ea\u05e8\u05d3\u05de\u05ea\u05db\u05dd\"",
+    "video": "media/323090.mp4"
   },
   "322818": {
     "audio": "media/322818.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 86"
+    "title": "Bava Batra Daf 86",
+    "video": "media/322818.mp4"
   },
   "322585": {
     "audio": "media/322585.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 85"
+    "title": "Bava Batra Daf 85",
+    "video": "media/322585.mp4"
   },
   "322340": {
     "audio": "media/322340.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 84"
+    "title": "Bava Batra Daf 84",
+    "video": "media/322340.mp4"
   },
   "322070": {
     "audio": "media/322070.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 83"
+    "title": "Bava Batra Daf 83",
+    "video": "media/322070.mp4"
   },
   "321917": {
     "audio": "media/321917.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 82"
+    "title": "Bava Batra Daf 82",
+    "video": "media/321917.mp4"
   },
   "321833": {
     "audio": "media/321833.mp3",
@@ -3424,22 +4013,26 @@
   "321475": {
     "audio": "media/321475.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 79"
+    "title": "Bava Batra Daf 79",
+    "video": "media/321475.mp4"
   },
   "321029": {
     "audio": "media/321029.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 77"
+    "title": "Bava Batra Daf 77",
+    "video": "media/321029.mp4"
   },
   "320764": {
     "audio": "media/320764.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 76"
+    "title": "Bava Batra Daf 76",
+    "video": "media/320764.mp4"
   },
   "320544": {
     "audio": "media/320544.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 75"
+    "title": "Bava Batra Daf 75",
+    "video": "media/320544.mp4"
   },
   "320467": {
     "audio": "media/320467.mp3",
@@ -3454,27 +4047,32 @@
   "320352": {
     "audio": "media/320352.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 73"
+    "title": "Bava Batra Daf 73",
+    "video": "media/320352.mp4"
   },
   "320129": {
     "audio": "media/320129.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 72"
+    "title": "Bava Batra Daf 72",
+    "video": "media/320129.mp4"
   },
   "319891": {
     "audio": "media/319891.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 71"
+    "title": "Bava Batra Daf 71",
+    "video": "media/319891.mp4"
   },
   "319495": {
     "audio": "media/319495.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 69"
+    "title": "Bava Batra Daf 69",
+    "video": "media/319495.mp4"
   },
   "319347": {
     "audio": "media/319347.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 67"
+    "title": "Bava Batra Daf 67",
+    "video": "media/319347.mp4"
   },
   "319292": {
     "audio": "media/319292.mp3",
@@ -3484,32 +4082,38 @@
   "319202": {
     "audio": "media/319202.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 66"
+    "title": "Bava Batra Daf 66",
+    "video": "media/319202.mp4"
   },
   "319203": {
     "audio": "media/319203.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat Re'eh:\u05d0\u05d9\u05e1\u05d5\u05e8 \u05d3\u05dd-Disgusting or Mitzvah."
+    "title": "Parashat Re'eh:\u05d0\u05d9\u05e1\u05d5\u05e8 \u05d3\u05dd-Disgusting or Mitzvah.",
+    "video": "media/319203.mp4"
   },
   "319027": {
     "audio": "media/319027.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 65"
+    "title": "Bava Batra Daf 65",
+    "video": "media/319027.mp4"
   },
   "318843": {
     "audio": "media/318843.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 64"
+    "title": "Bava Batra Daf 64",
+    "video": "media/318843.mp4"
   },
   "318486": {
     "audio": "media/318486.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 62"
+    "title": "Bava Batra Daf 62",
+    "video": "media/318486.mp4"
   },
   "318321": {
     "audio": "media/318321.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 61"
+    "title": "Bava Batra Daf 61",
+    "video": "media/318321.mp4"
   },
   "318183": {
     "audio": "media/318183.mp3",
@@ -3519,387 +4123,464 @@
   "318145": {
     "audio": "media/318145.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 59"
+    "title": "Bava Batra Daf 59",
+    "video": "media/318145.mp4"
   },
   "318147": {
     "audio": "media/318147.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat Ekev: Mezuzah \u05e9\u05de\u05d9\u05e8\u05d4 \u05d0\u05d5 \u05d9\u05d9\u05d7\u05d5\u05d3 \u05d4\u05e9\u05dd"
+    "title": "Parashat Ekev: Mezuzah \u05e9\u05de\u05d9\u05e8\u05d4 \u05d0\u05d5 \u05d9\u05d9\u05d7\u05d5\u05d3 \u05d4\u05e9\u05dd",
+    "video": "media/318147.mp4"
   },
   "317959": {
     "audio": "media/317959.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 58"
+    "title": "Bava Batra Daf 58",
+    "video": "media/317959.mp4"
   },
   "317418": {
     "audio": "media/317418.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 55"
+    "title": "Bava Batra Daf 55",
+    "video": "media/317418.mp4"
   },
   "317250": {
     "audio": "media/317250.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 54"
+    "title": "Bava Batra Daf 54",
+    "video": "media/317250.mp4"
   },
   "317079": {
     "audio": "media/317079.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 52"
+    "title": "Bava Batra Daf 52",
+    "video": "media/317079.mp4"
   },
   "317082": {
     "audio": "media/317082.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat V'etchanan: Shabbos First Dibros and Second"
+    "title": "Parashat V'etchanan: Shabbos First Dibros and Second",
+    "video": "media/317082.mp4"
   },
   "316751": {
     "audio": "media/316751.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 51"
+    "title": "Bava Batra Daf 51",
+    "video": "media/316751.mp4"
   },
   "316516": {
     "audio": "media/316516.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 50"
+    "title": "Bava Batra Daf 50",
+    "video": "media/316516.mp4"
   },
   "316381": {
     "audio": "media/316381.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 49"
+    "title": "Bava Batra Daf 49",
+    "video": "media/316381.mp4"
   },
   "316008": {
     "audio": "media/316008.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 48"
+    "title": "Bava Batra Daf 48",
+    "video": "media/316008.mp4"
   },
   "315811": {
     "audio": "media/315811.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 47"
+    "title": "Bava Batra Daf 47",
+    "video": "media/315811.mp4"
   },
   "315628": {
     "audio": "media/315628.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat Devarim:\u05de\u05e9\u05e0\u05d4 \u05ea\u05d5\u05e8\u05d4-\u05d3\u05d1\u05e8\u05d9\u05dd"
+    "title": "Parashat Devarim:\u05de\u05e9\u05e0\u05d4 \u05ea\u05d5\u05e8\u05d4-\u05d3\u05d1\u05e8\u05d9\u05dd",
+    "video": "media/315628.mp4"
   },
   "315629": {
     "audio": "media/315629.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 45"
+    "title": "Bava Batra Daf 45",
+    "video": "media/315629.mp4"
   },
   "315399": {
     "audio": "media/315399.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 44"
+    "title": "Bava Batra Daf 44",
+    "video": "media/315399.mp4"
   },
   "315139": {
     "audio": "media/315139.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 43"
+    "title": "Bava Batra Daf 43",
+    "video": "media/315139.mp4"
   },
   "314236": {
     "audio": "media/314236.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 40"
+    "title": "Bava Batra Daf 40",
+    "video": "media/314236.mp4"
   },
   "314068": {
     "audio": "media/314068.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 38"
+    "title": "Bava Batra Daf 38",
+    "video": "media/314068.mp4"
   },
   "314066": {
     "audio": "media/314066.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat Masay: \u05de\u05d1' \u05de\u05e1\u05e2\u05d5\u05ea \u05e9\u05dc \u05db\u05dc \u05d0\u05d7\u05d3"
+    "title": "Parashat Masay: \u05de\u05d1' \u05de\u05e1\u05e2\u05d5\u05ea \u05e9\u05dc \u05db\u05dc \u05d0\u05d7\u05d3",
+    "video": "media/314066.mp4"
   },
   "313681": {
     "audio": "media/313681.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 37"
+    "title": "Bava Batra Daf 37",
+    "video": "media/313681.mp4"
   },
   "313349": {
     "audio": "media/313349.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 36"
+    "title": "Bava Batra Daf 36",
+    "video": "media/313349.mp4"
   },
   "313148": {
     "audio": "media/313148.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 34"
+    "title": "Bava Batra Daf 34",
+    "video": "media/313148.mp4"
   },
   "312891": {
     "audio": "media/312891.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 34"
+    "title": "Bava Batra Daf 34",
+    "video": "media/312891.mp4"
   },
   "312716": {
     "audio": "media/312716.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat Pinchas: \u05e7\u05e0\u05d0\u05d5\u05ea-\u05e9\u05dc\u05d5\u05dd"
+    "title": "Parashat Pinchas: \u05e7\u05e0\u05d0\u05d5\u05ea-\u05e9\u05dc\u05d5\u05dd",
+    "video": "media/312716.mp4"
   },
   "312520": {
     "audio": "media/312520.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 31"
+    "title": "Bava Batra Daf 31",
+    "video": "media/312520.mp4"
   },
   "312521": {
     "audio": "media/312521.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat Pinchas: \u05e7\u05e0\u05d0\u05d5\u05ea-\u05e9\u05dc\u05d5\u05dd"
+    "title": "Parashat Pinchas: \u05e7\u05e0\u05d0\u05d5\u05ea-\u05e9\u05dc\u05d5\u05dd",
+    "video": "media/312521.mp4"
   },
   "312215": {
     "audio": "media/312215.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 230"
+    "title": "Bava Batra Daf 230",
+    "video": "media/312215.mp4"
   },
   "312063": {
     "audio": "media/312063.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 29"
+    "title": "Bava Batra Daf 29",
+    "video": "media/312063.mp4"
   },
   "311799": {
     "audio": "media/311799.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 28"
+    "title": "Bava Batra Daf 28",
+    "video": "media/311799.mp4"
   },
   "311609": {
     "audio": "media/311609.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 27"
+    "title": "Bava Batra Daf 27",
+    "video": "media/311609.mp4"
   },
   "311462": {
     "audio": "media/311462.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 26"
+    "title": "Bava Batra Daf 26",
+    "video": "media/311462.mp4"
   },
   "311297": {
     "audio": "media/311297.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 24"
+    "title": "Bava Batra Daf 24",
+    "video": "media/311297.mp4"
   },
   "311295": {
     "audio": "media/311295.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat Balak:\u05e8\u05d0\u05d4 \u05e9\u05d0\u05d9\u05df \u05e4\u05ea\u05d7\u05d9\u05d4\u05df \u05d6\u05d4 \u05db\u05e0\u05d2\u05d3 \u05d6\u05d4"
+    "title": "Parashat Balak:\u05e8\u05d0\u05d4 \u05e9\u05d0\u05d9\u05df \u05e4\u05ea\u05d7\u05d9\u05d4\u05df \u05d6\u05d4 \u05db\u05e0\u05d2\u05d3 \u05d6\u05d4",
+    "video": "media/311295.mp4"
   },
   "310993": {
     "audio": "media/310993.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 23"
+    "title": "Bava Batra Daf 23",
+    "video": "media/310993.mp4"
   },
   "310771": {
     "audio": "media/310771.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 22"
+    "title": "Bava Batra Daf 22",
+    "video": "media/310771.mp4"
   },
   "310588": {
     "audio": "media/310588.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 21"
+    "title": "Bava Batra Daf 21",
+    "video": "media/310588.mp4"
   },
   "310322": {
     "audio": "media/310322.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 20"
+    "title": "Bava Batra Daf 20",
+    "video": "media/310322.mp4"
   },
   "310155": {
     "audio": "media/310155.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 19"
+    "title": "Bava Batra Daf 19",
+    "video": "media/310155.mp4"
   },
   "309998": {
     "audio": "media/309998.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 17"
+    "title": "Bava Batra Daf 17",
+    "video": "media/309998.mp4"
   },
   "310000": {
     "audio": "media/310000.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat Chukat: \u05de\u05e7\u05dc \u05e0\u05d5\u05e2\u05dd-\u05d7\u05d8\u05d0 \u05de\u05d9 \u05de\u05e8\u05d9\u05d1\u05d4"
+    "title": "Parashat Chukat: \u05de\u05e7\u05dc \u05e0\u05d5\u05e2\u05dd-\u05d7\u05d8\u05d0 \u05de\u05d9 \u05de\u05e8\u05d9\u05d1\u05d4",
+    "video": "media/310000.mp4"
   },
   "309740": {
     "audio": "media/309740.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 16"
+    "title": "Bava Batra Daf 16",
+    "video": "media/309740.mp4"
   },
   "309446": {
     "audio": "media/309446.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 15"
+    "title": "Bava Batra Daf 15",
+    "video": "media/309446.mp4"
   },
   "309220": {
     "audio": "media/309220.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 14"
+    "title": "Bava Batra Daf 14",
+    "video": "media/309220.mp4"
   },
   "308933": {
     "audio": "media/308933.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 13"
+    "title": "Bava Batra Daf 13",
+    "video": "media/308933.mp4"
   },
   "308734": {
     "audio": "media/308734.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 12"
+    "title": "Bava Batra Daf 12",
+    "video": "media/308734.mp4"
   },
   "308561": {
     "audio": "media/308561.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 10"
+    "title": "Bava Batra Daf 10",
+    "video": "media/308561.mp4"
   },
   "308555": {
     "audio": "media/308555.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Korach: \u05e4\u05d9 \u05d4\u05d0\u05ea\u05d5\u05df \u05e2\u05e8\u05d1 \u05e9\u05d1\u05ea \u05d1\u05d9\u05d4\u05e9\u05de\"\u05e9"
+    "title": "Parasha Korach: \u05e4\u05d9 \u05d4\u05d0\u05ea\u05d5\u05df \u05e2\u05e8\u05d1 \u05e9\u05d1\u05ea \u05d1\u05d9\u05d4\u05e9\u05de\"\u05e9",
+    "video": "media/308555.mp4"
   },
   "308305": {
     "audio": "media/308305.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 9"
+    "title": "Bava Batra Daf 9",
+    "video": "media/308305.mp4"
   },
   "308030": {
     "audio": "media/308030.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 8"
+    "title": "Bava Batra Daf 8",
+    "video": "media/308030.mp4"
   },
   "307775": {
     "audio": "media/307775.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 7"
+    "title": "Bava Batra Daf 7",
+    "video": "media/307775.mp4"
   },
   "307348": {
     "audio": "media/307348.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Batra Daf 5"
+    "title": "Bava Batra Daf 5",
+    "video": "media/307348.mp4"
   },
   "307152": {
     "audio": "media/307152.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 3"
+    "title": "Daf 3",
+    "video": "media/307152.mp4"
   },
   "307151": {
     "audio": "media/307151.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Shelach:\u05d7\u05d1\u05d9\u05d1 \u05e9\u05dc\u05d9\u05d7 \u05e9\u05e2\u05d5\u05e9\u05d4 \u05e9\u05dc\u05d9\u05d7\u05d5\u05ea\u05d5"
+    "title": "Parasha Shelach:\u05d7\u05d1\u05d9\u05d1 \u05e9\u05dc\u05d9\u05d7 \u05e9\u05e2\u05d5\u05e9\u05d4 \u05e9\u05dc\u05d9\u05d7\u05d5\u05ea\u05d5",
+    "video": "media/307151.mp4"
   },
   "306861": {
     "audio": "media/306861.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 2"
+    "title": "Daf 2",
+    "video": "media/306861.mp4"
   },
   "306649": {
     "audio": "media/306649.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 119"
+    "title": "Daf 119",
+    "video": "media/306649.mp4"
   },
   "306095": {
     "audio": "media/306095.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 117"
+    "title": "Daf 117",
+    "video": "media/306095.mp4"
   },
   "305944": {
     "audio": "media/305944.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 116"
+    "title": "Daf 116",
+    "video": "media/305944.mp4"
   },
   "305754": {
     "audio": "media/305754.mp3",
     "intro_trimmed": 7.5,
-    "title": "Daf 114"
+    "title": "Daf 114",
+    "video": "media/305754.mp4"
   },
   "305752": {
     "audio": "media/305752.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Be'halot'cha: Everything is Hashem:"
+    "title": "Parasha Be'halot'cha: Everything is Hashem:",
+    "video": "media/305752.mp4"
   },
   "305233": {
     "audio": "media/305233.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 112"
+    "title": "Bava Metzia Daf 112",
+    "video": "media/305233.mp4"
   },
   "305031": {
     "audio": "media/305031.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 111"
+    "title": "Bava Metzia Daf 111",
+    "video": "media/305031.mp4"
   },
   "304869": {
     "audio": "media/304869.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 109"
+    "title": "Bava Metzia Daf 109",
+    "video": "media/304869.mp4"
   },
   "304856": {
     "audio": "media/304856.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 110"
+    "title": "Bava Metzia Daf 110",
+    "video": "media/304856.mp4"
   },
   "304427": {
     "audio": "media/304427.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 107"
+    "title": "Bava Metzia Daf 107",
+    "video": "media/304427.mp4"
   },
   "304429": {
     "audio": "media/304429.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Naso: Accepting the Torah Besimchah!"
+    "title": "Parasha Naso: Accepting the Torah Besimchah!",
+    "video": "media/304429.mp4"
   },
   "304150": {
     "audio": "media/304150.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 104"
+    "title": "Bava Metzia Daf 104",
+    "video": "media/304150.mp4"
   },
   "303850": {
     "audio": "media/303850.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 103"
+    "title": "Bava Metzia Daf 103",
+    "video": "media/303850.mp4"
   },
   "303598": {
     "audio": "media/303598.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 102"
+    "title": "Bava Metzia Daf 102",
+    "video": "media/303598.mp4"
   },
   "303386": {
     "audio": "media/303386.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 100"
+    "title": "Bava Metzia Daf 100",
+    "video": "media/303386.mp4"
   },
   "303389": {
     "audio": "media/303389.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shavuot:\u05e2\u05e9\u05e8\u05ea \u05d4\u05d3\u05d1\u05e8\u05d5\u05ea-\u05d7\u05d9\u05d1\u05d5\u05e8 \u05d1\u05d9\u05df \u05d4\u05e7\u05d1\"\u05d4 \u05dc\u05db\u05dc\u05dc \u05d9\u05e9\u05e8\u05d0\u05dc"
+    "title": "Shavuot:\u05e2\u05e9\u05e8\u05ea \u05d4\u05d3\u05d1\u05e8\u05d5\u05ea-\u05d7\u05d9\u05d1\u05d5\u05e8 \u05d1\u05d9\u05df \u05d4\u05e7\u05d1\"\u05d4 \u05dc\u05db\u05dc\u05dc \u05d9\u05e9\u05e8\u05d0\u05dc",
+    "video": "media/303389.mp4"
   },
   "303067": {
     "audio": "media/303067.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 98"
+    "title": "Bava Metzia Daf 98",
+    "video": "media/303067.mp4"
   },
   "302849": {
     "audio": "media/302849.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 98"
+    "title": "Bava Metzia Daf 98",
+    "video": "media/302849.mp4"
   },
   "302611": {
     "audio": "media/302611.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 97"
+    "title": "Bava Metzia Daf 97",
+    "video": "media/302611.mp4"
   },
   "302394": {
     "audio": "media/302394.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 96"
+    "title": "Bava Metzia Daf 96",
+    "video": "media/302394.mp4"
   },
   "302193": {
     "audio": "media/302193.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 95"
+    "title": "Bava Metzia Daf 95",
+    "video": "media/302193.mp4"
   },
   "302037": {
     "audio": "media/302037.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 93"
+    "title": "Bava Metzia Daf 93",
+    "video": "media/302037.mp4"
   },
   "301750": {
     "audio": "media/301750.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 92"
+    "title": "Bava Metzia Daf 92",
+    "video": "media/301750.mp4"
   },
   "301514": {
     "audio": "media/301514.mp3",
@@ -3909,27 +4590,32 @@
   "301286": {
     "audio": "media/301286.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 90"
+    "title": "Bava Metzia Daf 90",
+    "video": "media/301286.mp4"
   },
   "301075": {
     "audio": "media/301075.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 89"
+    "title": "Bava Metzia Daf 89",
+    "video": "media/301075.mp4"
   },
   "300877": {
     "audio": "media/300877.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 88"
+    "title": "Bava Metzia Daf 88",
+    "video": "media/300877.mp4"
   },
   "300646": {
     "audio": "media/300646.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 86"
+    "title": "Bava Metzia Daf 86",
+    "video": "media/300646.mp4"
   },
   "300647": {
     "audio": "media/300647.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Behar:\u05e8\u05d9\u05d1\u05d9\u05ea-\u05d1\u05d9\u05df \u05d0\u05d3\u05dd \u05dc\u05de\u05e7\u05d5\u05dd \u05d0\u05d5 \u05d1\u05d9\u05df \u05d0\u05d3\u05dd \u05dc\u05d7\u05d1\u05d9\u05e8\u05d5"
+    "title": "Parasha Behar:\u05e8\u05d9\u05d1\u05d9\u05ea-\u05d1\u05d9\u05df \u05d0\u05d3\u05dd \u05dc\u05de\u05e7\u05d5\u05dd \u05d0\u05d5 \u05d1\u05d9\u05df \u05d0\u05d3\u05dd \u05dc\u05d7\u05d1\u05d9\u05e8\u05d5",
+    "video": "media/300647.mp4"
   },
   "300319": {
     "audio": "media/300319.mp3",
@@ -3944,17 +4630,20 @@
   "299716": {
     "audio": "media/299716.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 83"
+    "title": "Bava Metzia Daf 83",
+    "video": "media/299716.mp4"
   },
   "299459": {
     "audio": "media/299459.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 82"
+    "title": "Bava Metzia Daf 82",
+    "video": "media/299459.mp4"
   },
   "299278": {
     "audio": "media/299278.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 81"
+    "title": "Bava Metzia Daf 81",
+    "video": "media/299278.mp4"
   },
   "299183": {
     "audio": "media/299183.mp3",
@@ -3964,87 +4653,104 @@
   "299070": {
     "audio": "media/299070.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 79"
+    "title": "Bava Metzia Daf 79",
+    "video": "media/299070.mp4"
   },
   "298756": {
     "audio": "media/298756.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 78"
+    "title": "Bava Metzia Daf 78",
+    "video": "media/298756.mp4"
   },
   "298545": {
     "audio": "media/298545.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 77"
+    "title": "Bava Metzia Daf 77",
+    "video": "media/298545.mp4"
   },
   "298309": {
     "audio": "media/298309.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 76"
+    "title": "Bava Metzia Daf 76",
+    "video": "media/298309.mp4"
   },
   "298065": {
     "audio": "media/298065.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 75"
+    "title": "Bava Metzia Daf 75",
+    "video": "media/298065.mp4"
   },
   "297884": {
     "audio": "media/297884.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 74"
+    "title": "Bava Metzia Daf 74",
+    "video": "media/297884.mp4"
   },
   "297668": {
     "audio": "media/297668.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 72"
+    "title": "Bava Metzia Daf 72",
+    "video": "media/297668.mp4"
   },
   "297663": {
     "audio": "media/297663.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Kedoshim:\u05d5\u05d0\u05d4\u05d1\u05ea \u05dc\u05e8\u05e2\u05d9\u05da \u05db\u05de\u05d5\u05da"
+    "title": "Parasha Kedoshim:\u05d5\u05d0\u05d4\u05d1\u05ea \u05dc\u05e8\u05e2\u05d9\u05da \u05db\u05de\u05d5\u05da",
+    "video": "media/297663.mp4"
   },
   "297422": {
     "audio": "media/297422.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 71"
+    "title": "Bava Metzia Daf 71",
+    "video": "media/297422.mp4"
   },
   "297184": {
     "audio": "media/297184.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 70"
+    "title": "Bava Metzia Daf 70",
+    "video": "media/297184.mp4"
   },
   "297003": {
     "audio": "media/297003.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 69"
+    "title": "Bava Metzia Daf 69",
+    "video": "media/297003.mp4"
   },
   "296977": {
     "audio": "media/296977.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 68"
+    "title": "Bava Metzia Daf 68",
+    "video": "media/296977.mp4"
   },
   "296675": {
     "audio": "media/296675.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 67"
+    "title": "Bava Metzia Daf 67",
+    "video": "media/296675.mp4"
   },
   "296501": {
     "audio": "media/296501.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 65"
+    "title": "Bava Metzia Daf 65",
+    "video": "media/296501.mp4"
   },
   "296500": {
     "audio": "media/296500.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Acharei Mot:\u05d5\u05d1\u05d7\u05e7\u05ea\u05d9\u05d4\u05dd \u05dc\u05d0 \u05ea\u05dc\u05db\u05d5"
+    "title": "Parasha Acharei Mot:\u05d5\u05d1\u05d7\u05e7\u05ea\u05d9\u05d4\u05dd \u05dc\u05d0 \u05ea\u05dc\u05db\u05d5",
+    "video": "media/296500.mp4"
   },
   "296267": {
     "audio": "media/296267.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 64"
+    "title": "Bava Metzia Daf 64",
+    "video": "media/296267.mp4"
   },
   "296082": {
     "audio": "media/296082.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 63"
+    "title": "Bava Metzia Daf 63",
+    "video": "media/296082.mp4"
   },
   "295920": {
     "audio": "media/295920.mp3",
@@ -4054,12 +4760,14 @@
   "295753": {
     "audio": "media/295753.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 58"
+    "title": "Bava Metzia Daf 58",
+    "video": "media/295753.mp4"
   },
   "295752": {
     "audio": "media/295752.mp3",
     "intro_trimmed": 7.5,
-    "title": "Sefiras Omer:\u05ea\u05de\u05d9\u05de\u05d5\u05ea-Every Second Every Day."
+    "title": "Sefiras Omer:\u05ea\u05de\u05d9\u05de\u05d5\u05ea-Every Second Every Day.",
+    "video": "media/295752.mp4"
   },
   "295628": {
     "audio": "media/295628.mp3",
@@ -4069,82 +4777,98 @@
   "295501": {
     "audio": "media/295501.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 54"
+    "title": "Bava Metzia Daf 54",
+    "video": "media/295501.mp4"
   },
   "295319": {
     "audio": "media/295319.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 53"
+    "title": "Bava Metzia Daf 53",
+    "video": "media/295319.mp4"
   },
   "295127": {
     "audio": "media/295127.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 51"
+    "title": "Bava Metzia Daf 51",
+    "video": "media/295127.mp4"
   },
   "295128": {
     "audio": "media/295128.mp3",
     "intro_trimmed": 7.5,
-    "title": "Shabbos Hagodol: \u05d2\u05d3\u05dc\u05d5\u05ea \u05d4\u05de\u05d5\u05d7\u05d9\u05df BIG STEPS!"
+    "title": "Shabbos Hagodol: \u05d2\u05d3\u05dc\u05d5\u05ea \u05d4\u05de\u05d5\u05d7\u05d9\u05df BIG STEPS!",
+    "video": "media/295128.mp4"
   },
   "294835": {
     "audio": "media/294835.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metziah Daf 50"
+    "title": "Bava Metziah Daf 50",
+    "video": "media/294835.mp4"
   },
   "294606": {
     "audio": "media/294606.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 49"
+    "title": "Bava Metzia Daf 49",
+    "video": "media/294606.mp4"
   },
   "294394": {
     "audio": "media/294394.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 48"
+    "title": "Bava Metzia Daf 48",
+    "video": "media/294394.mp4"
   },
   "294147": {
     "audio": "media/294147.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 47"
+    "title": "Bava Metzia Daf 47",
+    "video": "media/294147.mp4"
   },
   "293973": {
     "audio": "media/293973.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 46"
+    "title": "Bava Metzia Daf 46",
+    "video": "media/293973.mp4"
   },
   "293772": {
     "audio": "media/293772.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 44"
+    "title": "Bava Metzia Daf 44",
+    "video": "media/293772.mp4"
   },
   "293770": {
     "audio": "media/293770.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashah Tazria: Milah on Eighth day."
+    "title": "Parashah Tazria: Milah on Eighth day.",
+    "video": "media/293770.mp4"
   },
   "293502": {
     "audio": "media/293502.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 43"
+    "title": "Bava Metzia Daf 43",
+    "video": "media/293502.mp4"
   },
   "293279": {
     "audio": "media/293279.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 42"
+    "title": "Bava Metzia Daf 42",
+    "video": "media/293279.mp4"
   },
   "293040": {
     "audio": "media/293040.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 41"
+    "title": "Bava Metzia Daf 41",
+    "video": "media/293040.mp4"
   },
   "292837": {
     "audio": "media/292837.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 40"
+    "title": "Bava Metzia Daf 40",
+    "video": "media/292837.mp4"
   },
   "292589": {
     "audio": "media/292589.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 39"
+    "title": "Bava Metzia Daf 39",
+    "video": "media/292589.mp4"
   },
   "292516": {
     "audio": "media/292516.mp3",
@@ -4159,32 +4883,38 @@
   "292352": {
     "audio": "media/292352.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 37"
+    "title": "Bava Metzia Daf 37",
+    "video": "media/292352.mp4"
   },
   "292347": {
     "audio": "media/292347.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Shemini: \u05d5\u05d9\u05d3\u05d5\u05dd \u05d0\u05d4\u05e8\u05df:\u05e4\u05e8\u05e9\u05d4 \u05e9\u05ea\u05d5\u05d9\u05d9 \u05d9\u05d9\u05df"
+    "title": "Parasha Shemini: \u05d5\u05d9\u05d3\u05d5\u05dd \u05d0\u05d4\u05e8\u05df:\u05e4\u05e8\u05e9\u05d4 \u05e9\u05ea\u05d5\u05d9\u05d9 \u05d9\u05d9\u05df",
+    "video": "media/292347.mp4"
   },
   "292080": {
     "audio": "media/292080.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 36"
+    "title": "Bava Metzia Daf 36",
+    "video": "media/292080.mp4"
   },
   "291873": {
     "audio": "media/291873.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 35"
+    "title": "Bava Metzia Daf 35",
+    "video": "media/291873.mp4"
   },
   "291631": {
     "audio": "media/291631.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 34"
+    "title": "Bava Metzia Daf 34",
+    "video": "media/291631.mp4"
   },
   "291344": {
     "audio": "media/291344.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 33"
+    "title": "Bava Metzia Daf 33",
+    "video": "media/291344.mp4"
   },
   "291185": {
     "audio": "media/291185.mp3",
@@ -4199,32 +4929,38 @@
   "290992": {
     "audio": "media/290992.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 30"
+    "title": "Bava Metzia Daf 30",
+    "video": "media/290992.mp4"
   },
   "290990": {
     "audio": "media/290990.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Tzav:\u05d4\u05ea\u05d7\u05d3\u05e9\u05d5\u05ea Lesson from the Kohen Gadol"
+    "title": "Parasha Tzav:\u05d4\u05ea\u05d7\u05d3\u05e9\u05d5\u05ea Lesson from the Kohen Gadol",
+    "video": "media/290990.mp4"
   },
   "290742": {
     "audio": "media/290742.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 29"
+    "title": "Bava Metzia Daf 29",
+    "video": "media/290742.mp4"
   },
   "290505": {
     "audio": "media/290505.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia 28 "
+    "title": "Bava Metzia 28 ",
+    "video": "media/290505.mp4"
   },
   "290296": {
     "audio": "media/290296.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 27"
+    "title": "Bava Metzia Daf 27",
+    "video": "media/290296.mp4"
   },
   "290099": {
     "audio": "media/290099.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 26"
+    "title": "Bava Metzia Daf 26",
+    "video": "media/290099.mp4"
   },
   "290004": {
     "audio": "media/290004.mp3",
@@ -4234,7 +4970,8 @@
   "289832": {
     "audio": "media/289832.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 23"
+    "title": "Bava Metzia Daf 23",
+    "video": "media/289832.mp4"
   },
   "289508": {
     "audio": "media/289508.mp3",
@@ -4244,42 +4981,50 @@
   "289268": {
     "audio": "media/289268.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 21"
+    "title": "Bava Metzia Daf 21",
+    "video": "media/289268.mp4"
   },
   "288997": {
     "audio": "media/288997.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 20"
+    "title": "Bava Kamma Daf 20",
+    "video": "media/288997.mp4"
   },
   "288775": {
     "audio": "media/288775.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 19"
+    "title": "Bava Kamma Daf 19",
+    "video": "media/288775.mp4"
   },
   "288574": {
     "audio": "media/288574.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 18"
+    "title": "Bava Kamma Daf 18",
+    "video": "media/288574.mp4"
   },
   "288406": {
     "audio": "media/288406.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 16"
+    "title": "Bava Metzia Daf 16",
+    "video": "media/288406.mp4"
   },
   "288404": {
     "audio": "media/288404.mp3",
     "intro_trimmed": 7.5,
-    "title": "\u05de\u05d7\u05d9\u05d9\u05ea \u05e2\u05de\u05dc\u05e7-\u05de\u05d1\u05e0\u05d9 \u05d1\u05e0\u05d9\u05d5 \u05e9\u05dc \u05d4\u05de\u05df \u05d1\u05d1\u05e0\u05d9 \u05d1\u05e8\u05e7"
+    "title": "\u05de\u05d7\u05d9\u05d9\u05ea \u05e2\u05de\u05dc\u05e7-\u05de\u05d1\u05e0\u05d9 \u05d1\u05e0\u05d9\u05d5 \u05e9\u05dc \u05d4\u05de\u05df \u05d1\u05d1\u05e0\u05d9 \u05d1\u05e8\u05e7",
+    "video": "media/288404.mp4"
   },
   "288110": {
     "audio": "media/288110.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 15"
+    "title": "Bava Metzia Daf 15",
+    "video": "media/288110.mp4"
   },
   "287880": {
     "audio": "media/287880.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 14"
+    "title": "Bava Metzia Daf 14",
+    "video": "media/287880.mp4"
   },
   "287638": {
     "audio": "media/287638.mp3",
@@ -4289,12 +5034,14 @@
   "287430": {
     "audio": "media/287430.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 12"
+    "title": "Bava Metzia Daf 12",
+    "video": "media/287430.mp4"
   },
   "287260": {
     "audio": "media/287260.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 11"
+    "title": "Bava Metzia Daf 11",
+    "video": "media/287260.mp4"
   },
   "287187": {
     "audio": "media/287187.mp3",
@@ -4304,27 +5051,32 @@
   "287105": {
     "audio": "media/287105.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia: Daf 9"
+    "title": "Bava Metzia: Daf 9",
+    "video": "media/287105.mp4"
   },
   "287104": {
     "audio": "media/287104.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayakhel: World is a Mirror of yourself-\u05db\u05d9\u05d5\u05e8"
+    "title": "Parasha Vayakhel: World is a Mirror of yourself-\u05db\u05d9\u05d5\u05e8",
+    "video": "media/287104.mp4"
   },
   "286777": {
     "audio": "media/286777.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 8"
+    "title": "Bava Metzia Daf 8",
+    "video": "media/286777.mp4"
   },
   "286502": {
     "audio": "media/286502.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 7"
+    "title": "Bava Metzia Daf 7",
+    "video": "media/286502.mp4"
   },
   "286290": {
     "audio": "media/286290.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 6"
+    "title": "Bava Metzia Daf 6",
+    "video": "media/286290.mp4"
   },
   "286078": {
     "audio": "media/286078.mp3",
@@ -4334,7 +5086,8 @@
   "285889": {
     "audio": "media/285889.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 4"
+    "title": "Bava Metzia Daf 4",
+    "video": "media/285889.mp4"
   },
   "285804": {
     "audio": "media/285804.mp3",
@@ -4344,22 +5097,26 @@
   "285696": {
     "audio": "media/285696.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Metzia Daf 2"
+    "title": "Bava Metzia Daf 2",
+    "video": "media/285696.mp4"
   },
   "285695": {
     "audio": "media/285695.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Ki Tisa: Moshe Breaking the Luchos."
+    "title": "Parasha Ki Tisa: Moshe Breaking the Luchos.",
+    "video": "media/285695.mp4"
   },
   "285344": {
     "audio": "media/285344.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 119"
+    "title": "Bava Kamma Daf 119",
+    "video": "media/285344.mp4"
   },
   "284646": {
     "audio": "media/284646.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 117"
+    "title": "Bava Kamma Daf 117",
+    "video": "media/284646.mp4"
   },
   "284402": {
     "audio": "media/284402.mp3",
@@ -4374,22 +5131,26 @@
   "284096": {
     "audio": "media/284096.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 113"
+    "title": "Bava Kamma Daf 113",
+    "video": "media/284096.mp4"
   },
   "284084": {
     "audio": "media/284084.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Tetzaveh: Moshe Not mentioned in Parasha"
+    "title": "Parasha Tetzaveh: Moshe Not mentioned in Parasha",
+    "video": "media/284084.mp4"
   },
   "283818": {
     "audio": "media/283818.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 112"
+    "title": "Bava Kamma Daf 112",
+    "video": "media/283818.mp4"
   },
   "283268": {
     "audio": "media/283268.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 110"
+    "title": "Bava Kamma Daf 110",
+    "video": "media/283268.mp4"
   },
   "283021": {
     "audio": "media/283021.mp3",
@@ -4454,12 +5215,14 @@
   "281126": {
     "audio": "media/281126.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 98"
+    "title": "Bava Kamma Daf 98",
+    "video": "media/281126.mp4"
   },
   "280898": {
     "audio": "media/280898.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 97"
+    "title": "Bava Kamma Daf 97",
+    "video": "media/280898.mp4"
   },
   "280688": {
     "audio": "media/280688.mp3",
@@ -4469,12 +5232,14 @@
   "280469": {
     "audio": "media/280469.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 95"
+    "title": "Bava Kamma Daf 95",
+    "video": "media/280469.mp4"
   },
   "280286": {
     "audio": "media/280286.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 94"
+    "title": "Bava Kamma Daf 94",
+    "video": "media/280286.mp4"
   },
   "280212": {
     "audio": "media/280212.mp3",
@@ -4484,17 +5249,20 @@
   "280083": {
     "audio": "media/280083.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 92"
+    "title": "Bava Kamma Daf 92",
+    "video": "media/280083.mp4"
   },
   "280081": {
     "audio": "media/280081.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Yitro:\u05d5\u05d9\u05e9\u05de\u05e2 \u05d9\u05ea\u05e8\u05d5-Listen to your Messages!"
+    "title": "Parasha Yitro:\u05d5\u05d9\u05e9\u05de\u05e2 \u05d9\u05ea\u05e8\u05d5-Listen to your Messages!",
+    "video": "media/280081.mp4"
   },
   "279816": {
     "audio": "media/279816.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 91"
+    "title": "Bava Kamma Daf 91",
+    "video": "media/279816.mp4"
   },
   "279384": {
     "audio": "media/279384.mp3",
@@ -4504,7 +5272,8 @@
   "278987": {
     "audio": "media/278987.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 87"
+    "title": "Bava Kamma Daf 87",
+    "video": "media/278987.mp4"
   },
   "278934": {
     "audio": "media/278934.mp3",
@@ -4524,27 +5293,32 @@
   "278572": {
     "audio": "media/278572.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 84"
+    "title": "Bava Kamma Daf 84",
+    "video": "media/278572.mp4"
   },
   "278328": {
     "audio": "media/278328.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 83"
+    "title": "Bava Kamma Daf 83",
+    "video": "media/278328.mp4"
   },
   "278085": {
     "audio": "media/278085.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 82"
+    "title": "Bava Kamma Daf 82",
+    "video": "media/278085.mp4"
   },
   "277903": {
     "audio": "media/277903.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 81"
+    "title": "Bava Kamma Daf 81",
+    "video": "media/277903.mp4"
   },
   "277674": {
     "audio": "media/277674.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 80"
+    "title": "Bava Kamma Daf 80",
+    "video": "media/277674.mp4"
   },
   "277603": {
     "audio": "media/277603.mp3",
@@ -4554,37 +5328,44 @@
   "277514": {
     "audio": "media/277514.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 78"
+    "title": "Bava Kamma Daf 78",
+    "video": "media/277514.mp4"
   },
   "277496": {
     "audio": "media/277496.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Bo:Names of the Months-Chasam Sofer"
+    "title": "Parasha Bo:Names of the Months-Chasam Sofer",
+    "video": "media/277496.mp4"
   },
   "277249": {
     "audio": "media/277249.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 77"
+    "title": "Bava Kamma Daf 77",
+    "video": "media/277249.mp4"
   },
   "276976": {
     "audio": "media/276976.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 76"
+    "title": "Bava Kamma Daf 76",
+    "video": "media/276976.mp4"
   },
   "276738": {
     "audio": "media/276738.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 75"
+    "title": "Bava Kamma Daf 75",
+    "video": "media/276738.mp4"
   },
   "276501": {
     "audio": "media/276501.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 74"
+    "title": "Bava Kamma Daf 74",
+    "video": "media/276501.mp4"
   },
   "276328": {
     "audio": "media/276328.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 73"
+    "title": "Bava Kamma Daf 73",
+    "video": "media/276328.mp4"
   },
   "276258": {
     "audio": "media/276258.mp3",
@@ -4594,37 +5375,44 @@
   "276142": {
     "audio": "media/276142.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 71"
+    "title": "Bava Kamma Daf 71",
+    "video": "media/276142.mp4"
   },
   "276139": {
     "audio": "media/276139.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Va'eira:\u05e9\u05de\u05d9 \u05d4"
+    "title": "Parasha Va'eira:\u05e9\u05de\u05d9 \u05d4",
+    "video": "media/276139.mp4"
   },
   "275868": {
     "audio": "media/275868.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 70"
+    "title": "Bava Kamma Daf 70",
+    "video": "media/275868.mp4"
   },
   "275643": {
     "audio": "media/275643.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 69"
+    "title": "Bava Kamma Daf 69",
+    "video": "media/275643.mp4"
   },
   "275397": {
     "audio": "media/275397.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 68"
+    "title": "Bava Kamma Daf 68",
+    "video": "media/275397.mp4"
   },
   "275229": {
     "audio": "media/275229.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 67"
+    "title": "Bava Kamma Daf 67",
+    "video": "media/275229.mp4"
   },
   "275022": {
     "audio": "media/275022.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 66"
+    "title": "Bava Kamma Daf 66",
+    "video": "media/275022.mp4"
   },
   "274949": {
     "audio": "media/274949.mp3",
@@ -4634,37 +5422,44 @@
   "274890": {
     "audio": "media/274890.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 64"
+    "title": "Bava Kamma Daf 64",
+    "video": "media/274890.mp4"
   },
   "274818": {
     "audio": "media/274818.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Shemot:Names and their Meaning!"
+    "title": "Parasha Shemot:Names and their Meaning!",
+    "video": "media/274818.mp4"
   },
   "274576": {
     "audio": "media/274576.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 63"
+    "title": "Bava Kamma Daf 63",
+    "video": "media/274576.mp4"
   },
   "274375": {
     "audio": "media/274375.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 62"
+    "title": "Bava Kamma Daf 62",
+    "video": "media/274375.mp4"
   },
   "274147": {
     "audio": "media/274147.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava kamma Daf 61"
+    "title": "Bava kamma Daf 61",
+    "video": "media/274147.mp4"
   },
   "273934": {
     "audio": "media/273934.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 60"
+    "title": "Bava Kamma Daf 60",
+    "video": "media/273934.mp4"
   },
   "273735": {
     "audio": "media/273735.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 59"
+    "title": "Bava Kamma Daf 59",
+    "video": "media/273735.mp4"
   },
   "273662": {
     "audio": "media/273662.mp3",
@@ -4684,22 +5479,26 @@
   "273286": {
     "audio": "media/273286.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 56"
+    "title": "Bava Kamma Daf 56",
+    "video": "media/273286.mp4"
   },
   "273075": {
     "audio": "media/273075.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 55"
+    "title": "Bava Kamma Daf 55",
+    "video": "media/273075.mp4"
   },
   "272888": {
     "audio": "media/272888.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 54"
+    "title": "Bava Kamma Daf 54",
+    "video": "media/272888.mp4"
   },
   "272718": {
     "audio": "media/272718.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 53"
+    "title": "Bava Kamma Daf 53",
+    "video": "media/272718.mp4"
   },
   "272551": {
     "audio": "media/272551.mp3",
@@ -4709,32 +5508,38 @@
   "272399": {
     "audio": "media/272399.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 50"
+    "title": "Bava Kamma Daf 50",
+    "video": "media/272399.mp4"
   },
   "272397": {
     "audio": "media/272397.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayigash:\u05e4\u05e8\u05e9\u05ea \u05e2\u05d2\u05dc\u05d4 \u05e2\u05e8\u05d5\u05e4\u05d4"
+    "title": "Parasha Vayigash:\u05e4\u05e8\u05e9\u05ea \u05e2\u05d2\u05dc\u05d4 \u05e2\u05e8\u05d5\u05e4\u05d4",
+    "video": "media/272397.mp4"
   },
   "271910": {
     "audio": "media/271910.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 48"
+    "title": "Bava Kamma Daf 48",
+    "video": "media/271910.mp4"
   },
   "271697": {
     "audio": "media/271697.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 47"
+    "title": "Bava Kamma Daf 47",
+    "video": "media/271697.mp4"
   },
   "271490": {
     "audio": "media/271490.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 46"
+    "title": "Bava Kamma Daf 46",
+    "video": "media/271490.mp4"
   },
   "271309": {
     "audio": "media/271309.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 45"
+    "title": "Bava Kamma Daf 45",
+    "video": "media/271309.mp4"
   },
   "271239": {
     "audio": "media/271239.mp3",
@@ -4744,7 +5549,8 @@
   "271160": {
     "audio": "media/271160.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Mikeitz: Bitachon!"
+    "title": "Parasha Mikeitz: Bitachon!",
+    "video": "media/271160.mp4"
   },
   "270883": {
     "audio": "media/270883.mp3",
@@ -4754,17 +5560,20 @@
   "270613": {
     "audio": "media/270613.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 41"
+    "title": "Bava Kamma Daf 41",
+    "video": "media/270613.mp4"
   },
   "270429": {
     "audio": "media/270429.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 40"
+    "title": "Bava Kamma Daf 40",
+    "video": "media/270429.mp4"
   },
   "270244": {
     "audio": "media/270244.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 39"
+    "title": "Bava Kamma Daf 39",
+    "video": "media/270244.mp4"
   },
   "270055": {
     "audio": "media/270055.mp3",
@@ -4779,22 +5588,26 @@
   "269646": {
     "audio": "media/269646.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 35"
+    "title": "Bava Kamma Daf 35",
+    "video": "media/269646.mp4"
   },
   "269391": {
     "audio": "media/269391.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 34"
+    "title": "Bava Kamma Daf 34",
+    "video": "media/269391.mp4"
   },
   "269162": {
     "audio": "media/269162.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 33"
+    "title": "Bava Kamma Daf 33",
+    "video": "media/269162.mp4"
   },
   "268903": {
     "audio": "media/268903.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 32"
+    "title": "Bava Kamma Daf 32",
+    "video": "media/268903.mp4"
   },
   "268745": {
     "audio": "media/268745.mp3",
@@ -4809,42 +5622,50 @@
   "268581": {
     "audio": "media/268581.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 29"
+    "title": "Bava Kamma Daf 29",
+    "video": "media/268581.mp4"
   },
   "268580": {
     "audio": "media/268580.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashah Vayishlach:\u05e9\u05e8\u05d5 \u05e9\u05dc \u05e2\u05e9\u05d5"
+    "title": "Parashah Vayishlach:\u05e9\u05e8\u05d5 \u05e9\u05dc \u05e2\u05e9\u05d5",
+    "video": "media/268580.mp4"
   },
   "268307": {
     "audio": "media/268307.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 28"
+    "title": "Bava Kamma Daf 28",
+    "video": "media/268307.mp4"
   },
   "268062": {
     "audio": "media/268062.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 27"
+    "title": "Bava Kamma Daf 27",
+    "video": "media/268062.mp4"
   },
   "267822": {
     "audio": "media/267822.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 26"
+    "title": "Bava Kamma Daf 26",
+    "video": "media/267822.mp4"
   },
   "267637": {
     "audio": "media/267637.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 25"
+    "title": "Bava Kamma Daf 25",
+    "video": "media/267637.mp4"
   },
   "267460": {
     "audio": "media/267460.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 24"
+    "title": "Bava Kamma Daf 24",
+    "video": "media/267460.mp4"
   },
   "267462": {
     "audio": "media/267462.mp3",
     "intro_trimmed": 7.5,
-    "title": "\u05e8' \u05d9\u05e9\u05e8\u05d0\u05dc \u05d8\u05e9\u05d5\u05e8\u05e7\u05d5\u05d1 \u05d6\u05e6\"\u05dc:\u05d0\u05d4\u05d1\u05ea \u05d9\u05e9\u05e8\u05d0\u05dc-\u05d9\u05d0\u05e8\u05e6\u05d9\u05d9\u05d8 \u05d9\u05d2' \u05db\u05e1\u05dc\u05d5"
+    "title": "\u05e8' \u05d9\u05e9\u05e8\u05d0\u05dc \u05d8\u05e9\u05d5\u05e8\u05e7\u05d5\u05d1 \u05d6\u05e6\"\u05dc:\u05d0\u05d4\u05d1\u05ea \u05d9\u05e9\u05e8\u05d0\u05dc-\u05d9\u05d0\u05e8\u05e6\u05d9\u05d9\u05d8 \u05d9\u05d2' \u05db\u05e1\u05dc\u05d5",
+    "video": "media/267462.mp4"
   },
   "267381": {
     "audio": "media/267381.mp3",
@@ -4859,47 +5680,56 @@
   "267289": {
     "audio": "media/267289.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Vayetzei:\u05d5\u05d9\u05e6\u05d0 \u05d5\u05dc\u05d0 \u05d5\u05d9\u05d1\u05e8\u05d7"
+    "title": "Parasha Vayetzei:\u05d5\u05d9\u05e6\u05d0 \u05d5\u05dc\u05d0 \u05d5\u05d9\u05d1\u05e8\u05d7",
+    "video": "media/267289.mp4"
   },
   "266993": {
     "audio": "media/266993.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 21"
+    "title": "Bava Kamma Daf 21",
+    "video": "media/266993.mp4"
   },
   "266761": {
     "audio": "media/266761.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 20"
+    "title": "Bava Kamma Daf 20",
+    "video": "media/266761.mp4"
   },
   "266531": {
     "audio": "media/266531.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 19"
+    "title": "Bava Kamma Daf 19",
+    "video": "media/266531.mp4"
   },
   "266340": {
     "audio": "media/266340.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 18"
+    "title": "Bava Kamma Daf 18",
+    "video": "media/266340.mp4"
   },
   "265925": {
     "audio": "media/265925.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kama Daf 15"
+    "title": "Bava Kama Daf 15",
+    "video": "media/265925.mp4"
   },
   "265923": {
     "audio": "media/265923.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Toldot:\u05e7\u05d5\u05dc \u05e7\u05d5\u05dc \u05d9\u05e2\u05e7\u05d1-Soldiers in Shul and Front Lines!"
+    "title": "Parasha Toldot:\u05e7\u05d5\u05dc \u05e7\u05d5\u05dc \u05d9\u05e2\u05e7\u05d1-Soldiers in Shul and Front Lines!",
+    "video": "media/265923.mp4"
   },
   "265661": {
     "audio": "media/265661.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 14"
+    "title": "Bava Kamma Daf 14",
+    "video": "media/265661.mp4"
   },
   "265453": {
     "audio": "media/265453.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 13"
+    "title": "Bava Kamma Daf 13",
+    "video": "media/265453.mp4"
   },
   "265238": {
     "audio": "media/265238.mp3",
@@ -4909,12 +5739,14 @@
   "265063": {
     "audio": "media/265063.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 11"
+    "title": "Bava Kamma Daf 11",
+    "video": "media/265063.mp4"
   },
   "264883": {
     "audio": "media/264883.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 10"
+    "title": "Bava Kamma Daf 10",
+    "video": "media/264883.mp4"
   },
   "264805": {
     "audio": "media/264805.mp3",
@@ -4924,37 +5756,44 @@
   "264682": {
     "audio": "media/264682.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 8"
+    "title": "Bava Kamma Daf 8",
+    "video": "media/264682.mp4"
   },
   "264676": {
     "audio": "media/264676.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parasha Chayei Sarah:Yitzchok Minchah-\u05e9\u05d9\u05d7\u05d4 Intimate Conversation with Hashem!"
+    "title": "Parasha Chayei Sarah:Yitzchok Minchah-\u05e9\u05d9\u05d7\u05d4 Intimate Conversation with Hashem!",
+    "video": "media/264676.mp4"
   },
   "264418": {
     "audio": "media/264418.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 7"
+    "title": "Bava Kamma Daf 7",
+    "video": "media/264418.mp4"
   },
   "264199": {
     "audio": "media/264199.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma"
+    "title": "Bava Kamma",
+    "video": "media/264199.mp4"
   },
   "263986": {
     "audio": "media/263986.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 5"
+    "title": "Bava Kamma Daf 5",
+    "video": "media/263986.mp4"
   },
   "263812": {
     "audio": "media/263812.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf 4"
+    "title": "Bava Kamma Daf 4",
+    "video": "media/263812.mp4"
   },
   "263620": {
     "audio": "media/263620.mp3",
     "intro_trimmed": 7.5,
-    "title": "Bava Kamma Daf \u05d2"
+    "title": "Bava Kamma Daf \u05d2",
+    "video": "media/263620.mp4"
   },
   "263528": {
     "audio": "media/263528.mp3",
@@ -4964,12 +5803,14 @@
   "263411": {
     "audio": "media/263411.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat Vayera:Emunah without Signs!"
+    "title": "Parashat Vayera:Emunah without Signs!",
+    "video": "media/263411.mp4"
   },
   "263161": {
     "audio": "media/263161.mp3",
     "intro_trimmed": 7.5,
-    "title": "Kiddushin Daf 81"
+    "title": "Kiddushin Daf 81",
+    "video": "media/263161.mp4"
   },
   "262993": {
     "audio": "media/262993.mp3",
@@ -4979,7 +5820,8 @@
   "262669": {
     "audio": "media/262669.mp3",
     "intro_trimmed": 7.5,
-    "title": "Kiddushin Daf 79"
+    "title": "Kiddushin Daf 79",
+    "video": "media/262669.mp4"
   },
   "262485": {
     "audio": "media/262485.mp3",
@@ -4989,7 +5831,8 @@
   "262287": {
     "audio": "media/262287.mp3",
     "intro_trimmed": 7.5,
-    "title": "Kiddushin Daf 77"
+    "title": "Kiddushin Daf 77",
+    "video": "media/262287.mp4"
   },
   "262237": {
     "audio": "media/262237.mp3",
@@ -4999,22 +5842,26 @@
   "262113": {
     "audio": "media/262113.mp3",
     "intro_trimmed": 7.5,
-    "title": "Kiddushin Daf 75"
+    "title": "Kiddushin Daf 75",
+    "video": "media/262113.mp4"
   },
   "262111": {
     "audio": "media/262111.mp3",
     "intro_trimmed": 7.5,
-    "title": "Parashat L'ech Lecha: Test Of Milah."
+    "title": "Parashat L'ech Lecha: Test Of Milah.",
+    "video": "media/262111.mp4"
   },
   "261858": {
     "audio": "media/261858.mp3",
     "intro_trimmed": 7.5,
-    "title": "Kiddushin Daf 74"
+    "title": "Kiddushin Daf 74",
+    "video": "media/261858.mp4"
   },
   "261652": {
     "audio": "media/261652.mp3",
     "intro_trimmed": 7.5,
-    "title": "Kiddushin Daf 73"
+    "title": "Kiddushin Daf 73",
+    "video": "media/261652.mp4"
   },
   "261446": {
     "audio": "media/261446.mp3",

@@ -36,6 +36,8 @@
     "zelle": {
       "name": "JOSHUA STERN",
       "email": "jshmuelstern@gmail.com",
+      "qrData": "https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiSk9TSFVBIiwidG9rZW4iOiJqc2htdWVsc3Rlcm5AZ21haWwuY29tIiwiYWN0aW9uIjoicGF5bWVudCJ9",
+      "_qrData_note": "Exact Zelle payment payload (decoded from the original QR). The app renders this as crisp SVG; if removed, it is rebuilt from name+email. 'qr' jpeg kept only as a last-resort fallback.",
       "qr": "assets/zelle-qr.jpeg"
     },
     "dedicationNote": "To dedicate a day, a masechta, or the whole shiur, email jshmuelstern@gmail.com."
