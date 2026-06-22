@@ -283,7 +283,7 @@ function viewDaf(r) {
   const heT = `${m ? m.he : masechta} ${heDaf(daf)}`;
   const media = shiur ? `
     <div class="daf-media">
-      <a class="btn solid sm" data-play="${shiur.id}">▶ Listen${shiur.localAudio ? " ✓" : ""}</a>
+      <a class="btn solid sm" data-play="${shiur.id}">▶ Listen</a>
       ${(shiur.localVideo || shiur.video) ? `<a class="btn sm" data-watch="${shiur.id}">▦ Watch</a>` : ""}
       <a class="btn sm" data-fav="${shiur.id}">${isFav(shiur.id) ? "★ Saved" : "☆ Save"}</a>
     </div>
@@ -497,7 +497,7 @@ function watchVideo(id) {
   const slot = $("#videoSlot"); if (!slot) return;
   const local = State.content.options?.preferSelfHosted !== false && lec.localVideo;
   const src = local ? lec.localVideo : lec.video; if (!src) return;
-  slot.innerHTML = `<video class="daf-video" src="${esc(src)}" controls playsinline preload="metadata"></video>${local ? `<div class="daf-src">our copy · intro removed ✓</div>` : `<div class="daf-src">streaming from TorahAnytime · includes intro</div>`}`;
+  slot.innerHTML = `<video class="daf-video" src="${esc(src)}" controls playsinline preload="metadata"></video>`;
   slot.querySelector("video").play().catch(() => {});
   noteProgress(id);
 }
@@ -522,7 +522,7 @@ const Player = {
   bar() {
     const k = this.lec._dk, label = k && k.daf ? `${k.masechta} ${k.daf}` : "";
     $("#player").innerHTML = `<button class="x" id="pX" aria-label="Close">✕</button>
-      <div class="now"><b>${esc(label || this.lec.title)}</b>${this.local ? `<span class="tag">intro removed ✓</span>` : (this.lec.audio ? `<span class="tag muted">streaming · incl. intro</span>` : "")}</div>
+      <div class="now"><b>${esc(label || this.lec.title)}</b></div>
       <div class="scrub"><span class="t" id="pCur">0:00</span><input type="range" id="pSeek" min="0" max="1000" value="0" aria-label="Seek"><span class="t r" id="pDur">--:--</span></div>
       <div class="ctrls" id="pCtrls"></div>`;
     $("#pX").onclick = () => this.hide();
