@@ -968,73 +968,85 @@
     "audio": "media/429352.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 28 Menachot",
-    "video": "media/429352.mp4"
+    "video": "media/429352.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "429277": {
     "audio": "media/429277.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 30 Menachot",
-    "video": "media/429277.mp4"
+    "video": "media/429277.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "428996": {
     "audio": "media/428996.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 29 Menachot",
-    "video": "media/428996.mp4"
+    "video": "media/428996.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "428626": {
     "audio": "media/428626.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 27 Menachot",
-    "video": "media/428626.mp4"
+    "video": "media/428626.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "428440": {
     "audio": "media/428440.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 26 Menachot ",
-    "video": "media/428440.mp4"
+    "video": "media/428440.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "428442": {
     "audio": "media/428442.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Yitro: Eliezer-Eved Avrohom?",
-    "video": "media/428442.mp4"
+    "video": "media/428442.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "428141": {
     "audio": "media/428141.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 25 Menachot ",
-    "video": "media/428141.mp4"
+    "video": "media/428141.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "427768": {
     "audio": "media/427768.mp3",
     "intro_trimmed": 7.5,
     "title": "I Need Your Attention for a Moment",
-    "video": "media/427768.mp4"
+    "video": "media/427768.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "427815": {
     "audio": "media/427815.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 24 Menachot ",
-    "video": "media/427815.mp4"
+    "video": "media/427815.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "427500": {
     "audio": "media/427500.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 23 Menachot",
-    "video": "media/427500.mp4"
+    "video": "media/427500.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "427221": {
     "audio": "media/427221.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 22 Menachot",
-    "video": "media/427221.mp4"
+    "video": "media/427221.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "427002": {
     "audio": "media/427002.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 21 Menachot",
-    "video": "media/427002.mp4"
+    "video": "media/427002.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "426888": {
     "audio": "media/426888.mp3",
@@ -1045,43 +1057,50 @@
     "audio": "media/426701.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 19 Menachot",
-    "video": "media/426701.mp4"
+    "video": "media/426701.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "426703": {
     "audio": "media/426703.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Beshalach: \u05d4\u05d9\u05d3\u05d5\u05e8 \u05de\u05e6\u05d5\u05d4 33%",
-    "video": "media/426703.mp4"
+    "video": "media/426703.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "426361": {
     "audio": "media/426361.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 18 Menachot",
-    "video": "media/426361.mp4"
+    "video": "media/426361.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "426052": {
     "audio": "media/426052.mp3",
     "intro_trimmed": 7.5,
     "title": "Your Responsibility",
-    "video": "media/426052.mp4"
+    "video": "media/426052.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "426004": {
     "audio": "media/426004.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 17 Menachot",
-    "video": "media/426004.mp4"
+    "video": "media/426004.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "425705": {
     "audio": "media/425705.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 16 Menachot",
-    "video": "media/425705.mp4"
+    "video": "media/425705.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "425300": {
     "audio": "media/425300.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 15 Menachot",
-    "video": "media/425300.mp4"
+    "video": "media/425300.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "425039": {
     "audio": "media/425039.mp3",
@@ -1092,211 +1111,246 @@
     "audio": "media/424769.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 12 Menachot",
-    "video": "media/424769.mp4"
+    "video": "media/424769.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "424768": {
     "audio": "media/424768.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Bo: \u05e8\u05e2\u05d4 \u05e0\u05d2\u05d3 \u05e4\u05e0\u05d9\u05db\u05dd",
-    "video": "media/424768.mp4"
+    "video": "media/424768.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "424431": {
     "audio": "media/424431.mp3",
     "intro_trimmed": 7.5,
     "title": "Menachot Daf 11",
-    "video": "media/424431.mp4"
+    "video": "media/424431.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "423976": {
     "audio": "media/423976.mp3",
     "intro_trimmed": 7.5,
     "title": "Menachot Daf 10",
-    "video": "media/423976.mp4"
+    "video": "media/423976.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "423675": {
     "audio": "media/423675.mp3",
     "intro_trimmed": 7.5,
     "title": "Menachot Daf 9",
-    "video": "media/423675.mp4"
+    "video": "media/423675.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "423391": {
     "audio": "media/423391.mp3",
     "intro_trimmed": 7.5,
     "title": "Menachot Daf 8",
-    "video": "media/423391.mp4"
+    "video": "media/423391.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "423070": {
     "audio": "media/423070.mp3",
     "intro_trimmed": 7.5,
     "title": "Menachot Daf 7",
-    "video": "media/423070.mp4"
+    "video": "media/423070.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "422873": {
     "audio": "media/422873.mp3",
     "intro_trimmed": 7.5,
     "title": "Menachot Daf 5",
-    "video": "media/422873.mp4"
+    "video": "media/422873.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "422869": {
     "audio": "media/422869.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Va'eira: Ein Od Milvado, Fake news!",
-    "video": "media/422869.mp4"
+    "video": "media/422869.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "422558": {
     "audio": "media/422558.mp3",
     "intro_trimmed": 7.5,
     "title": "Menachot Daf 4",
-    "video": "media/422558.mp4"
+    "video": "media/422558.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "422280": {
     "audio": "media/422280.mp3",
     "intro_trimmed": 7.5,
     "title": "Menachot Daf 3",
-    "video": "media/422280.mp4"
+    "video": "media/422280.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "421951": {
     "audio": "media/421951.mp3",
     "intro_trimmed": 7.5,
     "title": "Menachot Daf 2;Hakdamh to Masechtah",
-    "video": "media/421951.mp4"
+    "video": "media/421951.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "421646": {
     "audio": "media/421646.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 120",
-    "video": "media/421646.mp4"
+    "video": "media/421646.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "421395": {
     "audio": "media/421395.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 119",
-    "video": "media/421395.mp4"
+    "video": "media/421395.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "421134": {
     "audio": "media/421134.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 117",
-    "video": "media/421134.mp4"
+    "video": "media/421134.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "421135": {
     "audio": "media/421135.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Shemot: \u05d5\u05d9\u05de\u05ea \u05de\u05dc\u05da \u05de\u05e6\u05e8\u05d9\u05dd",
-    "video": "media/421135.mp4"
+    "video": "media/421135.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "420790": {
     "audio": "media/420790.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 116",
-    "video": "media/420790.mp4"
+    "video": "media/420790.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "420502": {
     "audio": "media/420502.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 115",
-    "video": "media/420502.mp4"
+    "video": "media/420502.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "420210": {
     "audio": "media/420210.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 114",
-    "video": "media/420210.mp4"
+    "video": "media/420210.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "419971": {
     "audio": "media/419971.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 113",
-    "video": "media/419971.mp4"
+    "video": "media/419971.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "419707": {
     "audio": "media/419707.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 112",
-    "video": "media/419707.mp4"
+    "video": "media/419707.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "419430": {
     "audio": "media/419430.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Vayechi: Partner Zevulan and Yissaschar ",
-    "video": "media/419430.mp4"
+    "video": "media/419430.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "419428": {
     "audio": "media/419428.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 110",
-    "video": "media/419428.mp4"
+    "video": "media/419428.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "419087": {
     "audio": "media/419087.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 109",
-    "video": "media/419087.mp4"
+    "video": "media/419087.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "418756": {
     "audio": "media/418756.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 108",
-    "video": "media/418756.mp4"
+    "video": "media/418756.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "418261": {
     "audio": "media/418261.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 106",
-    "video": "media/418261.mp4"
+    "video": "media/418261.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "418047": {
     "audio": "media/418047.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 105",
-    "video": "media/418047.mp4"
+    "video": "media/418047.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "417840": {
     "audio": "media/417840.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 104",
-    "video": "media/417840.mp4"
+    "video": "media/417840.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "417625": {
     "audio": "media/417625.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 103",
-    "video": "media/417625.mp4"
+    "video": "media/417625.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "417627": {
     "audio": "media/417627.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Vayigash: Emunah Chakirah or Peshutah.",
-    "video": "media/417627.mp4"
+    "video": "media/417627.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "417340": {
     "audio": "media/417340.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 102",
-    "video": "media/417340.mp4"
+    "video": "media/417340.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "417110": {
     "audio": "media/417110.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 101",
-    "video": "media/417110.mp4"
+    "video": "media/417110.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "416842": {
     "audio": "media/416842.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 100",
-    "video": "media/416842.mp4"
+    "video": "media/416842.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "416652": {
     "audio": "media/416652.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 99",
-    "video": "media/416652.mp4"
+    "video": "media/416652.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "416466": {
     "audio": "media/416466.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 98",
-    "video": "media/416466.mp4"
+    "video": "media/416466.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "416393": {
     "audio": "media/416393.mp3",
@@ -1307,37 +1361,43 @@
     "audio": "media/416276.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 96",
-    "video": "media/416276.mp4"
+    "video": "media/416276.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "416279": {
     "audio": "media/416279.mp3",
     "intro_trimmed": 7.5,
     "title": "Chanukah: Thanking Essence of a Yid",
-    "video": "media/416279.mp4"
+    "video": "media/416279.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "415954": {
     "audio": "media/415954.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 95",
-    "video": "media/415954.mp4"
+    "video": "media/415954.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "415720": {
     "audio": "media/415720.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 94",
-    "video": "media/415720.mp4"
+    "video": "media/415720.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "415490": {
     "audio": "media/415490.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 93",
-    "video": "media/415490.mp4"
+    "video": "media/415490.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "415261": {
     "audio": "media/415261.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 92",
-    "video": "media/415261.mp4"
+    "video": "media/415261.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "414958": {
     "audio": "media/414958.mp3",
@@ -1363,13 +1423,15 @@
     "audio": "media/413456.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 86",
-    "video": "media/413456.mp4"
+    "video": "media/413456.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "412054": {
     "audio": "media/412054.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 85",
-    "video": "media/412054.mp4"
+    "video": "media/412054.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "411704": {
     "audio": "media/411704.mp3",
@@ -1380,79 +1442,92 @@
     "audio": "media/411551.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 82",
-    "video": "media/411551.mp4"
+    "video": "media/411551.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "411552": {
     "audio": "media/411552.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Vayishlach: Dinah trade with Yosef.",
-    "video": "media/411552.mp4"
+    "video": "media/411552.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "411170": {
     "audio": "media/411170.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 81",
-    "video": "media/411170.mp4"
+    "video": "media/411170.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "410871": {
     "audio": "media/410871.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 80",
-    "video": "media/410871.mp4"
+    "video": "media/410871.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "410554": {
     "audio": "media/410554.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 79",
-    "video": "media/410554.mp4"
+    "video": "media/410554.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "409981": {
     "audio": "media/409981.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 77",
-    "video": "media/409981.mp4"
+    "video": "media/409981.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "409772": {
     "audio": "media/409772.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 75",
-    "video": "media/409772.mp4"
+    "video": "media/409772.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "409774": {
     "audio": "media/409774.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Vayetzei: Yidishkeit is Geshmak!",
-    "video": "media/409774.mp4"
+    "video": "media/409774.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "409434": {
     "audio": "media/409434.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 74",
-    "video": "media/409434.mp4"
+    "video": "media/409434.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "409115": {
     "audio": "media/409115.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 73",
-    "video": "media/409115.mp4"
+    "video": "media/409115.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "408832": {
     "audio": "media/408832.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 72",
-    "video": "media/408832.mp4"
+    "video": "media/408832.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "408598": {
     "audio": "media/408598.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 71",
-    "video": "media/408598.mp4"
+    "video": "media/408598.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "408307": {
     "audio": "media/408307.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 70",
-    "video": "media/408307.mp4"
+    "video": "media/408307.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "408176": {
     "audio": "media/408176.mp3",
@@ -1463,67 +1538,78 @@
     "audio": "media/407918.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 68",
-    "video": "media/407918.mp4"
+    "video": "media/407918.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "407920": {
     "audio": "media/407920.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Toldot: Past and Future Generations!",
-    "video": "media/407920.mp4"
+    "video": "media/407920.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "407284": {
     "audio": "media/407284.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 66",
-    "video": "media/407284.mp4"
+    "video": "media/407284.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "406717": {
     "audio": "media/406717.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 64",
-    "video": "media/406717.mp4"
+    "video": "media/406717.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "406438": {
     "audio": "media/406438.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 63",
-    "video": "media/406438.mp4"
+    "video": "media/406438.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "406143": {
     "audio": "media/406143.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 61",
-    "video": "media/406143.mp4"
+    "video": "media/406143.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "406138": {
     "audio": "media/406138.mp3",
     "intro_trimmed": 7.5,
     "title": "Parasha Chayei Sara: Blessing of Everything!",
-    "video": "media/406138.mp4"
+    "video": "media/406138.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "405822": {
     "audio": "media/405822.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 60",
-    "video": "media/405822.mp4"
+    "video": "media/405822.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "405592": {
     "audio": "media/405592.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 59",
-    "video": "media/405592.mp4"
+    "video": "media/405592.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "405314": {
     "audio": "media/405314.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 58",
-    "video": "media/405314.mp4"
+    "video": "media/405314.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "405074": {
     "audio": "media/405074.mp3",
     "intro_trimmed": 7.5,
     "title": "Zevachim Daf 57",
-    "video": "media/405074.mp4"
+    "video": "media/405074.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   },
   "404819": {
     "audio": "media/404819.mp3",

@@ -16,6 +16,7 @@ const CFG = {
   cacheKey: "dy_lib_587_v3",
   lastVisitKey: "dy_lastVisit_587",
   favKey: "dy_favs_587", progKey: "dy_progress_587", notesKey: "dy_notes_587",
+  learnedKey: "dy_learned_587", posKey: "dy_pos_587",
   contentLocalKey: "dy_content_587",
 };
 
@@ -36,7 +37,7 @@ const State = {
 /* ---------- utils ---------- */
 const fmtDur = s => { s = Math.round(s || 0); if (!s) return ""; const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h ? `${h}h ${m}m` : `${m} min`; };
 const clock = s => { s = Math.max(0, Math.round(s || 0)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
-const getStore = k => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; } };
+const getStore = k => { try { const v = JSON.parse(localStorage.getItem(k)); return (v && typeof v === "object" && !Array.isArray(v)) ? v : {}; } catch { return {}; } };
 const setStore = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const dafKey = (m, d) => `${m}#${d}`;
 const fileKey = m => m.replace(/ /g, "_");
@@ -84,7 +85,7 @@ async function boot() {
   buildIndex(); renderShell(); route("today", {}, { replace: true });
   setStatus("checking"); refreshLive(seed.lectures || [], !!cached);
 }
-async function loadContent() { const l = localStorage.getItem(CFG.contentLocalKey); if (l) { try { return JSON.parse(l); } catch {} } return loadJson(CFG.contentUrl); }
+async function loadContent() { let l = null; try { l = localStorage.getItem(CFG.contentLocalKey); } catch {} if (l) { try { return JSON.parse(l); } catch {} } return loadJson(CFG.contentUrl); }
 async function loadJson(u) { try { return await fetch(u).then(r => r.ok ? r.json() : {}); } catch { return {}; } }
 
 // Resolve a manifest media path. Paths are stored RELATIVE ("media/<id>.mp3")
@@ -129,21 +130,67 @@ async function refreshLive(prev, fromCache) {
 function readCache() { try { const c = JSON.parse(localStorage.getItem(CFG.cacheKey)); return c && Array.isArray(c.lectures) && c.lectures.length ? c : null; } catch { return null; } }
 function writeCache() { setStore(CFG.cacheKey, { speaker: State.speaker, lectures: State.all }); }
 function markNew() {
-  const last = localStorage.getItem(CFG.lastVisitKey); State.newIds = new Set();
+  let last = null; try { last = localStorage.getItem(CFG.lastVisitKey); } catch {}
+  State.newIds = new Set();
   if (last) for (const l of State.all) if ((l.posted || "") > last) State.newIds.add(l.id);
-  localStorage.setItem(CFG.lastVisitKey, todayStr());
+  try { localStorage.setItem(CFG.lastVisitKey, todayStr()); } catch {}
 }
 const favs = () => getStore(CFG.favKey);
 const isFav = id => !!favs()[id];
 function toggleFav(id) { const f = favs(); if (f[id]) delete f[id]; else f[id] = Date.now(); setStore(CFG.favKey, f); }
 function noteProgress(id) { const p = getStore(CFG.progKey); p[id] = Date.now(); setStore(CFG.progKey, p); }
 
+/* ---------- learned dapim (tracked per DAF, Shas-wide, in localStorage) ---------- */
+const learnedAll = () => getStore(CFG.learnedKey);
+const isLearned = (m, d) => !!learnedAll()[dafKey(m, d)];
+function setLearned(m, d, on) {
+  const L = learnedAll(), k = dafKey(m, d);
+  if (on) L[k] = Date.now(); else delete L[k];
+  setStore(CFG.learnedKey, L);
+}
+function toggleLearned(m, d) { const on = !isLearned(m, d); setLearned(m, d, on); return on; }
+function markShiurLearned(lec) { const k = lec && lec._dk; if (k && k.daf) setLearned(k.masechta, k.daf, true); }
+function learnedInMasechta(en) { const L = learnedAll(); let n = 0; for (const k in L) if (k.slice(0, en.length + 1) === en + "#") n++; return n; }
+let _shasTotal = 0;
+function shasTotal() { if (!_shasTotal) _shasTotal = DY.SHAS.reduce((n, m) => n + (m.lastDaf - m.firstDaf + 1), 0); return _shasTotal; }
+function learnedTotal() { const L = learnedAll(); let n = 0; for (const k in L) if (DY.BYEN[k.split("#")[0]]) n++; return n; }
+const shasPos = (m, d) => { const i = DY.SHAS.findIndex(x => x.en === m); return i < 0 ? -1 : i * 10000 + d; };
+// The next daf the user hasn't marked learned, in Daf Yomi (Shas) order, starting
+// just past the furthest daf they've learned. Falls back to today's daf when fresh;
+// null once all of Shas is learned.
+function nextUnlearnedDaf() {
+  const L = learnedAll(), keys = Object.keys(L);
+  if (!keys.length) { const t = DY.dafForDate(new Date()); return { masechta: t.masechta, daf: t.daf }; }
+  let best = -1, bm = null, bd = 0;
+  for (const k of keys) { const [m, ds] = k.split("#"); const p = shasPos(m, +ds); if (p > best) { best = p; bm = m; bd = +ds; } }
+  // continue forward from the furthest-learned daf (the common, sequential case)
+  let cur = { masechta: bm, daf: bd };
+  for (let i = 0; i < 6000; i++) { const nx = dafStep(cur.masechta, cur.daf, 1); if (!nx) break; if (!L[dafKey(nx.masechta, nx.daf)]) return nx; cur = nx; }
+  // reached the end of Shas — fall back to the first earlier gap before declaring "done"
+  for (const mx of DY.SHAS) for (let d = mx.firstDaf; d <= mx.lastDaf; d++) if (!L[dafKey(mx.en, d)]) return { masechta: mx.en, daf: d };
+  return null;  // genuinely finished all of Shas
+}
+
+/* ---------- resume positions (per shiur id; shared by audio & video) ---------- */
+const posAll = () => getStore(CFG.posKey);
+const getPos = id => posAll()[id] || null;
+function savePos(id, t, d) { if (!id || !(t > 0)) return; const dd = (isFinite(d) && d > 0) ? Math.round(d) : 0; const P = posAll(); P[id] = { t: Math.round(t), d: dd, at: Date.now() }; setStore(CFG.posKey, P); }
+function clearPos(id) { const P = posAll(); if (P[id]) { delete P[id]; setStore(CFG.posKey, P); } }
+// A saved position worth resuming to (past the intro, not at the very end).
+const resumePoint = id => { const p = getPos(id); return (p && p.t > 20 && (!p.d || p.t < p.d - 20)) ? p.t : 0; };
+// The single most-recently-left-off shiur, for the home "Continue" card.
+function lastInProgress() {
+  const P = posAll(); let best = null;
+  for (const id in P) { const p = P[id]; if (!p || !p.t) continue; if (p.d && p.t > p.d - 25) continue; if (!best || p.at > best.at) best = { id: +id, ...p }; }
+  if (!best) return null; const lec = State.all.find(l => l.id === best.id); return lec ? { lec, pos: best } : null;
+}
+
 /* native daf text loader */
 async function loadDafText(masechta) {
   const key = fileKey(masechta);
   if (State.dafCache[key]) return State.dafCache[key];
   const info = State.dafIndex[masechta]; if (!info) return null;
-  try { const d = await fetch(`data/daf/${key}.json`).then(r => r.json()); State.dafCache[key] = d; return d; }
+  try { const d = await fetch(`data/daf/${key}.json`).then(r => r.ok ? r.json() : null); if (!d) return null; State.dafCache[key] = d; return d; }
   catch { return null; }
 }
 /* Rashi + Tosafos for the "Daf" (Tzuras Hadaf) layout — loaded lazily per masechta */
@@ -162,7 +209,7 @@ function renderShell() {
   document.body.innerHTML = `<div id="app">
     <header class="bar">
       <button class="ic-btn back" id="backBtn" aria-label="Back" hidden>‹</button>
-      <button class="ic-btn" id="burger" aria-label="Menu">☰</button>
+      <button class="ic-btn" id="burger" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">☰</button>
       <span class="wordmark" id="home" role="link" tabindex="0" title="Today's daf">${esc(mh.hebrew || "הדף היומי")}</span>
       <span class="live" id="live" title="updating from source"></span>
       <span class="spacer"></span>
@@ -177,8 +224,8 @@ function renderShell() {
     <div class="player hidden" id="player"></div>
   </div>
   <div class="mask" id="mask"></div>
-  <aside class="menu" id="menu"></aside>
-  <div class="toast-wrap" id="toasts"></div>
+  <aside class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Site menu"></aside>
+  <div class="toast-wrap" id="toasts" aria-live="polite" aria-atomic="false"></div>
   <div class="reader" id="reader" hidden aria-hidden="true"></div>`;
 
   $("#burger").onclick = openMenu; $("#mask").onclick = closeMenu;
@@ -204,8 +251,8 @@ function buildMenu() {
   $$("#menu .mi[data-route]").forEach(b => b.onclick = () => { closeMenu(); route(b.dataset.route); });
   $("#editorBtn").onclick = openEditor;
 }
-function openMenu() { $("#menu").classList.add("open"); $("#mask").classList.add("open"); }
-function closeMenu() { $("#menu").classList.remove("open"); $("#mask").classList.remove("open"); }
+function openMenu() { $("#menu").classList.add("open"); $("#mask").classList.add("open"); $("#burger")?.setAttribute("aria-expanded", "true"); $("#app")?.setAttribute("inert", ""); setTimeout(() => $("#menu .mi")?.focus(), 0); }
+function closeMenu() { const wasOpen = $("#menu")?.classList.contains("open"); $("#menu").classList.remove("open"); $("#mask").classList.remove("open"); $("#burger")?.setAttribute("aria-expanded", "false"); $("#app")?.removeAttribute("inert"); if (wasOpen) $("#burger")?.focus(); }
 
 /* =====================================================================
    ROUTER
@@ -233,6 +280,7 @@ window.addEventListener("popstate", e => {
 });
 function rerender() {
   const v = $("#view"); if (!v) return;
+  $$("#view video").forEach(vid => { try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {} });   // flush any in-page video before the view is replaced (no detached audio)
   const r = State.route;
   const fn = { today: viewToday, browse: viewBrowse, seder: viewSeder, masechta: viewMasechta, daf: viewDaf, topics: viewTopics, category: viewCategory, search: viewSearch, mystuff: viewMyStuff, sponsor: viewSponsor, about: viewAbout, donate: viewDonate }[r.name] || viewToday;
   v.innerHTML = `<div class="view">${fn(r)}</div>`;
@@ -244,6 +292,41 @@ function rerender() {
    VIEWS
    ===================================================================== */
 function dafData(date) { const dy = DY.dafForDate(date); return dy ? { dy, shiur: shiurFor(dy.masechta, dy.daf) } : null; }
+
+/* ---------- progress UI (shared) ---------- */
+function progressBar(done, total, opts = {}) {
+  const pct = total ? Math.min(100, Math.round((done / total) * 100)) : 0;
+  return `<div class="prog">
+    <div class="prog-track" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${esc(opts.label || "Progress")}" aria-valuetext="${done.toLocaleString()} of ${total.toLocaleString()} (${pct}%)"><div class="prog-fill" style="width:${pct}%"></div></div>
+    ${opts.hideLabel ? "" : `<div class="prog-label"><span>${esc(opts.label || "Learned")}</span><span class="prog-n">${done.toLocaleString()} / ${total.toLocaleString()} · ${pct}%</span></div>`}
+  </div>`;
+}
+// Home "Continue learning" block — resume the last shiur + jump to the next
+// unlearned daf + overall Shas progress. Hidden entirely until there's progress.
+function continueCard() {
+  const lip = lastInProgress(), lt = learnedTotal();
+  if (!lip && !lt) return "";
+  let rows = "";
+  if (lip) {
+    const k = lip.lec._dk;
+    const title = k && k.daf ? `${k.masechta} · Daf ${k.daf}` : lip.lec.title;
+    rows += `<button class="cont-row" data-play="${lip.lec.id}"><span class="cont-ic">▶</span><span class="cont-main"><b>Resume ${esc(title)}</b><span class="cont-sub">picks up at ${clock(lip.pos.t)}</span></span></button>`;
+  }
+  const nx = nextUnlearnedDaf();
+  if (nx) {
+    const m = DY.BYEN[nx.masechta];
+    rows += `<button class="cont-row" data-daf="${esc(nx.masechta)}|${nx.daf}"><span class="cont-ic ghost">↪</span><span class="cont-main"><b>Up next · ${esc(nx.masechta)} Daf ${nx.daf}</b><span class="cont-sub">${esc(m ? m.he : nx.masechta)} ${esc(heDaf(nx.daf))}</span></span></button>`;
+  }
+  return `<div class="section">Continue learning</div>
+    <div class="continue">${rows}
+      ${lt ? `<div class="cont-prog">${progressBar(lt, shasTotal(), { label: "Your Shas progress" })}</div>` : ""}
+    </div>`;
+}
+function upNextLink() {
+  const nx = nextUnlearnedDaf();
+  if (!nx) return `<p class="center muted" style="font-size:13.5px;margin-top:10px">You've learned all of Shas — mazel tov! 🎉</p>`;
+  return `<p class="center" style="margin-top:10px"><a class="textlink" data-daf="${esc(nx.masechta)}|${nx.daf}">Up next · ${esc(nx.masechta)} Daf ${nx.daf} →</a></p>`;
+}
 
 function viewToday() {
   const mh = State.content.masthead || {};
@@ -272,6 +355,7 @@ function viewToday() {
         <a data-daf="${esc(tm.dy.masechta)}|${tm.dy.daf}">Tomorrow · <span class="nm">${esc(tm.dy.he)} ${esc(heDaf(tm.dy.daf))}</span> ›</a>
       </div>
     </div>
+    ${continueCard()}
     ${recentSection()}
     ${moreSection()}`;
 }
@@ -284,6 +368,7 @@ function recentSection() {
 
 function viewBrowse() {
   return `<div class="pagetitle">Browse Shas</div><p class="lead">Every daf of the Talmud — tap any daf to read it; the Rabbi's shiur appears where he's given it.</p>
+    ${learnedTotal() ? `<div class="browse-prog">${progressBar(learnedTotal(), shasTotal(), { label: "Your Shas progress" })}</div>` : ""}
     <div class="toc">${DY.SEDARIM.map(s => {
       const mas = DY.masechtosInSeder(s.en);
       const total = mas.reduce((n, m) => n + countMasechta(m.en), 0);
@@ -301,21 +386,30 @@ function viewSeder(r) {
 
 function viewMasechta(r) {
   const m = DY.BYEN[r.masechta];
+  if (!m) return crumbs([["Browse", "browse"]], "—") + `<div class="empty-mini">That masechta isn't available.</div>`;
   let cells = "";
   for (let d = m.firstDaf; d <= m.lastDaf; d++) {
-    const has = State.byDaf.has(dafKey(m.en, d));
-    cells += `<button class="daf-cell ${has ? "has" : "future"}" data-daf="${esc(m.en)}|${d}"><span class="he">${esc(window.HebCal ? window.HebCal.gematria(d) : d)}</span><span class="n">${d}</span></button>`;
+    const has = State.byDaf.has(dafKey(m.en, d)), lrn = isLearned(m.en, d);
+    cells += `<button class="daf-cell ${has ? "has" : "future"}${lrn ? " learned" : ""}" data-daf="${esc(m.en)}|${d}"><span class="he">${esc(window.HebCal ? window.HebCal.gematria(d) : d)}</span><span class="n">${d}</span>${lrn ? '<span class="cell-chk" aria-label="learned">✓</span>' : ""}</button>`;
   }
+  const ln = learnedInMasechta(m.en);
   return crumbs([["Browse", "browse"], [DY.sederHe(m.seder), "seder", { seder: m.seder }]], m.he) +
     `<div class="center muted" style="font-size:13px;margin:8px 0 2px">${countMasechta(m.en)} of ${m.dapim} dapim given · tap any daf to read it</div>
+     ${ln ? `<div class="mas-prog">${progressBar(ln, m.dapim, { label: "Learned in " + m.en })}</div>` : ""}
      <div class="daf-grid">${cells}</div>`;
 }
 
 function viewDaf(r) {
+  if (!r.id || r.id.indexOf("|") < 0) return `<div class="empty-mini">Select a daf to read.</div>`;
   const [masechta, dafS] = r.id.split("|"); const daf = +dafS;
   const m = DY.BYEN[masechta], shiur = shiurFor(masechta, daf);
   const mode = r.mode || State._dafMode || "daf";
   const heT = `${m ? m.he : masechta} ${heDaf(daf)}`;
+  const lrn = isLearned(masechta, daf);
+  const learnCtl = `<div class="daf-progress">
+       <button class="learn-toggle ${lrn ? "on" : ""}" data-learn="${esc(masechta)}|${daf}" aria-pressed="${lrn}">${lrn ? "✓ Learned" : "Mark as learned"}</button>
+       <span class="learn-meta">${esc(masechta)}: ${learnedInMasechta(masechta)} / ${m ? m.dapim : "?"} dapim learned</span>
+     </div>`;
   const media = shiur ? `
     <div class="daf-media">
       <a class="btn solid sm" data-play="${shiur.id}">▶ Listen</a>
@@ -334,10 +428,11 @@ function viewDaf(r) {
          <button class="daynav next" data-daynav="1" aria-label="Next daf — whole page" title="Next daf (whole page)"${dafStep(masechta, daf, 1) ? "" : " disabled"}>›</button>
        </div>
        ${shiur ? `<div class="meta">Given ${dateLine(shiur.recorded || shiur.posted)} · ${fmtDur(shiur.duration)}</div>` : ""}</div>
+     ${learnCtl}
      ${media}${sponsor}
      <div class="daf-toolbar">
        <span class="ttl">The Daf</span>
-       <span class="seg" id="dafMode">${["daf", "he", "en", "both"].map(x => `<button data-mode="${x}" class="${x === mode ? "on" : ""}"${x === "daf" ? ' title="The full page — Gemara, Rashi &amp; Tosafos, as printed"' : ""}>${({ daf: "Daf", he: "עברית", en: "English", both: "Both" })[x]}</button>`).join("")}</span>
+       <span class="seg" id="dafMode" role="group" aria-label="Daf display mode">${["daf", "he", "en", "both"].map(x => `<button data-mode="${x}" class="${x === mode ? "on" : ""}" aria-pressed="${x === mode}"${x === "daf" ? ' title="The full page — Gemara, Rashi &amp; Tosafos, as printed"' : ""}>${({ daf: "Daf", he: "עברית", en: "English", both: "Both" })[x]}</button>`).join("")}</span>
        <button class="fs-btn" id="dafFsBtn" aria-label="Read full screen" title="Read full screen">⛶</button>
      </div>
      <div class="daf-read">
@@ -432,9 +527,9 @@ function renderDafLayout(masechta, daf, data, comm) {
    Order matches the printed daf: תוספות (left) · גמרא (center) · רש"י (right). */
 function dafColTabs() {
   const cur = State._dafCol || "gemara";
-  return `<div class="daf-col-tabs">` +
+  return `<div class="daf-col-tabs" role="tablist" aria-label="Daf column">` +
     [["tosafos", "תוספות"], ["gemara", "גמרא"], ["rashi", 'רש"י']].map(([k, l]) =>
-      `<button data-dcol="${k}" class="${k === cur ? "on" : ""}">${l}</button>`).join("") +
+      `<button data-dcol="${k}" role="tab" aria-selected="${k === cur}" class="${k === cur ? "on" : ""}">${l}</button>`).join("") +
     `</div>`;
 }
 function applyDafCol(box) {        // reflect the chosen column as a class on the daf container
@@ -444,7 +539,7 @@ function applyDafCol(box) {        // reflect the chosen column as a class on th
 function selectDafCol(col) {
   State._dafCol = col;
   [$("#dafText"), $("#rdBody")].forEach(b => b && applyDafCol(b));   // covers the in-page daf and the full-screen reader
-  $$("[data-dcol]").forEach(b => b.classList.toggle("on", b.dataset.dcol === col));
+  $$("[data-dcol]").forEach(b => { const on = b.dataset.dcol === col; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
 }
 
 function renderAmud(seg, mode) {
@@ -478,19 +573,25 @@ function dayNav(dir) {                           // top arrows — whole lecture
    and never touches the underlying page — so the shiur (audio or video) keeps
    playing untouched while you read ahead or back. */
 const Reader = { masechta: null, daf: null, mode: "daf", open: false };
+let _readerClosing = false, _readerOpener = null;
 function openReader(masechta, daf, mode) {
   Reader.masechta = masechta; Reader.daf = +daf; Reader.mode = mode || State._dafMode || "daf"; Reader.open = true;
   const r = $("#reader"); if (!r) return;
+  _readerOpener = document.activeElement;
   r.hidden = false; r.setAttribute("aria-hidden", "false");
   document.documentElement.classList.add("reader-open");
   renderReader();
+  $("#view")?.setAttribute("inert", "");                // background content is inert; the player (z-index above the reader) stays controllable
+  setTimeout(() => $("#rdClose")?.focus(), 0);           // move focus into the overlay
   try { history.pushState({ ...history.state, reader: true }, ""); } catch {}  // Back / Esc closes the reader first
 }
-function closeReader() { if (Reader.open) { try { history.back(); } catch { hideReader(); } } }  // routed through popstate so #view is left intact
+function closeReader() { if (Reader.open && !_readerClosing) { _readerClosing = true; try { history.back(); } catch { hideReader(); } } }  // routed through popstate so #view is left intact
 function hideReader() {
-  Reader.open = false;
+  Reader.open = false; _readerClosing = false;
   const r = $("#reader"); if (r) { r.hidden = true; r.setAttribute("aria-hidden", "true"); }
   document.documentElement.classList.remove("reader-open");
+  $("#view")?.removeAttribute("inert");
+  try { _readerOpener && _readerOpener.focus(); } catch {}   // restore focus to whatever opened the reader
   syncInpageRead(Reader.masechta, Reader.daf);   // leave the in-page reader where we stopped
 }
 function syncInpageRead(masechta, daf) {
@@ -512,7 +613,7 @@ function renderReader() {
       <div class="rd-side rd-left"><button class="rd-ic close" id="rdClose" aria-label="Close full screen">✕</button></div>
       <div class="rd-title"><span class="he">${esc(dafTitleHe(m, d))}</span><span class="en">${esc(m)} · Daf ${d}</span></div>
       <div class="rd-side rd-right">
-        <span class="seg rd-seg" id="rdMode">${["daf", "he", "en", "both"].map(x => `<button data-rmode="${x}" class="${x === mode ? "on" : ""}">${({ daf: "Daf", he: "עברית", en: "English", both: "Both" })[x]}</button>`).join("")}</span>
+        <span class="seg rd-seg" id="rdMode" role="group" aria-label="Daf display mode">${["daf", "he", "en", "both"].map(x => `<button data-rmode="${x}" class="${x === mode ? "on" : ""}" aria-pressed="${x === mode}">${({ daf: "Daf", he: "עברית", en: "English", both: "Both" })[x]}</button>`).join("")}</span>
         ${shiur ? `<button class="rd-ic play" id="rdPlay" aria-label="Play this shiur" title="Play this daf's shiur">▶</button>` : ""}
       </div>
     </div>
@@ -542,11 +643,16 @@ function runSearch(q) {
   wireRows(box);
 }
 function viewMyStuff() {
-  const f = favs(), p = getStore(CFG.progKey);
+  const f = favs(), p = getStore(CFG.progKey), lt = learnedTotal();
   const fav = State.all.filter(l => f[l.id]).sort((a, b) => f[b.id] - f[a.id]);
   const pr = State.all.filter(l => p[l.id]).sort((a, b) => p[b.id] - p[a.id]).slice(0, 12);
   const sec = (t, list, e) => `<div class="section">${t}</div>` + (list.length ? `<div class="rows">${list.map(rowHtml).join("")}</div>` : `<div class="empty-mini">${e}</div>`);
-  return `<div class="pagetitle">My Stuff</div>` + sec("Continue", pr, "Play a shiur and it appears here.") + sec("Saved", fav, "Tap ☆ on a daf to save it.");
+  const head = (lt || lastInProgress())
+    ? `<div class="mystuff-top">${progressBar(lt, shasTotal(), { label: "Your Shas progress" })}${upNextLink()}</div>`
+    : `<p class="lead">Your progress lives on this device — mark dapim as learned and your spot is saved automatically.</p>`;
+  return `<div class="pagetitle">My Stuff</div>` + head
+    + sec("Continue", pr, "Play a shiur and it appears here.")
+    + sec("Saved", fav, "Tap ☆ Save on a daf to keep it here.");
 }
 
 /* ---------- Shiurim (non-daf: parsha, holidays, machshava, …) ---------- */
@@ -571,7 +677,7 @@ function viewCategory(r) {
   let body;
   if (/paras|holiday/i.test(cat)) {                 // group by parsha / yom tov (the series)
     const groups = {};
-    for (const l of list) (groups[l.series || "—"] ||= []).push(l);
+    for (const l of list) { const gk = l.series || "—"; (groups[gk] || (groups[gk] = [])).push(l); }
     const names = Object.keys(groups).sort((a, b) => Math.max(...groups[b].map(x => Date.parse(x.posted || 0) || 0)) - Math.max(...groups[a].map(x => Date.parse(x.posted || 0) || 0)));
     body = names.map(nm => `<div class="topic-group">${esc(nm)}</div><div class="rows">${groups[nm].map(rowHtml).join("")}</div>`).join("");
   } else {
@@ -698,13 +804,13 @@ function wireView(r) {
   v.querySelectorAll("[data-daf]").forEach(b => b.onclick = () => route("daf", { id: b.dataset.daf }));
   v.querySelectorAll("[data-go]").forEach(a => a.onclick = () => route(a.dataset.go, JSON.parse(a.dataset.p || "{}")));
   v.querySelectorAll("[data-route]").forEach(b => b.onclick = () => route(b.dataset.route));
-  v.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => { navigator.clipboard?.writeText(b.dataset.copy); toast("Email copied"); });
+  v.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => { const p = navigator.clipboard && navigator.clipboard.writeText(b.dataset.copy); if (p && p.then) p.then(() => toast("Email copied")).catch(() => toast(b.dataset.copy)); else toast(b.dataset.copy); });
   v.querySelectorAll("[data-sponsor-daf]").forEach(b => b.onclick = e => { e.stopPropagation(); const [m, d] = b.dataset.sponsorDaf.split("|"); route("sponsor", { pre: { kind: "daf", masechta: m, daf: +d } }); });
   v.querySelectorAll("[data-watch]").forEach(b => b.onclick = e => { e.stopPropagation(); watchVideo(+b.dataset.watch); });
   v.querySelectorAll("[data-watchdaf]").forEach(b => b.onclick = () => route("daf", { id: b.dataset.watchdaf, watch: true }));
   v.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => {
     const mode = b.dataset.mode; State._dafMode = mode;
-    $$("#dafMode button").forEach(x => x.classList.toggle("on", x.dataset.mode === mode));
+    $$("#dafMode button").forEach(x => { const on = x.dataset.mode === mode; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
     const box = $("#dafText"); if (box) { box.dataset.mode = mode; hydrateDaf(); } // re-render text only; leaves any playing video intact
   });
   const dr = $(".daf-read");   // these controls are re-rendered inside #dafText each flip → delegate
@@ -717,6 +823,13 @@ function wireView(r) {
   wireRows(v);
   const q = $("#q"); if (q) { q.oninput = () => runSearch(q.value); q.focus(); runSearch(""); }
   v.querySelectorAll("[data-fav]").forEach(b => { if (!b.classList.contains("row")) b.onclick = e => { e.stopPropagation(); toggleFav(+b.dataset.fav); rerender(); }; });
+  v.querySelectorAll("[data-learn]").forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const [m, ds] = b.dataset.learn.split("|"), d = +ds, on = toggleLearned(m, d);
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); b.textContent = on ? "✓ Learned" : "Mark as learned";
+    const meta = b.parentElement.querySelector(".learn-meta"); if (meta) { const mm = DY.BYEN[m]; meta.textContent = `${m}: ${learnedInMasechta(m)} / ${mm ? mm.dapim : "?"} dapim learned`; }
+    toast(on ? `Marked ${esc(m)} ${d} as learned ✓` : `Unmarked ${esc(m)} ${d}`);
+  });
   wireSponsor();
 }
 function wireSponsor() {
@@ -732,7 +845,9 @@ function wireRows(scope) {
 function playId(id) {
   const lec = State.all.find(l => l.id === id); if (!lec) return;
   const local = State.content.options?.preferSelfHosted !== false && lec.localAudio;
-  Player.load(lec, true, local ? lec.localAudio : lec.audio, !!local); noteProgress(id);
+  const url = local ? lec.localAudio : lec.audio;
+  if (!url) { toast("This shiur isn't available to play yet."); return; }
+  Player.load(lec, true, url, !!local); noteProgress(id);
 }
 // The TorahAnytime source carries a ~7.5s logo intro. Our self-hosted copies are
 // already trimmed; for any not-yet-self-hosted shiur we fall back to TA and skip
@@ -759,7 +874,12 @@ function watchVideo(id) {
   slot.innerHTML = `<video class="daf-video" src="${esc(src)}" controls playsinline preload="metadata" autoplay></video>`;
   const v = slot.querySelector("video");
   v.addEventListener("play", () => { try { Player.audio?.pause(); } catch {} pauseVideos(v); });  // video wins → silence the audio player
-  if (!local) skipIntroOnce(v, lec.introTrimmed || INTRO_SEC);   // TA fallback still has the intro
+  const resumeTo = resumePoint(id);
+  if (resumeTo) v.addEventListener("loadedmetadata", () => { try { v.currentTime = resumeTo; } catch {} toast(`Resumed from ${clock(resumeTo)}`); }, { once: true });
+  else if (!local) skipIntroOnce(v, lec.introTrimmed || INTRO_SEC);   // TA fallback still has the intro
+  let lastSave = 0;
+  v.addEventListener("timeupdate", () => { const cur = v.currentTime || 0, dur = v.duration || 0; if (dur && cur > 8 && cur < dur - 8 && Date.now() - lastSave > 4000) { lastSave = Date.now(); savePos(id, cur, dur); } });
+  v.addEventListener("ended", () => { clearPos(id); markShiurLearned(lec); });
   v.play().catch(() => {});
   noteProgress(id);
 }
@@ -773,15 +893,20 @@ const Player = {
     if (this.audio) { this.audio.pause(); this.audio.src = ""; }
     this.audio = new Audio(); this.audio.preload = "metadata";
     this.audio.ontimeupdate = () => this.tick();
-    this.audio.onloadedmetadata = () => { if (this._skipPending && !this.local) { try { this.audio.currentTime = this.lec?.introTrimmed || INTRO_SEC; } catch {} } this._skipPending = false; this.tick(); };
-    this.audio.onplay = () => { pauseVideos(); this.ctrls(); }; this.audio.onpause = () => this.ctrls(); this.audio.onended = () => this.ctrls();
+    this.audio.onloadedmetadata = () => {
+      if (this._resumeTo) { try { this.audio.currentTime = this._resumeTo; } catch {} toast(`Resumed from ${clock(this._resumeTo)}`); this._resumeTo = 0; this._skipPending = false; }
+      else if (this._skipPending && !this.local) { try { this.audio.currentTime = this.lec?.introTrimmed || INTRO_SEC; } catch {} }
+      this._skipPending = false; this.tick();
+    };
+    this.audio.onplay = () => { pauseVideos(); this.ctrls(); }; this.audio.onpause = () => this.ctrls();
+    this.audio.onended = () => { if (this.lec) { clearPos(this.lec.id); markShiurLearned(this.lec); } this.ctrls(); };
     this.audio.onerror = () => { if (this.lec && this.local) { this.local = false; this._skipPending = true; this.audio.src = this.lec.audio; this.audio.play().catch(() => {}); this.bar(); } };
   },
-  load(lec, autoplay, url, local) { this.lec = lec; this.local = !!local; this._skipPending = !local; this.audio.src = url || lec.audio; this.audio.playbackRate = this.speed; $("#player").classList.remove("hidden"); $("#app")?.classList.add("player-active"); document.documentElement.classList.add("player-on"); this.bar(); if (autoplay) this.audio.play().catch(() => {}); },
+  load(lec, autoplay, url, local) { this.lec = lec; this.local = !!local; this._skipPending = !local; this._resumeTo = resumePoint(lec.id); this._lastSave = 0; this.audio.src = url || lec.audio; this.audio.playbackRate = this.speed; $("#player").classList.remove("hidden"); $("#app")?.classList.add("player-active"); document.documentElement.classList.add("player-on"); this.bar(); if (autoplay) this.audio.play().catch(() => {}); },
   toggle() { this.audio.paused ? this.audio.play().catch(() => {}) : this.audio.pause(); },
   skip(s) { this.audio.currentTime = Math.max(0, Math.min(this.audio.duration || 1e9, this.audio.currentTime + s)); },
   setSpeed() { const o = [1, 1.25, 1.5, 1.75, 2, 0.75]; this.speed = o[(o.indexOf(this.speed) + 1) % o.length]; this.audio.playbackRate = this.speed; this.ctrls(); },
-  hide() { $("#player").classList.add("hidden"); $("#app")?.classList.remove("player-active"); document.documentElement.classList.remove("player-on"); this.audio.pause(); },
+  hide() { if (this.lec) { const cur = this.audio.currentTime || 0, dur = this.audio.duration || 0; if (dur && cur > 8 && cur < dur - 8) savePos(this.lec.id, cur, dur); } $("#player").classList.add("hidden"); $("#app")?.classList.remove("player-active"); document.documentElement.classList.remove("player-on"); this.audio.pause(); },
   bar() {
     const k = this.lec._dk, label = k && k.daf ? `${k.masechta} ${k.daf}` : "";
     $("#player").innerHTML = `<button class="x" id="pX" aria-label="Close">✕</button>
@@ -797,7 +922,7 @@ const Player = {
     c.innerHTML = `<button id="pB" aria-label="Back 10s">↺10</button><button class="pp" id="pP" aria-label="${playing ? "Pause" : "Play"}">${playing ? "❚❚" : "▶"}</button><button id="pF" aria-label="Forward 10s">10↻</button><button class="pill" id="pS" aria-label="Speed">${this.speed}×</button>`;
     $("#pP").onclick = () => this.toggle(); $("#pB").onclick = () => this.skip(-10); $("#pF").onclick = () => this.skip(10); $("#pS").onclick = () => this.setSpeed();
   },
-  tick() { const cur = this.audio.currentTime || 0, dur = this.audio.duration || 0, c = $("#pCur"), d = $("#pDur"), s = $("#pSeek"); if (c) c.textContent = clock(cur); if (d) d.textContent = dur ? clock(dur) : "--:--"; if (s && dur) { s.value = (cur / dur) * 1000; s.style.backgroundSize = (cur / dur) * 100 + "% 100%"; } },
+  tick() { const cur = this.audio.currentTime || 0, dur = this.audio.duration || 0, c = $("#pCur"), d = $("#pDur"), s = $("#pSeek"); if (c) c.textContent = clock(cur); if (d) d.textContent = dur ? clock(dur) : "--:--"; if (s && dur) { s.value = (cur / dur) * 1000; s.style.backgroundSize = (cur / dur) * 100 + "% 100%"; s.setAttribute("aria-valuetext", clock(cur) + " of " + clock(dur)); } if (this.lec && dur && cur > 8 && cur < dur - 8 && !this.audio.paused) { const now = Date.now(); if (now - (this._lastSave || 0) > 4000) { this._lastSave = now; savePos(this.lec.id, cur, dur); } } },
 };
 
 /* =====================================================================
@@ -821,7 +946,7 @@ function openEditor() {
   openMenu();
   $("#e_apply").onclick = applyEditor;
   $("#e_dl").onclick = () => { const c2 = gatherEditor(); const b = new Blob([JSON.stringify(c2, null, 2)], { type: "application/json" }); const a = el("a"); a.href = URL.createObjectURL(b); a.download = "content.json"; a.click(); };
-  $("#e_reset").onclick = () => { localStorage.removeItem(CFG.contentLocalKey); location.reload(); };
+  $("#e_reset").onclick = () => { try { localStorage.removeItem(CFG.contentLocalKey); } catch {} location.reload(); };
 }
 function gatherEditor() {
   const c = JSON.parse(JSON.stringify(State.content));
