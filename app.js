@@ -283,6 +283,7 @@ window.addEventListener("popstate", e => {
 });
 function rerender() {
   const v = $("#view"); if (!v) return;
+  if (Player.isVideo) Player.hide();                         // an in-page video can't survive a view swap — save its spot and drop the bar
   $$("#view video").forEach(vid => { try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {} });   // flush any in-page video before the view is replaced (no detached audio)
   resetReadMin();                                            // a fresh view starts with full top chrome
   const r = State.route;
@@ -940,82 +941,109 @@ function playId(id) {
   const local = State.content.options?.preferSelfHosted !== false && lec.localAudio;
   const url = local ? lec.localAudio : lec.audio;
   if (!url) { toast("This shiur isn't available to play yet."); return; }
-  Player.load(lec, true, url, !!local); noteProgress(id);
+  Player.playAudio(lec, url, !!local); noteProgress(id);
 }
 // The TorahAnytime source carries a ~7.5s logo intro. Our self-hosted copies are
 // already trimmed; for any not-yet-self-hosted shiur we fall back to TA and skip
 // the intro client-side, so the intro is never shown either way.
 const INTRO_SEC = 7.5;
-function skipIntroOnce(media, seconds) {
-  let done = false;
-  const seek = () => {
-    if (done || !isFinite(media.duration)) return;
-    done = true;
-    if (media.currentTime < seconds - 0.3) { try { media.currentTime = seconds; } catch {} }
-  };
-  media.addEventListener("loadedmetadata", seek, { once: true });
-  media.addEventListener("canplay", seek, { once: true });
+// Single-active-media: only one source makes sound at a time. Pause the player's
+// persistent <audio> AND every in-page <video> except the one passed in.
+function pauseAllExcept(except) {
+  try { if (Player.audio && Player.audio !== except) Player.audio.pause(); } catch {}
+  $$("video").forEach(v => { if (v !== except) { try { v.pause(); } catch {} } });
 }
-// Single-active-media: pause every <video> (optionally except one). The bottom
-// audio player and an in-page video must never sound at the same time.
-function pauseVideos(except) { $$("video").forEach(v => { if (v !== except) { try { v.pause(); } catch {} } }); }
+// Watch a shiur's video: the picture plays in-page, but the SAME compact bottom
+// transport that drives "Listen" is bound to it — so play / pause / seek / speed
+// stay pinned at the bottom while you scroll down to read. One player, both modes.
 function watchVideo(id) {
   const lec = State.all.find(l => l.id === id); if (!lec) return;
   const slot = $("#videoSlot"); if (!slot) return;
   const local = State.content.options?.preferSelfHosted !== false && lec.localVideo;
   const src = local ? lec.localVideo : lec.video; if (!src) return;
-  slot.innerHTML = `<video class="daf-video" src="${esc(src)}" controls playsinline preload="metadata" autoplay></video>`;
-  const v = slot.querySelector("video");
-  v.addEventListener("play", () => { try { Player.audio?.pause(); } catch {} pauseVideos(v); });  // video wins → silence the audio player
-  const resumeTo = resumePoint(id);
-  if (resumeTo) v.addEventListener("loadedmetadata", () => { try { v.currentTime = resumeTo; } catch {} toast(`Resumed from ${clock(resumeTo)}`); }, { once: true });
-  else if (!local) skipIntroOnce(v, lec.introTrimmed || INTRO_SEC);   // TA fallback still has the intro
-  let lastSave = 0;
-  v.addEventListener("timeupdate", () => { const cur = v.currentTime || 0, dur = v.duration || 0; if (dur && cur > 8 && cur < dur - 8 && Date.now() - lastSave > 4000) { lastSave = Date.now(); savePos(id, cur, dur); } });
-  v.addEventListener("ended", () => { clearPos(id); markShiurLearned(lec); });
-  v.play().catch(() => {});
+  slot.innerHTML = `<video class="daf-video" controls playsinline preload="metadata"></video>`;
+  Player.playVideo(slot.querySelector("video"), lec, src, !!local);
   noteProgress(id);
 }
 
 /* =====================================================================
-   PLAYER (native audio)
+   PLAYER — one compact transport for BOTH audio and video.
+   `media` is whichever element is live: a persistent <audio> for "Listen",
+   or an in-page <video> for "Watch". Same bar, same controls, either way —
+   so a video watcher keeps play/seek/speed at the bottom while reading.
    ===================================================================== */
 const Player = {
-  audio: null, lec: null, speed: 1, local: false,
+  audio: null, media: null, lec: null, speed: 1, local: false, isVideo: false,
   mount() {
-    if (this.audio) { this.audio.pause(); this.audio.src = ""; }
+    if (this.audio) { try { this.audio.pause(); this.audio.src = ""; } catch {} }
     this.audio = new Audio(); this.audio.preload = "metadata";
-    this.audio.ontimeupdate = () => this.tick();
-    this.audio.onloadedmetadata = () => {
-      if (this._resumeTo) { try { this.audio.currentTime = this._resumeTo; } catch {} toast(`Resumed from ${clock(this._resumeTo)}`); this._resumeTo = 0; this._skipPending = false; }
-      else if (this._skipPending && !this.local) { try { this.audio.currentTime = this.lec?.introTrimmed || INTRO_SEC; } catch {} }
-      this._skipPending = false; this.tick();
-    };
-    this.audio.onplay = () => { pauseVideos(); this.ctrls(); }; this.audio.onpause = () => this.ctrls();
-    this.audio.onended = () => { if (this.lec) { clearPos(this.lec.id); markShiurLearned(this.lec); } this.ctrls(); };
-    this.audio.onerror = () => { if (this.lec && this.local) { this.local = false; this._skipPending = true; this.audio.src = this.lec.audio; this.audio.play().catch(() => {}); this.bar(); } };
+    this._bind(this.audio);
   },
-  load(lec, autoplay, url, local) { this.lec = lec; this.local = !!local; this._skipPending = !local; this._resumeTo = resumePoint(lec.id); this._lastSave = 0; this.audio.src = url || lec.audio; this.audio.playbackRate = this.speed; $("#player").classList.remove("hidden"); $("#app")?.classList.add("player-active"); document.documentElement.classList.add("player-on"); this.bar(); if (autoplay) this.audio.play().catch(() => {}); },
-  toggle() { this.audio.paused ? this.audio.play().catch(() => {}) : this.audio.pause(); },
-  skip(s) { this.audio.currentTime = Math.max(0, Math.min(this.audio.duration || 1e9, this.audio.currentTime + s)); },
-  setSpeed() { const o = [1, 1.25, 1.5, 1.75, 2, 0.75]; this.speed = o[(o.indexOf(this.speed) + 1) % o.length]; this.audio.playbackRate = this.speed; this.ctrls(); },
-  hide() { if (this.lec) { const cur = this.audio.currentTime || 0, dur = this.audio.duration || 0; if (dur && cur > 8 && cur < dur - 8) savePos(this.lec.id, cur, dur); } $("#player").classList.add("hidden"); $("#app")?.classList.remove("player-active"); document.documentElement.classList.remove("player-on"); this.audio.pause(); },
+  // Wire one media element's events to the player. Guarded so each element binds
+  // once; every handler no-ops unless that element is the active `media`.
+  _bind(m) {
+    if (m._pbound) return; m._pbound = true;
+    m.addEventListener("timeupdate", () => { if (this.media === m) this.tick(); });
+    m.addEventListener("loadedmetadata", () => {
+      if (this.media !== m) return;
+      if (this._resumeTo) { try { m.currentTime = this._resumeTo; } catch {} toast(`Resumed from ${clock(this._resumeTo)}`); this._resumeTo = 0; }
+      else if (this._skipPending && !this.local) { try { m.currentTime = this.lec?.introTrimmed || INTRO_SEC; } catch {} }   // TA fallback still carries the intro
+      this._skipPending = false; this.tick();
+    });
+    m.addEventListener("play", () => { if (this.media === m) { pauseAllExcept(m); this.ctrls(); } });
+    m.addEventListener("pause", () => { if (this.media === m) this.ctrls(); });
+    m.addEventListener("ended", () => { if (this.media === m && this.lec) { clearPos(this.lec.id); markShiurLearned(this.lec); this.ctrls(); } });
+    m.addEventListener("error", () => { if (this.media === m && this.lec && this.local && !this.isVideo) { this.local = false; this._skipPending = true; this.audio.src = this.lec.audio; this.audio.play().catch(() => {}); this.bar(); } });
+  },
+  playAudio(lec, url, local) {
+    this.lec = lec; this.local = !!local; this.isVideo = false; this.media = this.audio;
+    this._skipPending = !local; this._resumeTo = resumePoint(lec.id); this._lastSave = 0;
+    pauseAllExcept(this.audio);
+    this.audio.src = url || lec.audio; this.audio.playbackRate = this.speed;
+    this.show(); this.bar(); this.audio.play().catch(() => {});
+  },
+  playVideo(v, lec, url, local) {
+    this.lec = lec; this.local = !!local; this.isVideo = true; this.media = v;
+    this._skipPending = !local; this._resumeTo = resumePoint(lec.id); this._lastSave = 0;
+    this._bind(v); pauseAllExcept(v);
+    v.playbackRate = this.speed; v.src = url;
+    this.show(); this.bar(); v.play().catch(() => {});
+  },
+  show() { $("#player").classList.remove("hidden"); $("#app")?.classList.add("player-active"); document.documentElement.classList.add("player-on"); },
+  toggle() { const m = this.media; if (!m) return; m.paused ? m.play().catch(() => {}) : m.pause(); },
+  skip(s) { const m = this.media; if (!m) return; m.currentTime = Math.max(0, Math.min(m.duration || 1e9, m.currentTime + s)); },
+  setSpeed() { const o = [1, 1.25, 1.5, 1.75, 2, 0.75]; this.speed = o[(o.indexOf(this.speed) + 1) % o.length]; if (this.media) this.media.playbackRate = this.speed; this.ctrls(); },
+  hide() {
+    const m = this.media;
+    if (m && this.lec) { const cur = m.currentTime || 0, dur = m.duration || 0; if (dur && cur > 8 && cur < dur - 8) savePos(this.lec.id, cur, dur); }
+    $("#player").classList.add("hidden"); $("#app")?.classList.remove("player-active"); document.documentElement.classList.remove("player-on");
+    try { m && m.pause(); } catch {}
+    this.isVideo = false;
+  },
   bar() {
-    const k = this.lec._dk, label = k && k.daf ? `${k.masechta} ${k.daf}` : "";
-    $("#player").innerHTML = `<button class="x" id="pX" aria-label="Close">✕</button>
-      <div class="now"><b>${esc(label || this.lec.title)}</b></div>
-      <div class="scrub"><span class="t" id="pCur">0:00</span><input type="range" id="pSeek" min="0" max="1000" value="0" aria-label="Seek"><span class="t r" id="pDur">--:--</span></div>
-      <div class="ctrls" id="pCtrls"></div>`;
+    if (!this.lec) return;
+    const k = this.lec._dk, label = k && k.daf ? `${k.masechta} ${k.daf}` : (this.lec.title || "");
+    $("#player").innerHTML = `<div class="scrub"><input type="range" id="pSeek" min="0" max="1000" value="0" aria-label="Seek"></div>
+      <div class="prow">
+        <div class="pnow"><span class="ptype" aria-hidden="true">${this.isVideo ? "▦" : "♪"}</span><span class="ptxt"><b id="pTitle">${esc(label)}</b><span class="ptime"><span id="pCur">0:00</span> / <span id="pDur">--:--</span></span></span></div>
+        <div class="ctrls" id="pCtrls"></div>
+        <button class="x" id="pX" aria-label="Close player">✕</button>
+      </div>`;
     $("#pX").onclick = () => this.hide();
-    $("#pSeek").oninput = e => { if (this.audio.duration) this.audio.currentTime = (e.target.value / 1000) * this.audio.duration; };
+    $("#pSeek").oninput = e => { const m = this.media; if (m && m.duration) m.currentTime = (e.target.value / 1000) * m.duration; };
     this.ctrls(); this.tick();
   },
   ctrls() {
-    const c = $("#pCtrls"); if (!c) return; const playing = !this.audio.paused && !this.audio.ended;
-    c.innerHTML = `<button id="pB" aria-label="Back 10s">↺10</button><button class="pp" id="pP" aria-label="${playing ? "Pause" : "Play"}">${playing ? "❚❚" : "▶"}</button><button id="pF" aria-label="Forward 10s">10↻</button><button class="pill" id="pS" aria-label="Speed">${this.speed}×</button>`;
+    const c = $("#pCtrls"); if (!c) return; const m = this.media, playing = m && !m.paused && !m.ended;
+    c.innerHTML = `<button id="pB" aria-label="Back 10 seconds">↺<span class="d">10</span></button><button class="pp" id="pP" aria-label="${playing ? "Pause" : "Play"}">${playing ? "❚❚" : "▶"}</button><button id="pF" aria-label="Forward 10 seconds"><span class="d">10</span>↻</button><button class="pill" id="pS" aria-label="Playback speed">${this.speed}×</button>`;
     $("#pP").onclick = () => this.toggle(); $("#pB").onclick = () => this.skip(-10); $("#pF").onclick = () => this.skip(10); $("#pS").onclick = () => this.setSpeed();
   },
-  tick() { const cur = this.audio.currentTime || 0, dur = this.audio.duration || 0, c = $("#pCur"), d = $("#pDur"), s = $("#pSeek"); if (c) c.textContent = clock(cur); if (d) d.textContent = dur ? clock(dur) : "--:--"; if (s && dur) { s.value = (cur / dur) * 1000; s.style.backgroundSize = (cur / dur) * 100 + "% 100%"; s.setAttribute("aria-valuetext", clock(cur) + " of " + clock(dur)); } if (this.lec && dur && cur > 8 && cur < dur - 8 && !this.audio.paused) { const now = Date.now(); if (now - (this._lastSave || 0) > 4000) { this._lastSave = now; savePos(this.lec.id, cur, dur); } } },
+  tick() {
+    const m = this.media, cur = m ? m.currentTime || 0 : 0, dur = m ? m.duration || 0 : 0, c = $("#pCur"), d = $("#pDur"), s = $("#pSeek");
+    if (c) c.textContent = clock(cur); if (d) d.textContent = dur ? clock(dur) : "--:--";
+    if (s && dur) { s.value = (cur / dur) * 1000; s.style.backgroundSize = (cur / dur) * 100 + "% 100%"; s.setAttribute("aria-valuetext", clock(cur) + " of " + clock(dur)); }
+    if (this.lec && dur && cur > 8 && cur < dur - 8 && m && !m.paused) { const now = Date.now(); if (now - (this._lastSave || 0) > 4000) { this._lastSave = now; savePos(this.lec.id, cur, dur); } }
+  },
 };
 
 /* =====================================================================
