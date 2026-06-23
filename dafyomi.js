@@ -66,6 +66,7 @@
 
   function dafForDate(d) {
     const ms = (d instanceof Date) ? Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) : d;
+    if (!Number.isFinite(ms)) return null;               // explicit guard for Invalid Date / non-numeric input
     let idx = Math.floor((ms - ANCHOR) / 864e5) % CYCLE;
     if (idx < 0) idx += CYCLE;
     for (const m of SHAS) { if (idx < m.dapim) return { masechta: m.en, he: m.he, daf: idx + m.firstDaf }; idx -= m.dapim; }

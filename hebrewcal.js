@@ -64,6 +64,7 @@
   // ---- gematria ----
   const G = { 1: "א", 2: "ב", 3: "ג", 4: "ד", 5: "ה", 6: "ו", 7: "ז", 8: "ח", 9: "ט", 10: "י", 20: "כ", 30: "ל", 40: "מ", 50: "נ", 60: "ס", 70: "ע", 80: "פ", 90: "צ", 100: "ק", 200: "ר", 300: "ש", 400: "ת" };
   function gematria(n) {
+    n = Math.round(n); if (!Number.isFinite(n) || n < 1) return "";   // reject junk / negative / zero (e.g. a crafted ?id=…|-1 URL) instead of emitting "undefined"
     let s = "", h = Math.floor(n / 100) * 100; n = n % 100;
     while (h > 0) { const take = Math.min(h, 400); s += G[take]; h -= take; }
     if (n === 15) s += "טו"; else if (n === 16) s += "טז";
@@ -71,7 +72,7 @@
     return s;
   }
   function gematriaP(n) { // with geresh / gershayim
-    const s = gematria(n);
+    const s = gematria(n); if (!s) return s;            // no bare gershayim for empty input
     return s.length === 1 ? s + "׳" : s.slice(0, -1) + "״" + s.slice(-1);
   }
 
@@ -83,6 +84,7 @@
   }
 
   function fromDate(dt) { // JS Date (local) -> hebrew parts + formatted
+    if (!(dt instanceof Date) || isNaN(dt.getTime())) return null;   // invalid Date in -> null out (caller already guards the one live call site)
     const f = fixedFromGregorian(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
     const h = hebFromFixed(f);
     return {

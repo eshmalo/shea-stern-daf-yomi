@@ -62,9 +62,6 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 img { max-width: 100%; }
 ::selection { background: #e8d9c2; }
 
-/* a single reusable "unstyle a button" mixin via class list */
-.unbtn { -webkit-appearance: none; appearance: none; background: none; border: 0; margin: 0; padding: 0; font: inherit; color: inherit; text-align: left; }
-
 #app {
   max-width: var(--app); margin: 0 auto; min-height: 100vh; min-height: 100dvh; background: var(--paper);
   box-shadow: 0 0 0 1px rgba(33,30,24,.07), 0 18px 60px -18px rgba(33,30,24,.28);
@@ -132,7 +129,7 @@ main#view { flex: 1 0 auto; width: 100%; }
 .btn.solid:hover { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
 .btn.block { display: flex; width: 100%; }
 .btn.sm { padding: 7px 14px; font-size: 14px; }
-.textlink { color: var(--link); border-bottom: 1px solid color-mix(in srgb, var(--link) 45%, transparent); padding-bottom: 1px; }
+.textlink { appearance: none; -webkit-appearance: none; background: none; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--link) 45%, transparent); padding: 0 0 1px; font: inherit; cursor: pointer; color: var(--link); }
 .textlink:hover { border-bottom-color: var(--accent-2); text-decoration: none; }
 
 /* ---------- Today (hero band) ---------- */
@@ -143,8 +140,8 @@ main#view { flex: 1 0 auto; width: 100%; }
 .today .date { font-size: 14px; color: var(--ink-faint); margin-top: 8px; }
 .today .actions { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
 .adjacent { display: flex; justify-content: center; gap: 14px; margin-top: 18px; font-size: 14px; flex-wrap: wrap; }
-.adjacent a { color: var(--ink-soft); display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 14px; border: 1px solid var(--hair); border-radius: 999px; transition: border-color .14s, background .14s; }
-.adjacent a:hover { border-color: var(--hair-2); background: var(--paper-2); text-decoration: none; color: var(--ink); }
+.adjacent a, .adjacent button { appearance: none; -webkit-appearance: none; font: inherit; cursor: pointer; color: var(--ink-soft); display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 14px; border: 1px solid var(--hair); border-radius: 999px; background: none; transition: border-color .14s, background .14s; }
+.adjacent a:hover, .adjacent button:hover { border-color: var(--hair-2); background: var(--paper-2); text-decoration: none; color: var(--ink); }
 .adjacent .nm { font-family: var(--serif-he); direction: rtl; font-weight: 600; color: var(--accent); }
 
 /* ---------- list rows ---------- */
@@ -186,7 +183,7 @@ main#view { flex: 1 0 auto; width: 100%; }
 
 /* ---------- Masechta: daf grid ---------- */
 .crumbs { font-family: var(--sans); font-size: 12.5px; color: var(--ink-faint); margin: 8px 0 2px; letter-spacing: .01em; }
-.crumbs a { color: var(--ink-soft); } .crumbs b { color: var(--ink); font-weight: 600; }
+.crumbs a, .crumbs button { appearance: none; -webkit-appearance: none; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; color: var(--ink-soft); } .crumbs b { color: var(--ink); font-weight: 600; }
 /* Hebrew daf grid (the "calendar"): daf 2 starts top-right and flows right-to-left */
 .daf-grid { display: grid; direction: rtl; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 1px; background: var(--hair-2); border: 1px solid var(--hair-2); margin-top: 14px; border-radius: 4px; overflow: hidden; }
 .daf-cell { -webkit-appearance: none; appearance: none; border: 0; background: var(--paper); min-height: 52px; aspect-ratio: 1.1; display: grid; place-items: center; position: relative; color: var(--ink); transition: background .12s; }
@@ -266,7 +263,7 @@ html.reader-open { overflow: hidden; }
 .reader-bar .rd-title .he { font-family: var(--serif-he); direction: rtl; font-size: 21px; font-weight: 700; display: block; }
 .reader-bar .rd-title .en { font-family: var(--sans); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-top: 1px; }
 .reader-bar .rd-seg { flex: none; }
-.reader-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 24px 48px; max-width: 1040px; margin: 0 auto; width: 100%; }
+.reader-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 16px 24px 48px; max-width: 1040px; margin: 0 auto; width: 100%; }
 /* full-screen daf uses the width; single-column reading text stays a comfortable measure, centered */
 .reader-body .amud { max-width: 760px; margin-left: auto; margin-right: auto; }
 .reader-body .dafpage { max-width: 100%; }
@@ -518,4 +515,15 @@ html.is-phone #app.player-active { padding-bottom: calc(100px + env(safe-area-in
 html.is-phone .toast-wrap { bottom: calc(106px + env(safe-area-inset-bottom, 0px)); }
 html.is-phone.dy-min .bar { transform: translateY(-100%); }
 html.is-phone.dy-min .daf-colhead { top: 0; box-shadow: 0 8px 16px -12px rgba(33, 30, 24, .45); }
+
+/* Respect the OS "reduce motion" setting — collapse animations/transitions to
+   near-instant. State changes still apply; only the motion is removed. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 

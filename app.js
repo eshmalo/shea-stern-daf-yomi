@@ -25,7 +25,9 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h != null) n.innerHTML = h; return n; };
 const esc = s => (s ?? "").toString().replace(/[&<>"]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m]));
 // English daf text carries intentional Steinsaltz markup (<b>/<i>); escape everything, then re-allow a safe set
-const safeEn = s => esc(s).replace(/&lt;(\/?(?:b|strong|i|em|br|sup|sub))&gt;/gi, "<$1>");
+const safeEn = s => esc((s ?? "").toString().replace(/<\/?span[^>]*>/gi, "").replace(/<(b|strong)>([^<]*)<\1>/gi, "<$1>$2</$1>")).replace(/&lt;(\/?(?:b|strong|i|em|br|sup|sub))&gt;/gi, "<$1>");
+// Hebrew daf text carries Sefaria/Vilna markup too — <big><strong> on Mishnah-opening words + <br>; same escape-then-allowlist
+const safeHe = s => esc(s).replace(/&lt;(\/?(?:big|strong|b|i|em|br))&gt;/gi, "<$1>");
 const DY = window.DafYomi;
 
 const State = {
@@ -38,7 +40,7 @@ const State = {
 const fmtDur = s => { s = Math.round(s || 0); if (!s) return ""; const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h ? `${h}h ${m}m` : `${m} min`; };
 const clock = s => { s = Math.max(0, Math.round(s || 0)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
 const getStore = k => { try { const v = JSON.parse(localStorage.getItem(k)); return (v && typeof v === "object" && !Array.isArray(v)) ? v : {}; } catch { return {}; } };
-const setStore = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const setStore = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
 const dafKey = (m, d) => `${m}#${d}`;
 const fileKey = m => m.replace(/ /g, "_");
 const todayStr = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`; };
@@ -55,10 +57,10 @@ function calStrings(dstr) {
 function dateLine(dstr) {
   const c = calStrings(dstr); if (!c.greg && !c.heb) return "";
   const G = c.greg ? `<span dir="ltr">${esc(c.greg)}</span>` : "";
-  const H = c.heb ? `<span dir="rtl" class="hdate">${esc(c.heb)}</span>` : "";
+  const H = c.heb ? `<span dir="rtl" class="hdate" lang="he">${esc(c.heb)}</span>` : "";
   return G && H ? `${G} <span class="datesep">·</span> ${H}` : (G || H);
 }
-const gregOf = dstr => calStrings(dstr).greg;   // compact, Gregorian-only (for dense list rows)
+const gregOf = dstr => esc(calStrings(dstr).greg);   // compact, Gregorian-only (for dense list rows); esc() guards an unparseable API date echoed back raw
 
 function leanFromApi(x) {
   const cat = (x.categories || [])[0] || {}, sub = (x.subcategories || [])[0] || {};
@@ -77,7 +79,7 @@ async function boot() {
   const cached = readCache();
   let seed = cached;
   if (!seed) {
-    try { const s = await fetch(CFG.snapshot).then(r => r.json()); seed = { speaker: s.speaker, lectures: s.lectures }; }
+    try { const s = await fetch(CFG.snapshot).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }); seed = { speaker: s.speaker, lectures: s.lectures }; }
     catch { seed = { speaker: { name: "Rabbi Shea Stern" }, lectures: [] }; }
   }
   State.speaker = seed.speaker; State.all = seed.lectures || [];
@@ -85,7 +87,7 @@ async function boot() {
   buildIndex(); renderShell(); restoreInitialRoute();
   setStatus("checking"); refreshLive(seed.lectures || [], !!cached);
 }
-async function loadContent() { let l = null; try { l = localStorage.getItem(CFG.contentLocalKey); } catch {} if (l) { try { return JSON.parse(l); } catch {} } return loadJson(CFG.contentUrl); }
+async function loadContent() { let l = null; try { l = localStorage.getItem(CFG.contentLocalKey); } catch {} if (l) { try { const p = JSON.parse(l); if (p && typeof p === "object" && !Array.isArray(p)) return p; } catch { try { localStorage.removeItem(CFG.contentLocalKey); } catch {} } } return loadJson(CFG.contentUrl); }
 async function loadJson(u) { try { return await fetch(u).then(r => r.ok ? r.json() : {}); } catch { return {}; } }
 
 // Resolve a manifest media path. Paths are stored RELATIVE ("media/<id>.mp3")
@@ -95,13 +97,14 @@ async function loadJson(u) { try { return await fetch(u).then(r => r.ok ? r.json
 function mediaUrl(p) {
   if (!p) return "";
   if (/^https?:\/\//i.test(p)) return p;
-  const base = (State.content?.options?.mediaBaseUrl || "").replace(/\/+$/, "");
+  const base = String(State.content?.options?.mediaBaseUrl || "").replace(/\/+$/, "");   // coerce — a non-string mediaBaseUrl must not crash buildIndex at boot
   return base ? base + "/" + p.replace(/^\/+/, "") : p;
 }
 
 function buildIndex() {
   const m = new Map();
   for (const lec of State.all) {
+    if (!lec || typeof lec !== "object") continue;   // tolerate a corrupt cache entry without breaking the whole index
     const mm = State.media[String(lec.id)];
     if (mm) { lec.localAudio = mediaUrl(mm.audio); lec.localVideo = mediaUrl(mm.video); lec.introTrimmed = mm.intro_trimmed; }
     const k = DY.shiurDaf(lec); lec._dk = k;
@@ -117,12 +120,13 @@ async function refreshLive(prev, fromCache) {
       fetch(`${CFG.api}/speakers/${CFG.speakerId}`).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch(`${CFG.api}/speakers/${CFG.speakerId}/lectures?limit=2000&offset=0`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
     ]);
-    const fresh = (data.lecture || []).map(leanFromApi).sort((a, b) => (b.posted || "").localeCompare(a.posted || "") || b.id - a.id);
+    const fresh = (data.lecture || []).filter(x => x && typeof x === "object").map(leanFromApi).sort((a, b) => (b.posted || "").localeCompare(a.posted || "") || (+b.id || 0) - (+a.id || 0));
     if (!fresh.length && prev.length) throw new Error("empty");
     if (spk) State.speaker = { ...State.speaker, name: `${spk.title || ""} ${spk.name_first || ""} ${spk.name_last || ""}`.trim() || State.speaker.name };
     const prevIds = new Set(prev.map(l => l.id));
     const added = fresh.filter(l => !prevIds.has(l.id));
-    State.all = fresh; buildIndex(); writeCache(); markNew(); rerender();
+    State.all = fresh; buildIndex(); writeCache(); markNew();
+    if (!Reader.open && State.route.name !== "daf") rerender();   // don't yank the view out from under an active read (daf text is catalog-independent)
     if (added.length && fromCache) toast(`${added.length} new shiur${added.length > 1 ? "im" : ""} added`);
     setStatus("live");
   } catch { setStatus("err"); }
@@ -210,13 +214,13 @@ function renderShell() {
     <header class="bar">
       <button class="ic-btn back" id="backBtn" aria-label="Back" hidden>‹</button>
       <button class="ic-btn" id="burger" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">☰</button>
-      <span class="wordmark" id="home" role="link" tabindex="0" title="Today's daf">${esc(mh.hebrew || "הדף היומי")}</span>
+      <span class="wordmark" id="home" role="link" tabindex="0" title="Today's daf" lang="he">${esc(mh.hebrew || "הדף היומי")}</span>
       <span class="spacer"></span>
       <button class="ic-btn" id="searchBtn" aria-label="Search">⌕</button>
     </header>
     <main id="view"></main>
     <footer>
-      <span class="fhe">${esc(mh.hebrew || "שיעורי הדף היומי")}</span>
+      <span class="fhe" lang="he">${esc(mh.hebrew || "שיעורי הדף היומי")}</span>
       ${esc(mh.english || State.speaker?.name || "Rabbi Shea Stern")} · ${esc(mh.subtitle || "Daf Yomi")}<br>
       Talmud — William Davidson Edition, Sefaria · the library updates automatically
     </footer>
@@ -225,7 +229,7 @@ function renderShell() {
   <div class="mask" id="mask"></div>
   <aside class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Site menu"></aside>
   <div class="toast-wrap" id="toasts" aria-live="polite" aria-atomic="false"></div>
-  <div class="reader" id="reader" hidden aria-hidden="true"></div>`;
+  <div class="reader" id="reader" role="dialog" aria-modal="true" aria-labelledby="rdTitle" hidden aria-hidden="true"></div>`;
 
   $("#burger").onclick = openMenu; $("#mask").onclick = closeMenu;
   $("#searchBtn").onclick = () => route("search");
@@ -301,10 +305,20 @@ function updateBackBtn() { const b = $("#backBtn"); if (b) b.hidden = _navDepth 
 // already survives reloads; sessionStorage is the fallback. Skipped inside the
 // phone-view iframe so it can't clobber the parent tab's saved page.
 function persistRoute() { if (_embedded) return; try { sessionStorage.setItem("dy_route", JSON.stringify({ route: State.route, sponsor: State.sponsor, depth: _navDepth })); } catch {} }
+const KNOWN_ROUTES = new Set(["today", "browse", "seder", "masechta", "daf", "topics", "category", "search", "mystuff", "sponsor", "about", "donate"]);
+// Validate a route restored from history.state / sessionStorage before trusting it — a forged or
+// corrupt deep-link (bad route name, unknown masechta, out-of-range daf) falls back to Today instead.
+function validRoute(r) {
+  if (!r || !KNOWN_ROUTES.has(r.name)) return false;
+  if (r.name === "daf") { const [m, d] = (r.id || "").split("|"); const mm = DY.BYEN[m], dn = +d; return !!(mm && dn >= mm.firstDaf && dn <= mm.lastDaf); }
+  if (r.name === "masechta") return !!DY.BYEN[r.masechta];
+  if (r.name === "seder") return DY.SEDARIM.some(s => s.en === r.seder);
+  return true;
+}
 function restoreInitialRoute() {
   let st = history.state;
   if (!_embedded && !(st && st.route && st.route.name)) { try { st = JSON.parse(sessionStorage.getItem("dy_route") || "null"); } catch { st = null; } }
-  if (st && st.route && st.route.name) {
+  if (st && st.route && validRoute(st.route)) {
     State.route = st.route;
     if (st.sponsor) State.sponsor = st.sponsor;
     _navDepth = typeof st.depth === "number" ? st.depth : 0;
@@ -354,14 +368,14 @@ function continueCard() {
   if (lip) {
     const k = lip.lec._dk;
     const title = k && k.daf ? `${k.masechta} · Daf ${k.daf}` : lip.lec.title;
-    rows += `<button class="cont-row" data-play="${lip.lec.id}"><span class="cont-ic">▶</span><span class="cont-main"><b>Resume ${esc(title)}</b><span class="cont-sub">picks up at ${clock(lip.pos.t)}</span></span></button>`;
+    rows += `<button class="cont-row" data-play="${lip.lec.id}"><span class="cont-ic" aria-hidden="true">▶</span><span class="cont-main"><b>Resume ${esc(title)}</b><span class="cont-sub">picks up at ${clock(lip.pos.t)}</span></span></button>`;
   }
   const nx = nextUnlearnedDaf();
   if (nx) {
     const m = DY.BYEN[nx.masechta];
-    rows += `<button class="cont-row" data-daf="${esc(nx.masechta)}|${nx.daf}"><span class="cont-ic ghost">↪</span><span class="cont-main"><b>Up next · ${esc(nx.masechta)} Daf ${nx.daf}</b><span class="cont-sub">${esc(m ? m.he : nx.masechta)} ${esc(heDaf(nx.daf))}</span></span></button>`;
+    rows += `<button class="cont-row" data-daf="${esc(nx.masechta)}|${nx.daf}"><span class="cont-ic ghost" aria-hidden="true">↪</span><span class="cont-main"><b>Up next · ${esc(nx.masechta)} Daf ${nx.daf}</b><span class="cont-sub">${esc(m ? m.he : nx.masechta)} ${esc(heDaf(nx.daf))}</span></span></button>`;
   }
-  return `<div class="section">Continue learning</div>
+  return `<div class="section" role="heading" aria-level="2">Continue learning</div>
     <div class="continue">${rows}
       ${lt ? `<div class="cont-prog">${progressBar(lt, shasTotal(), { label: "Your Shas progress" })}</div>` : ""}
     </div>`;
@@ -369,34 +383,35 @@ function continueCard() {
 function upNextLink() {
   const nx = nextUnlearnedDaf();
   if (!nx) return `<p class="center muted" style="font-size:13.5px;margin-top:10px">You've learned all of Shas — mazel tov! 🎉</p>`;
-  return `<p class="center" style="margin-top:10px"><a class="textlink" data-daf="${esc(nx.masechta)}|${nx.daf}">Up next · ${esc(nx.masechta)} Daf ${nx.daf} →</a></p>`;
+  return `<p class="center" style="margin-top:10px"><button class="textlink" data-daf="${esc(nx.masechta)}|${nx.daf}">Up next · ${esc(nx.masechta)} Daf ${nx.daf} →</button></p>`;
 }
 
 function viewToday() {
   const mh = State.content.masthead || {};
   const now = new Date();
-  const t = dafData(now), y = dafData(new Date(now - 864e5)), tm = dafData(new Date(now - -864e5));
+  const yDate = new Date(now), tmDate = new Date(now); yDate.setDate(yDate.getDate() - 1); tmDate.setDate(tmDate.getDate() + 1);   // true calendar-day steps (DST-safe), not ±24h
+  const t = dafData(now), y = dafData(yDate), tm = dafData(tmDate);
   const ref = `${esc(t.dy.masechta)}|${t.dy.daf}`;
   const hasVid = t.shiur && (t.shiur.localVideo || t.shiur.video);
   const actions = t.shiur
-    ? `<a class="btn solid" data-play="${t.shiur.id}">▶ Listen</a>${hasVid ? `<a class="btn" data-watchdaf="${ref}">▦ Watch</a>` : ""}<a class="btn" data-daf="${ref}">Read the daf</a>`
-    : `<a class="btn accent" data-sponsor-daf="${ref}">✦ Sponsor today's daf</a><a class="btn" data-daf="${ref}">Read the daf</a>`;
+    ? `<button class="btn solid" data-play="${t.shiur.id}">▶ Listen</button>${hasVid ? `<button class="btn" data-watchdaf="${ref}">▦ Watch</button>` : ""}<button class="btn" data-daf="${ref}">Read the daf</button>`
+    : `<button class="btn accent" data-sponsor-daf="${ref}">✦ Sponsor today's daf</button><button class="btn" data-daf="${ref}">Read the daf</button>`;
   return `
     <div class="titlepage">
-      <div class="he">${esc(mh.hebrew || "שיעורי הדף היומי")}</div>
+      <div class="he" lang="he">${esc(mh.hebrew || "שיעורי הדף היומי")}</div>
       <div class="by">given by <b>${esc(mh.english || State.speaker?.name || "")}</b></div>
       <div class="sub">${esc(mh.subtitle || "")}</div>
       <div class="flourish"><span>❖</span></div>
     </div>
     <div class="today">
       <div class="eyebrow">Today's Daf</div>
-      <div class="he">${esc(t.dy.he)} ${esc(heDaf(t.dy.daf))}</div>
+      <div class="he" lang="he">${esc(t.dy.he)} ${esc(heDaf(t.dy.daf))}</div>
       <div class="en">${esc(t.dy.masechta)} · Daf ${t.dy.daf}</div>
       <div class="date">${dateLine(todayStr())}</div>
       <div class="actions">${actions}</div>
       <div class="adjacent">
-        <a data-daf="${esc(tm.dy.masechta)}|${tm.dy.daf}" title="Tomorrow">‹ <span class="nm">${esc(tm.dy.he)} ${esc(heDaf(tm.dy.daf))}</span></a>
-        <a data-daf="${esc(y.dy.masechta)}|${y.dy.daf}" title="Yesterday"><span class="nm">${esc(y.dy.he)} ${esc(heDaf(y.dy.daf))}</span> ›</a>
+        <button data-daf="${esc(tm.dy.masechta)}|${tm.dy.daf}" title="Tomorrow" aria-label="Tomorrow — ${esc(tm.dy.he)} ${esc(heDaf(tm.dy.daf))}"><span aria-hidden="true">‹ </span><span class="nm">${esc(tm.dy.he)} ${esc(heDaf(tm.dy.daf))}</span></button>
+        <button data-daf="${esc(y.dy.masechta)}|${y.dy.daf}" title="Yesterday" aria-label="Yesterday — ${esc(y.dy.he)} ${esc(heDaf(y.dy.daf))}"><span class="nm">${esc(y.dy.he)} ${esc(heDaf(y.dy.daf))}</span><span aria-hidden="true"> ›</span></button>
       </div>
     </div>
     ${continueCard()}
@@ -406,18 +421,18 @@ function viewToday() {
 function recentSection() {
   const recent = State.all.filter(l => l._dk && l._dk.daf).slice(0, 7);
   if (!recent.length) return "";
-  return `<div class="section">Recently given</div><div class="rows">${recent.map(rowHtml).join("")}</div>
-    <p class="center" style="margin-top:16px"><a class="textlink" data-route="browse">Browse all of Shas →</a></p>`;
+  return `<div class="section" role="heading" aria-level="2">Recently given</div><div class="rows">${recent.map(rowHtml).join("")}</div>
+    <p class="center" style="margin-top:16px"><button class="textlink" data-route="browse">Browse all of Shas →</button></p>`;
 }
 
 function viewBrowse() {
-  return `<div class="pagetitle">Browse Shas</div><p class="lead">Every daf of the Talmud — tap any daf to read it; the Rabbi's shiur appears where he's given it.</p>
+  return `<div class="pagetitle" role="heading" aria-level="1">Browse Shas</div><p class="lead">Every daf of the Talmud — tap any daf to read it; the Rabbi's shiur appears where he's given it.</p>
     ${learnedTotal() ? `<div class="browse-prog">${progressBar(learnedTotal(), shasTotal(), { label: "Your Shas progress" })}</div>` : ""}
     <div class="toc">${DY.SEDARIM.map(s => {
       const mas = DY.masechtosInSeder(s.en);
       const total = mas.reduce((n, m) => n + countMasechta(m.en), 0);
       return `<div class="seder">${esc(s.he)}<span class="ct">${total} shiurim</span></div>
-        <div class="mas-list">${mas.map(m => { const n = countMasechta(m.en); return `<button class="mas ${n ? "" : "empty"}" data-masechta="${esc(m.en)}"><span class="nm">${esc(m.he)}</span><span class="ct">${n || "—"}</span></button>`; }).join("")}</div>`;
+        <div class="mas-list">${mas.map(m => { const n = countMasechta(m.en); return `<button class="mas ${n ? "" : "empty"}" data-masechta="${esc(m.en)}"><span class="nm" lang="he">${esc(m.he)}</span><span class="ct">${n || "—"}</span></button>`; }).join("")}</div>`;
     }).join("")}</div>`;
 }
 function countMasechta(en) { let n = 0; for (const [k, a] of State.byDaf) if (k.startsWith(en + "#")) n += a.length; return n; }
@@ -425,7 +440,7 @@ function countMasechta(en) { let n = 0; for (const [k, a] of State.byDaf) if (k.
 function viewSeder(r) {
   const mas = DY.masechtosInSeder(r.seder);
   return crumbs([["Browse", "browse"]], DY.sederHe(r.seder)) +
-    `<div class="mas-list" style="margin-top:14px">${mas.map(m => { const n = countMasechta(m.en); return `<button class="mas ${n ? "" : "empty"}" data-masechta="${esc(m.en)}"><span class="nm">${esc(m.he)}</span><span class="ct">${n || "—"}</span></button>`; }).join("")}</div>`;
+    `<div class="mas-list" style="margin-top:14px">${mas.map(m => { const n = countMasechta(m.en); return `<button class="mas ${n ? "" : "empty"}" data-masechta="${esc(m.en)}"><span class="nm" lang="he">${esc(m.he)}</span><span class="ct">${n || "—"}</span></button>`; }).join("")}</div>`;
 }
 
 function viewMasechta(r) {
@@ -434,7 +449,7 @@ function viewMasechta(r) {
   let cells = "";
   for (let d = m.firstDaf; d <= m.lastDaf; d++) {
     const has = State.byDaf.has(dafKey(m.en, d)), lrn = isLearned(m.en, d);
-    cells += `<button class="daf-cell ${has ? "has" : "future"}${lrn ? " learned" : ""}" data-daf="${esc(m.en)}|${d}"><span class="he">${esc(window.HebCal ? window.HebCal.gematria(d) : d)}</span><span class="n">${d}</span>${lrn ? '<span class="cell-chk" aria-label="learned">✓</span>' : ""}</button>`;
+    cells += `<button class="daf-cell ${has ? "has" : "future"}${lrn ? " learned" : ""}" data-daf="${esc(m.en)}|${d}" aria-label="${esc(m.en)} Daf ${d}${has ? " — shiur available" : ""}${lrn ? ", learned" : ""}"><span class="he" aria-hidden="true">${esc(window.HebCal ? window.HebCal.gematria(d) : d)}</span><span class="n" aria-hidden="true">${d}</span>${lrn ? '<span class="cell-chk" aria-hidden="true">✓</span>' : ""}</button>`;
   }
   const ln = learnedInMasechta(m.en);
   return crumbs([["Browse", "browse"], [DY.sederHe(m.seder), "seder", { seder: m.seder }]], m.he) +
@@ -456,19 +471,19 @@ function viewDaf(r) {
      </div>`;
   const media = shiur ? `
     <div class="daf-media">
-      <a class="btn solid sm" data-play="${shiur.id}">▶ Listen</a>
-      ${(shiur.localVideo || shiur.video) ? `<a class="btn sm" data-watch="${shiur.id}">▦ Watch</a>` : ""}
-      <a class="btn sm" data-fav="${shiur.id}">${isFav(shiur.id) ? "★ Saved" : "☆ Save"}</a>
+      <button class="btn solid sm" data-play="${shiur.id}">▶ Listen</button>
+      ${(shiur.localVideo || shiur.video) ? `<button class="btn sm" data-watch="${shiur.id}">▦ Watch</button>` : ""}
+      <button class="btn sm" data-fav="${shiur.id}" aria-pressed="${isFav(shiur.id)}">${isFav(shiur.id) ? "★ Saved" : "☆ Save"}</button>
     </div>
     <div id="videoSlot"></div>` : "";
   const sponsor = shiur
-    ? `<p class="center" style="margin:10px 0"><a class="textlink" data-sponsor-daf="${esc(masechta)}|${daf}">✦ Sponsor this daf</a></p>`
-    : `<div class="sponsor-strip"><b>This daf hasn't been given yet.</b><div class="muted" style="font-size:14px;margin-top:4px">Sponsor it for a yahrtzeit or simcha — your dedication is learned by everyone.</div><a class="btn accent" data-sponsor-daf="${esc(masechta)}|${daf}">✦ Sponsor ${esc(masechta)} ${daf}</a></div>`;
+    ? `<p class="center" style="margin:10px 0"><button class="textlink" data-sponsor-daf="${esc(masechta)}|${daf}">✦ Sponsor this daf</button></p>`
+    : `<div class="sponsor-strip"><b>This daf hasn't been given yet.</b><div class="muted" style="font-size:14px;margin-top:4px">Sponsor it for a yahrtzeit or simcha — your dedication is learned by everyone.</div><button class="btn accent" data-sponsor-daf="${esc(masechta)}|${daf}">✦ Sponsor ${esc(masechta)} ${daf}</button></div>`;
   return crumbs([["Browse", "browse"], [m ? m.he : masechta, "masechta", { masechta }]], heDaf(daf)) +
     `<div class="daf-head">
        <div class="daf-daynav">
          <button class="daynav next" data-daynav="1" aria-label="Next daf — whole page" title="Next daf (whole page)"${dafStep(masechta, daf, 1) ? "" : " disabled"}>‹</button>
-         <div class="daf-head-titles"><div class="he">${esc(heT)}</div><div class="en">${esc(masechta)} · Daf ${daf}</div></div>
+         <div class="daf-head-titles"><div class="he" lang="he">${esc(heT)}</div><div class="en">${esc(masechta)} · Daf ${daf}</div></div>
          <button class="daynav prev" data-daynav="-1" aria-label="Previous daf — whole page" title="Previous daf (whole page)"${dafStep(masechta, daf, -1) ? "" : " disabled"}>›</button>
        </div>
        ${shiur ? `<div class="meta">Given ${dateLine(shiur.recorded || shiur.posted)} · ${fmtDur(shiur.duration)}</div>` : ""}</div>
@@ -489,7 +504,8 @@ function viewDaf(r) {
 async function dafBodyHtml(masechta, daf, mode) {
   const data = await loadDafText(masechta);
   if (!data) {
-    const reason = { Shekalim: "Shekalim is learned from the Talmud Yerushalmi, which isn't in the native reader yet.", Kinnim: "Kinnim is a Mishnah-only masechta — it has no Gemara text.", Middos: "Middos is a Mishnah-only masechta — it has no Gemara text." }[masechta] || "Native text for this masechta isn't available yet.";
+    const special = { Shekalim: "Shekalim is learned from the Talmud Yerushalmi, which isn't in the native reader yet.", Kinnim: "Kinnim is a Mishnah-only masechta — it has no Gemara text.", Middos: "Middos is a Mishnah-only masechta — it has no Gemara text." }[masechta];
+    const reason = special || ((typeof navigator !== "undefined" && navigator.onLine === false) ? "You're offline — reconnect to load this daf's text." : "Native text for this masechta isn't available yet.");   // don't blame the masechta when it's really a connection drop
     return `<div class="empty-mini">${esc(reason)}</div>`;
   }
   if (mode === "daf") { const comm = await loadDafComm(masechta); return renderDafLayout(masechta, daf, data, comm); }
@@ -506,7 +522,10 @@ async function dafBodyHtml(masechta, daf, mode) {
 }
 async function hydrateDaf() {
   const box = $("#dafText"); if (!box) return;
-  box.innerHTML = await dafBodyHtml(box.dataset.mas, +box.dataset.daf, box.dataset.mode);
+  const gen = (box._hydGen = (box._hydGen || 0) + 1);          // serialize overlapping hydrates
+  const html = await dafBodyHtml(box.dataset.mas, +box.dataset.daf, box.dataset.mode);
+  if (!box.isConnected || box._hydGen !== gen) return;          // a newer flip superseded this one — drop the stale render
+  box.innerHTML = html;
   applyDafCol(box); attachDafSwipe(box);
 }
 // Step to the previous / next daf, crossing masechta boundaries in Daf Yomi
@@ -545,18 +564,20 @@ function flipLabel(cls, innerHtml, mas, daf) {
     + `</div>`;
 }
 function dafPage(daf, amud, seg, c, labelHtml) {
-  const gem = (seg.he || "").split("\n").filter(Boolean).map(esc).join("<br>");
+  const gem = (seg.he || "").split("\n").filter(Boolean).map(safeHe).join("<br>");
   return `<div class="dafpage">
     ${labelHtml}
     <div class="dafpage-grid">
-      <div class="col side rashi"><div class="col-h">רש"י</div>${commCol(c && c.r)}</div>
-      <div class="col gemara"><div class="col-h">גמרא</div><div class="gem">${gem || '<div class="col-empty">—</div>'}</div></div>
-      <div class="col side tosafos"><div class="col-h">תוספות</div>${commCol(c && c.t)}</div>
+      <div class="col side rashi"><div class="col-h" lang="he">רש"י</div>${commCol(c && c.r)}</div>
+      <div class="col gemara"><div class="col-h" lang="he">גמרא</div><div class="gem">${gem || '<div class="col-empty">—</div>'}</div></div>
+      <div class="col side tosafos"><div class="col-h" lang="he">תוספות</div>${commCol(c && c.t)}</div>
     </div></div>`;
 }
 function renderDafLayout(masechta, daf, data, comm) {
   comm = comm || {};
   let html = "";
+  if (masechta === "Tamid" && daf === 26 && data["25b"])   // opening Mishnah sits on Vilna 25b — surface it in daf mode too (the he/en path already does)
+    html += dafPage(daf, "25b", data["25b"], comm["25b"], flipLabel("dafpage-label", esc(heAmud(25, "25b")), masechta, daf));
   for (const amud of [daf + "a", daf + "b"]) {
     const seg = data[amud]; if (!seg) continue;
     html += dafPage(daf, amud, seg, comm[amud], flipLabel("dafpage-label", esc(heAmud(daf, amud)), masechta, daf));   // per-page daf-flip arrows on each amud (restored)
@@ -646,7 +667,9 @@ function dafTopScroll() {
 // daf starts at its top instead of inheriting the previous page's scroll.
 function restoreColScroll(col, toTopIfUnseen) {
   const saved = (State._colScroll || {})[colScrollKey(col)];
+  const wasReaderOpen = Reader.open;
   requestAnimationFrame(() => {
+    if (Reader.open !== wasReaderOpen) return;                 // reader opened/closed within the frame — this scroll target is no longer the right surface
     const ceil = dafTopScroll();                               // the sticky-header "ceiling" (column top, header pinned)
     let target = null;
     if (saved != null) target = Math.max(saved, ceil);        // restore a remembered spot — but never above the ceiling
@@ -704,11 +727,11 @@ function attachDafSwipe(box) {
 
 function renderAmud(seg, mode) {
   const he = (seg.he || "").split("\n").filter(Boolean), en = (seg.en || "").split("\n").filter(Boolean);
-  if (mode === "he") return `<div class="daf-he">${he.map(esc).join("<br>")}</div>`;
+  if (mode === "he") return `<div class="daf-he" lang="he">${he.map(safeHe).join("<br>")}</div>`;
   if (mode === "en") return `<div class="daf-en">${en.map(safeEn).join("<br>")}</div>`;
   // both: interleave by segment if counts align, else stacked blocks
-  if (he.length === en.length && he.length) return he.map((h, i) => `<div class="seg-pair"><div class="daf-he">${esc(h)}</div><div class="daf-en">${safeEn(en[i])}</div></div>`).join("");
-  return `<div class="daf-he">${he.map(esc).join("<br>")}</div><hr class="rule thin"><div class="daf-en">${en.map(safeEn).join("<br>")}</div>`;
+  if (he.length === en.length && he.length) return he.map((h, i) => `<div class="seg-pair"><div class="daf-he" lang="he">${safeHe(h)}</div><div class="daf-en">${safeEn(en[i])}</div></div>`).join("");
+  return `<div class="daf-he" lang="he">${he.map(safeHe).join("<br>")}</div><hr class="rule thin"><div class="daf-en">${en.map(safeEn).join("<br>")}</div>`;
 }
 
 /* ---------- two flip controls on the daf page ----------
@@ -737,13 +760,14 @@ function dayNav(dir) {                           // top arrows — whole lecture
 const Reader = { masechta: null, daf: null, mode: "daf", open: false };
 let _readerClosing = false, _readerOpener = null;
 function openReader(masechta, daf, mode) {
+  if (Reader.open) return;   // already open — don't stack a second history entry or clobber the opener
   Reader.masechta = masechta; Reader.daf = +daf; Reader.mode = mode || State._dafMode || "daf"; Reader.open = true;
   const r = $("#reader"); if (!r) return;
   _readerOpener = document.activeElement;
   r.hidden = false; r.setAttribute("aria-hidden", "false");
   document.documentElement.classList.add("reader-open");
   renderReader();
-  $("#view")?.setAttribute("inert", "");                // background content is inert; the player (z-index above the reader) stays controllable
+  $("#view")?.setAttribute("inert", ""); $("#app > header")?.setAttribute("inert", "");   // background + top bar inert (trap focus in the overlay); the player (z-index above the reader) stays controllable
   resetReadMin();                                       // reader opens at the top with full chrome
   setTimeout(() => $("#rdClose")?.focus(), 0);           // move focus into the overlay
   try { history.pushState({ ...history.state, reader: true }, ""); } catch {}  // Back / Esc closes the reader first
@@ -753,7 +777,7 @@ function hideReader() {
   Reader.open = false; _readerClosing = false;
   const r = $("#reader"); if (r) { r.hidden = true; r.setAttribute("aria-hidden", "true"); }
   document.documentElement.classList.remove("reader-open");
-  $("#view")?.removeAttribute("inert");
+  $("#view")?.removeAttribute("inert"); $("#app > header")?.removeAttribute("inert");
   resetReadMin();
   try { _readerOpener && _readerOpener.focus(); } catch {}   // restore focus to whatever opened the reader
   syncInpageRead(Reader.masechta, Reader.daf);   // leave the in-page reader where we stopped
@@ -762,7 +786,7 @@ function syncInpageRead(masechta, daf) {
   const box = $("#dafText"); if (!box) return;
   if (box.dataset.mas === masechta && +box.dataset.daf === daf) return;
   box.dataset.mas = masechta; box.dataset.daf = daf;
-  updateFlipUI(); hydrateDaf();
+  hydrateDaf();   // re-renders #dafText incl. the flip arrows; no separate UI step needed
 }
 function readerFlip(dir) {
   const nx = dafStep(Reader.masechta, Reader.daf, dir); if (!nx) return;
@@ -776,7 +800,7 @@ function renderReader() {
   r.innerHTML = `
     <div class="reader-bar">
       <div class="rd-side rd-left"><button class="rd-ic close" id="rdClose" aria-label="Close full screen">✕</button></div>
-      <div class="rd-title"><span class="he">${esc(dafTitleHe(m, d))}</span><span class="en">${esc(m)} · Daf ${d}</span></div>
+      <div class="rd-title" id="rdTitle"><span class="he" lang="he">${esc(dafTitleHe(m, d))}</span><span class="en">${esc(m)} · Daf ${d}</span></div>
       <div class="rd-side rd-right">
         <span class="seg rd-seg" id="rdMode" role="group" aria-label="Daf display mode">${["daf", "he", "en", "both"].map(x => `<button data-rmode="${x}" class="${x === mode ? "on" : ""}" aria-pressed="${x === mode}">${({ daf: "Daf", he: "עברית", en: "English", both: "Both" })[x]}</button>`).join("")}</span>
         ${shiur ? `<button class="rd-ic play" id="rdPlay" aria-label="Play this shiur" title="Play this daf's shiur">▶</button>` : ""}
@@ -802,7 +826,7 @@ async function fillReaderBody(m, d, mode) {
   }
 }
 
-function viewSearch() { return `<div class="pagetitle">Search</div><div class="searchbar"><input id="q" type="search" aria-label="Search" placeholder="search a daf, masechta, or topic…" autocomplete="off"></div><div id="results"></div>`; }
+function viewSearch() { return `<div class="pagetitle" role="heading" aria-level="1">Search</div><div class="searchbar"><input id="q" type="search" aria-label="Search" placeholder="search a daf, masechta, or topic…" autocomplete="off"></div><div id="results"></div>`; }
 function runSearch(q) {
   const box = $("#results"); if (!box) return;
   q = (q || "").trim().toLowerCase();
@@ -813,13 +837,13 @@ function runSearch(q) {
 }
 function viewMyStuff() {
   const f = favs(), p = getStore(CFG.progKey), lt = learnedTotal();
-  const fav = State.all.filter(l => f[l.id]).sort((a, b) => f[b.id] - f[a.id]);
-  const pr = State.all.filter(l => p[l.id]).sort((a, b) => p[b.id] - p[a.id]).slice(0, 12);
-  const sec = (t, list, e) => `<div class="section">${t}</div>` + (list.length ? `<div class="rows">${list.map(rowHtml).join("")}</div>` : `<div class="empty-mini">${e}</div>`);
+  const fav = State.all.filter(l => f[l.id]).sort((a, b) => (+f[b.id] || 0) - (+f[a.id] || 0));
+  const pr = State.all.filter(l => p[l.id]).sort((a, b) => (+p[b.id] || 0) - (+p[a.id] || 0)).slice(0, 12);
+  const sec = (t, list, e) => `<div class="section" role="heading" aria-level="2">${t}</div>` + (list.length ? `<div class="rows">${list.map(rowHtml).join("")}</div>` : `<div class="empty-mini">${e}</div>`);
   const head = (lt || lastInProgress())
     ? `<div class="mystuff-top">${progressBar(lt, shasTotal(), { label: "Your Shas progress" })}${upNextLink()}</div>`
     : `<p class="lead">Your progress lives on this device — mark dapim as learned and your spot is saved automatically.</p>`;
-  return `<div class="pagetitle">My Stuff</div>` + head
+  return `<div class="pagetitle" role="heading" aria-level="1">My Stuff</div>` + head
     + sec("Continue", pr, "Play a shiur and it appears here.")
     + sec("Saved", fav, "Tap ☆ Save on a daf to keep it here.");
 }
@@ -834,8 +858,8 @@ function nonDafCats() {
 }
 function viewTopics() {
   const cats = nonDafCats();
-  if (!cats.length) return `<div class="pagetitle">Shiurim</div><div class="empty-mini">No shiurim found yet.</div>`;
-  return `<div class="pagetitle">Shiurim</div><p class="lead">Beyond the daily daf — parsha, holidays, and more.</p>
+  if (!cats.length) return `<div class="pagetitle" role="heading" aria-level="1">Shiurim</div><div class="empty-mini">No shiurim found yet.</div>`;
+  return `<div class="pagetitle" role="heading" aria-level="1">Shiurim</div><p class="lead">Beyond the daily daf — parsha, holidays, and more.</p>
     <div class="cat-list">${cats.map(c => `<button class="cat-row" data-cat="${esc(c.name)}"><span class="nm">${esc(c.pretty)}</span><span class="ct">${c.count} shiurim ›</span></button>`).join("")}</div>`;
 }
 function viewCategory(r) {
@@ -852,32 +876,32 @@ function viewCategory(r) {
   } else {
     body = `<div class="rows">${list.map(rowHtml).join("")}</div>`;
   }
-  return back + `<div class="pagetitle" style="margin-top:6px">${esc(pretty)}</div>${body}`;
+  return back + `<div class="pagetitle" role="heading" aria-level="1" style="margin-top:6px">${esc(pretty)}</div>${body}`;
 }
 function moreSection() {
   const nondaf = State.all.filter(l => !isDafShiur(l)).slice(0, 4);
   if (!nondaf.length) return "";
-  return `<div class="section">Parsha &amp; more</div><div class="rows">${nondaf.map(rowHtml).join("")}</div>
-    <p class="center" style="margin-top:14px"><a class="textlink" data-route="topics">All shiurim →</a></p>`;
+  return `<div class="section" role="heading" aria-level="2">Parsha &amp; more</div><div class="rows">${nondaf.map(rowHtml).join("")}</div>
+    <p class="center" style="margin-top:14px"><button class="textlink" data-route="topics">All shiurim →</button></p>`;
 }
 
 /* ---------- Sponsor ---------- */
 function viewSponsor() {
   const s = State.content.sponsor || {}, amt = s.amounts || {}, sp = State.sponsor;
   const today = DY.dafForDate(new Date());
-  const opt = (kind, t, sub, price, attr) => `<button class="sp-opt ${sp.kind === kind ? "on" : ""}" ${attr}><span><b>${t}</b><span>${sub}</span></span><span class="price">${price || ""}</span></button>`;
+  const opt = (kind, t, sub, price, attr) => `<button class="sp-opt ${sp.kind === kind ? "on" : ""}" ${attr} aria-pressed="${sp.kind === kind ? "true" : "false"}"><span><b>${t}</b><span>${sub}</span></span><span class="price">${esc(price || "")}</span></button>`;
   const picker = `<div class="sp-opts">
       ${sp.kind === "daf" ? opt("daf", "This daf", `${esc(sp.masechta || "")} ${sp.daf || ""}`, amt.daf, `data-sp="daf"`) : ""}
       ${opt("today", "Today's daf", `${today.masechta} ${today.daf}`, amt.daf, `data-sp="today"`)}
       ${opt("future", "A future daf", "for a yahrtzeit or simcha", amt.daf, `data-sp="future"`)}
       ${opt("masechta", "A whole masechta", "dedicate an entire tractate", amt.masechta, `data-sp="masechta"`)}
     </div>
-    ${sp.kind === "future" ? `<div class="field-label">Date</div><input type="date" id="spDate" value="${esc(sp.date || todayStr())}">${sp.date ? `<p class="center muted" style="font-size:14px">that day's daf: <b>${esc(sponsorFutureDaf().masechta)} ${sponsorFutureDaf().daf}</b></p>` : ""}` : ""}
-    ${sp.kind === "masechta" ? `<div class="field-label">Masechta</div><select id="spMas">${DY.SHAS.map(m => `<option value="${esc(m.en)}" ${sp.masechta === m.en ? "selected" : ""}>${esc(m.en)} — ${esc(m.he)}</option>`).join("")}</select>` : ""}`;
+    ${sp.kind === "future" ? `<div class="field-label">Date</div><input type="date" id="spDate" aria-label="Date" value="${esc(sp.date || todayStr())}">${sp.date ? `<p class="center muted" style="font-size:14px">that day's daf: <b>${esc(sponsorFutureDaf().masechta)} ${sponsorFutureDaf().daf}</b></p>` : ""}` : ""}
+    ${sp.kind === "masechta" ? `<div class="field-label">Masechta</div><select id="spMas" aria-label="Masechta">${DY.SHAS.map(m => `<option value="${esc(m.en)}" ${sp.masechta === m.en ? "selected" : ""}>${esc(m.en)} — ${esc(m.he)}</option>`).join("")}</select>` : ""}`;
   const form = sp.kind ? `<div class="sp-form">
       <div class="sp-target">Sponsoring: <b>${esc(sponsorTargetLabel())}</b></div>
       <div class="field-label">Dedication</div>
-      <select id="spType">${(s.dedicationTypes || ["L'ilui nishmas", "In honor of"]).map(t => `<option>${esc(t)}</option>`).join("")}</select>
+      <select id="spType" aria-label="Dedication">${(Array.isArray(s.dedicationTypes) ? s.dedicationTypes : ["L'ilui nishmas", "In honor of"]).map(t => `<option>${esc(t)}</option>`).join("")}</select>
       <input id="spFor" aria-label="name" placeholder="…name">
       <div class="field-label">From</div>
       <input id="spFrom" aria-label="your name" placeholder="sponsored by">
@@ -886,7 +910,7 @@ function viewSponsor() {
       <button class="btn block" data-route="donate" style="margin-top:8px">Complete by Zelle →</button>
       ${s.note ? `<p class="muted" style="font-size:12.5px;margin-top:12px">${esc(s.note)}</p>` : ""}
     </div>` : "";
-  return `<div class="pagetitle">${esc(s.heading || "Sponsor the Shiur")}</div><p class="lead">${esc(s.blurb || "")}</p>${picker}${form}`;
+  return `<div class="pagetitle" role="heading" aria-level="1">${esc(s.heading || "Sponsor the Shiur")}</div><p class="lead">${esc(s.blurb || "")}</p>${picker}${form}`;
 }
 function sponsorFutureDaf() { return DY.dafForDate(State.sponsor.date ? new Date(State.sponsor.date + "T00:00:00") : new Date()); }
 function sponsorTargetLabel() {
@@ -900,7 +924,7 @@ function sponsorTargetLabel() {
 function sendSponsor() {
   const s = State.content.sponsor || {}, to = s.contactEmail || State.content.contact?.email || "";
   const body = `I would like to sponsor: ${sponsorTargetLabel()}\n\nDedication: ${$("#spType")?.value || ""} ${$("#spFor")?.value || ""}\nFrom: ${$("#spFrom")?.value || ""}\nEmail: ${$("#spEmail")?.value || ""}\n\n(I will complete the sponsorship by Zelle to ${State.content.donate?.zelle?.email || ""}.)`;
-  location.href = `mailto:${to}?subject=${encodeURIComponent("Daf Yomi sponsorship — " + sponsorTargetLabel())}&body=${encodeURIComponent(body)}`;
+  location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent("Daf Yomi sponsorship — " + sponsorTargetLabel())}&body=${encodeURIComponent(body)}`;
 }
 
 // Our own Zelle QR — generated as crisp SVG (no image file). The exact payload
@@ -911,7 +935,7 @@ function zelleQrData() {
   if (z.qrData) return z.qrData;
   if (!z.email) return "";
   const first = (z.name || "").trim().split(/\s+/)[0] || (z.name || "");
-  try { return "https://enroll.zellepay.com/qr-codes?data=" + btoa(JSON.stringify({ name: first, token: z.email, action: "payment" })); }
+  try { return "https://enroll.zellepay.com/qr-codes?data=" + btoa(unescape(encodeURIComponent(JSON.stringify({ name: first, token: z.email, action: "payment" })))); }
   catch { return ""; }
 }
 function renderQR(text, { px = 230, label = "QR code" } = {}) {
@@ -929,7 +953,7 @@ function viewDonate() {
   const d = State.content.donate || {}, z = d.zelle || {};
   const qr = renderQR(zelleQrData(), { px: 230, label: `Zelle QR — pay ${z.name || ""}` })
     || (z.qr ? `<img src="${esc(z.qr)}" alt="Zelle QR for ${esc(z.name || "")}">` : "");
-  return `<div class="pagetitle">${esc(d.heading || "Donate")}</div><p class="lead">${esc(d.blurb || "")}</p>
+  return `<div class="pagetitle" role="heading" aria-level="1">${esc(d.heading || "Donate")}</div><p class="lead">${esc(d.blurb || "")}</p>
     <div class="donate-box"><div class="qr-frame">${qr}<div class="qr-cap">Scan with your bank app to pay by <span class="zelle-brand">Zelle</span></div></div>
       <div class="zelle-line">Pay <b>${esc(z.name || "")}</b> via <span class="zelle-brand">Zelle</span><span class="muted">${esc(z.email || "")}</span></div>
       <button class="btn sm copy-btn" data-copy="${esc(z.email || "")}">Copy email</button>
@@ -937,11 +961,11 @@ function viewDonate() {
 }
 function viewAbout() {
   const a = State.content.about || {}, c = State.content.contact || {}, p = State.content.phone || {};
-  return `<div class="pagetitle">${esc(a.heading || "About")}</div>
-    <div class="prose">${(a.paragraphs || []).map(x => `<p>${esc(x)}</p>`).join("")}</div>
-    ${a.tradition ? `<div class="section">${esc(a.tradition.heading)}</div><div class="prose"><p>${esc(a.tradition.body)}</p></div>` : ""}
-    <div class="section">FAQ</div>${(State.content.faqs || []).map(x => `<details class="faq"><summary>${esc(x.q)}</summary><div class="a">${esc(x.a)}</div></details>`).join("")}
-    <div class="section">Contact</div>
+  return `<div class="pagetitle" role="heading" aria-level="1">${esc(a.heading || "About")}</div>
+    <div class="prose">${(Array.isArray(a.paragraphs) ? a.paragraphs : []).map(x => `<p>${esc(x)}</p>`).join("")}</div>
+    ${a.tradition ? `<div class="section" role="heading" aria-level="2">${esc(a.tradition.heading)}</div><div class="prose"><p>${esc(a.tradition.body)}</p></div>` : ""}
+    <div class="section" role="heading" aria-level="2">FAQ</div>${(Array.isArray(State.content.faqs) ? State.content.faqs : []).map(x => `<details class="faq"><summary>${esc(x.q)}</summary><div class="a">${esc(x.a)}</div></details>`).join("")}
+    <div class="section" role="heading" aria-level="2">Contact</div>
     <p class="prose"><a class="textlink" href="mailto:${esc(c.email || "")}">${esc(c.email || "")}</a>${p.number ? ` · Listen by phone: ${esc(p.number)} ext. ${esc(p.extension || "")}` : ""}</p>`;
 }
 
@@ -954,12 +978,12 @@ function rowHtml(lec) {
   const title = isDaf ? `${esc(k.masechta)} · Daf ${k.daf}` : esc(lec.title);
   const meta = [fmtDur(lec.duration), gregOf(lec.recorded || lec.posted)].filter(Boolean).join(" · ");
   return `<button class="row${State.newIds.has(lec.id) ? " is-new" : ""}" data-rowdaf="${isDaf ? esc(k.masechta) + "|" + k.daf : ""}" data-play="${lec.id}">
-    <span class="rnum${isDaf ? "" : " sym"}">${num}</span>
+    <span class="rnum${isDaf ? "" : " sym"}"${isDaf ? "" : ' aria-hidden="true"'}>${num}</span>
     <span class="rmain"><b>${title}</b><span class="rmeta">${meta}</span></span>
     <span class="rgo" aria-hidden="true">▶</span></button>`;
 }
 function crumbs(parts, title) {
-  return `<div class="crumbs" dir="ltr">${parts.map(([l, n, p]) => `<a data-go="${n}" data-p='${esc(JSON.stringify(p || {}))}'>${esc(l)}</a>`).join(" › ")} › <b>${esc(title)}</b></div>`;
+  return `<div class="crumbs" dir="ltr">${parts.map(([l, n, p]) => `<button data-go="${n}" data-p="${esc(JSON.stringify(p || {}))}">${esc(l)}</button>`).join(" › ")} › <b>${esc(title)}</b></div>`;
 }
 
 /* =====================================================================
@@ -971,9 +995,9 @@ function wireView(r) {
   v.querySelectorAll("[data-masechta]").forEach(b => b.onclick = () => route("masechta", { masechta: b.dataset.masechta }));
   v.querySelectorAll("[data-cat]").forEach(b => b.onclick = () => route("category", { cat: b.dataset.cat }));
   v.querySelectorAll("[data-daf]").forEach(b => b.onclick = () => route("daf", { id: b.dataset.daf }));
-  v.querySelectorAll("[data-go]").forEach(a => a.onclick = () => route(a.dataset.go, JSON.parse(a.dataset.p || "{}")));
+  v.querySelectorAll("[data-go]").forEach(a => a.onclick = () => { let p = {}; try { p = JSON.parse(a.dataset.p || "{}"); } catch {} route(a.dataset.go, p); });
   v.querySelectorAll("[data-route]").forEach(b => b.onclick = () => route(b.dataset.route));
-  v.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => { const p = navigator.clipboard && navigator.clipboard.writeText(b.dataset.copy); if (p && p.then) p.then(() => toast("Email copied")).catch(() => toast(b.dataset.copy)); else toast(b.dataset.copy); });
+  v.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => { const p = navigator.clipboard && navigator.clipboard.writeText(b.dataset.copy); if (p && p.then) p.then(() => toast("Email copied")).catch(() => toast(esc(b.dataset.copy))); else toast(esc(b.dataset.copy)); });
   v.querySelectorAll("[data-sponsor-daf]").forEach(b => b.onclick = e => { e.stopPropagation(); const [m, d] = b.dataset.sponsorDaf.split("|"); route("sponsor", { pre: { kind: "daf", masechta: m, daf: +d } }); });
   v.querySelectorAll("[data-watch]").forEach(b => b.onclick = e => { e.stopPropagation(); watchVideo(+b.dataset.watch); });
   v.querySelectorAll("[data-watchdaf]").forEach(b => b.onclick = () => route("daf", { id: b.dataset.watchdaf, watch: true }));
@@ -990,7 +1014,7 @@ function wireView(r) {
   v.querySelectorAll("[data-daynav]").forEach(b => b.onclick = () => dayNav(+b.dataset.daynav));
   if ($("#dafFsBtn")) $("#dafFsBtn").onclick = () => { const box = $("#dafText"); if (box) openReader(box.dataset.mas, +box.dataset.daf, box.dataset.mode); };
   wireRows(v);
-  const q = $("#q"); if (q) { q.oninput = () => runSearch(q.value); q.focus(); runSearch(""); }
+  const q = $("#q"); if (q) { let _sd; q.oninput = () => { clearTimeout(_sd); _sd = setTimeout(() => runSearch(q.value), 150); }; q.focus(); runSearch(""); }
   v.querySelectorAll("[data-fav]").forEach(b => { if (!b.classList.contains("row")) b.onclick = e => { e.stopPropagation(); toggleFav(+b.dataset.fav); rerender(); }; });
   v.querySelectorAll("[data-learn]").forEach(b => b.onclick = e => {
     e.stopPropagation();
@@ -1036,6 +1060,7 @@ function watchVideo(id) {
   const slot = $("#videoSlot"); if (!slot) return;
   const local = State.content.options?.preferSelfHosted !== false && lec.localVideo;
   const src = local ? lec.localVideo : lec.video; if (!src) return;
+  const old = slot.querySelector("video"); if (old) { try { old.pause(); old.removeAttribute("src"); old.load(); } catch {} }   // stop a video already playing in this slot before swapping it out (else it keeps decoding, detached)
   slot.innerHTML = `<video class="daf-video" controls playsinline preload="metadata"></video>`;
   Player.playVideo(slot.querySelector("video"), lec, src, !!local);
   noteProgress(id);
@@ -1101,7 +1126,7 @@ const Player = {
     m.addEventListener("timeupdate", () => { if (this.media === m) this.tick(); });
     m.addEventListener("loadedmetadata", () => {
       if (this.media !== m) return;
-      if (this._resumeTo) { try { m.currentTime = this._resumeTo; } catch {} toast(`Resumed from ${clock(this._resumeTo)}`); this._resumeTo = 0; }
+      if (this._resumeTo) { try { m.currentTime = this._resumeTo; toast(`Resumed from ${clock(this._resumeTo)}`); } catch {} this._resumeTo = 0; }
       else if (this._skipPending && !this.local) { try { m.currentTime = this.lec?.introTrimmed || INTRO_SEC; } catch {} }   // TA fallback still carries the intro
       this._skipPending = false; this.tick();
     });
@@ -1109,7 +1134,7 @@ const Player = {
     m.addEventListener("pause", () => { if (this.media === m) this.ctrls(); });
     m.addEventListener("ratechange", () => { if (this.media === m && this.speed !== m.playbackRate) { this.speed = m.playbackRate; this.ctrls(); } });   // keep the bar's speed in sync with the native video menu (and vice-versa)
     m.addEventListener("ended", () => { if (this.media === m && this.lec) { clearPos(this.lec.id); markShiurLearned(this.lec); this.ctrls(); } });
-    m.addEventListener("error", () => { if (this.media === m && this.lec && this.local && !this.isVideo) { this.local = false; this._skipPending = true; this.audio.src = this.lec.audio; this.audio.play().catch(() => {}); this.bar(); } });
+    m.addEventListener("error", () => { if (this.media === m && this.lec && this.local && !this.isVideo) { this.local = false; if (!this.lec.audio) { this.bar(); return; } this._skipPending = true; this.audio.src = this.lec.audio; this.audio.play().catch(() => {}); this.bar(); } });
   },
   playAudio(lec, url, local) {
     this.lec = lec; this.local = !!local; this.isVideo = false; this.media = this.audio;
@@ -1135,6 +1160,7 @@ const Player = {
     $("#player").classList.add("hidden"); $("#app")?.classList.remove("player-active"); document.documentElement.classList.remove("player-on");
     try { m && m.pause(); } catch {}
     if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = "none"; navigator.mediaSession.metadata = null; } catch {} }
+    this._elCur = this._elDur = this._elSeek = null;
     this.isVideo = false;
   },
   bar() {
@@ -1148,6 +1174,7 @@ const Player = {
       </div>`;
     $("#pX").onclick = () => this.hide();
     $("#pSeek").oninput = e => { const m = this.media; if (m && m.duration) m.currentTime = (e.target.value / 1000) * m.duration; };
+    this._elCur = $("#pCur"); this._elDur = $("#pDur"); this._elSeek = $("#pSeek");   // cache the stable bar refs — tick() runs ~4Hz, no need to re-query each fire
     this._meta(); this.ctrls(); this.tick();
   },
   ctrls() {
@@ -1157,7 +1184,7 @@ const Player = {
     $("#pP").onclick = () => this.toggle(); $("#pB").onclick = () => this.skip(-10); $("#pF").onclick = () => this.skip(10); $("#pS").onclick = () => this.setSpeed();
   },
   tick() {
-    const m = this.media, cur = m ? m.currentTime || 0 : 0, dur = m ? m.duration || 0 : 0, c = $("#pCur"), d = $("#pDur"), s = $("#pSeek");
+    const m = this.media, cur = m ? m.currentTime || 0 : 0, dur = m ? m.duration || 0 : 0, c = this._elCur, d = this._elDur, s = this._elSeek;
     if (c) c.textContent = clock(cur); if (d) d.textContent = dur ? clock(dur) : "--:--";
     if (s && dur) { s.value = (cur / dur) * 1000; s.style.backgroundSize = (cur / dur) * 100 + "% 100%"; s.setAttribute("aria-valuetext", clock(cur) + " of " + clock(dur)); }
     this._pos();
@@ -1194,7 +1221,7 @@ function gatherEditor() {
   c.donate = c.donate || {}; c.donate.blurb = $("#e_blurb").value; c.donate.zelle = c.donate.zelle || {}; c.donate.zelle.name = $("#e_zname").value; c.donate.zelle.email = $("#e_zemail").value;
   return c;
 }
-function applyEditor() { State.content = gatherEditor(); setStore(CFG.contentLocalKey, State.content); renderShell(); route(State.route.name, State.route); closeMenu(); toast("Preview updated"); }
+function applyEditor() { State.content = gatherEditor(); const ok = setStore(CFG.contentLocalKey, State.content); if (Reader.open) hideReader(); renderShell(); route(State.route.name, State.route); closeMenu(); toast(ok ? "Preview updated" : "Preview updated — storage full, changes won't persist"); }
 
 window.addEventListener("keydown", e => {
   if (Reader.open) {
