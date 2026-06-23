@@ -234,7 +234,8 @@ main#view { flex: 1 0 auto; width: 100%; }
    sides — identical in every mode (Daf / עברית / English / Both). Borderless;
    they flip ONLY the gemara in place. */
 .flip-label { display: flex; align-items: center; justify-content: center; gap: 18px; }
-/* force LTR so ‹ prev = left, › next = right (beats .amud .amud-label / .dafpage-label rtl) */
+/* hold the DOM order (Hebrew RTL pagination: ‹ next = left, › prev = right) against
+   the rtl label — keep the row itself ltr so the chevrons don't bidi-flip */
 .dafpage-label.flip-label, .amud-label.flip-label { direction: ltr !important; }
 .flip-label .lbl-t { direction: rtl; }
 .amud-label.flip-label::before, .amud-label.flip-label::after { display: none; }   /* drop the side rules when arrows flank the number */

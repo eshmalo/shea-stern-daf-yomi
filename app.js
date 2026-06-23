@@ -356,8 +356,8 @@ function viewToday() {
       <div class="date">${dateLine(todayStr())}</div>
       <div class="actions">${actions}</div>
       <div class="adjacent">
-        <a data-daf="${esc(y.dy.masechta)}|${y.dy.daf}">‹ Yesterday · <span class="nm">${esc(y.dy.he)} ${esc(heDaf(y.dy.daf))}</span></a>
-        <a data-daf="${esc(tm.dy.masechta)}|${tm.dy.daf}">Tomorrow · <span class="nm">${esc(tm.dy.he)} ${esc(heDaf(tm.dy.daf))}</span> ›</a>
+        <a data-daf="${esc(tm.dy.masechta)}|${tm.dy.daf}">‹ Tomorrow · <span class="nm">${esc(tm.dy.he)} ${esc(heDaf(tm.dy.daf))}</span></a>
+        <a data-daf="${esc(y.dy.masechta)}|${y.dy.daf}">Yesterday · <span class="nm">${esc(y.dy.he)} ${esc(heDaf(y.dy.daf))}</span> ›</a>
       </div>
     </div>
     ${continueCard()}
@@ -428,9 +428,9 @@ function viewDaf(r) {
   return crumbs([["Browse", "browse"], [m ? m.he : masechta, "masechta", { masechta }]], heDaf(daf)) +
     `<div class="daf-head">
        <div class="daf-daynav">
-         <button class="daynav prev" data-daynav="-1" aria-label="Previous daf — whole page" title="Previous daf (whole page)"${dafStep(masechta, daf, -1) ? "" : " disabled"}>‹</button>
+         <button class="daynav next" data-daynav="1" aria-label="Next daf — whole page" title="Next daf (whole page)"${dafStep(masechta, daf, 1) ? "" : " disabled"}>‹</button>
          <div class="daf-head-titles"><div class="he">${esc(heT)}</div><div class="en">${esc(masechta)} · Daf ${daf}</div></div>
-         <button class="daynav next" data-daynav="1" aria-label="Next daf — whole page" title="Next daf (whole page)"${dafStep(masechta, daf, 1) ? "" : " disabled"}>›</button>
+         <button class="daynav prev" data-daynav="-1" aria-label="Previous daf — whole page" title="Previous daf (whole page)"${dafStep(masechta, daf, -1) ? "" : " disabled"}>›</button>
        </div>
        ${shiur ? `<div class="meta">Given ${dateLine(shiur.recorded || shiur.posted)} · ${fmtDur(shiur.duration)}</div>` : ""}</div>
      ${learnCtl}
@@ -500,9 +500,9 @@ function commCol(arr) {
 function flipLabel(cls, innerHtml, mas, daf) {
   const dis = d => dafStep(mas, daf, d) ? "" : " disabled";
   return `<div class="${cls} flip-label">`
-    + `<button class="pageflip prev" data-gemflip="-1" aria-label="Previous daf" title="Previous daf"${dis(-1)}>‹</button>`
+    + `<button class="pageflip next" data-gemflip="1" aria-label="Next daf" title="Next daf"${dis(1)}>‹</button>`
     + `<span class="lbl-t">${innerHtml}</span>`
-    + `<button class="pageflip next" data-gemflip="1" aria-label="Next daf" title="Next daf"${dis(1)}>›</button>`
+    + `<button class="pageflip prev" data-gemflip="-1" aria-label="Previous daf" title="Previous daf"${dis(-1)}>›</button>`
     + `</div>`;
 }
 function dafPage(daf, amud, seg, c, labelHtml) {
@@ -551,9 +551,9 @@ function dafColHead(masechta, daf) {
   const dafLbl = `${DY.BYEN[masechta] ? DY.BYEN[masechta].he : masechta} ${window.HebCal ? window.HebCal.gematria(daf) : daf}`;
   return `<div class="daf-colhead">
     <div class="daf-flip-row">
-      <button class="pageflip prev" data-gemflip="-1" aria-label="Previous daf" title="Previous daf"${dis(-1)}>‹</button>
+      <button class="pageflip next" data-gemflip="1" aria-label="Next daf" title="Next daf"${dis(1)}>‹</button>
       <span class="daf-flip-lbl">${esc(dafLbl)}</span>
-      <button class="pageflip next" data-gemflip="1" aria-label="Next daf" title="Next daf"${dis(1)}>›</button>
+      <button class="pageflip prev" data-gemflip="-1" aria-label="Previous daf" title="Previous daf"${dis(-1)}>›</button>
     </div>
     <div class="daf-cols-row" role="tablist" aria-label="Daf column — tap a name or swipe">${dafColsInner()}</div>
   </div>`;
@@ -591,7 +591,22 @@ function colScrollKey(col) {
   const b = $("#dafText"); return `p:${b ? b.dataset.mas : ""}:${b ? b.dataset.daf : ""}:${col}`;
 }
 function saveColScroll(col) { if (!col) return; State._colScroll = State._colScroll || {}; State._colScroll[colScrollKey(col)] = curDafScroll(); }
-function restoreColScroll(col) { const y = (State._colScroll || {})[colScrollKey(col)]; if (y == null) return; requestAnimationFrame(() => setDafScroll(y)); }
+// "The top of this daf" for the active scroller: the reader body scrolls to 0;
+// the in-page view scrolls so the daf reading region sits just under the bar.
+function dafTopScroll() {
+  if (Reader.open) return 0;
+  const box = $("#dafText"); if (!box) return 0;
+  const barH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--bar-h")) || 0;
+  return Math.max(0, (window.scrollY || 0) + box.getBoundingClientRect().top - barH - 4);
+}
+// Restore a remembered spot for this daf+column. On a plain column switch we stay
+// put when the column hasn't been seen; on a page flip (toTopIfUnseen) an unseen
+// daf starts at its top instead of inheriting the previous page's scroll.
+function restoreColScroll(col, toTopIfUnseen) {
+  const saved = (State._colScroll || {})[colScrollKey(col)];
+  if (saved == null && !toTopIfUnseen) return;
+  requestAnimationFrame(() => setDafScroll(saved != null ? saved : dafTopScroll()));
+}
 
 /* ---------- phone: collapse the top chrome while reading the daf ----------
    Scrolling DOWN hides the app bar + the daf-flip row (leaving just the thin
@@ -649,11 +664,13 @@ function renderAmud(seg, mode) {
       place — the top of the page (the shiur you're hearing) stays put.
    2. Top arrows (in the head) turn the WHOLE page to the previous / next daf —
       a different day's full lecture page. */
-function gemaraFlip(dir) {                       // label arrows — daf text only, in place
+async function gemaraFlip(dir) {                 // label arrows — daf text only, in place
   const box = $("#dafText"); if (!box) return;
   const nx = dafStep(box.dataset.mas, +box.dataset.daf, dir); if (!nx) return;
+  saveColScroll(State._dafCol);                  // remember our place on the daf we're leaving
   box.dataset.mas = nx.masechta; box.dataset.daf = nx.daf;
-  hydrateDaf();                                  // re-renders the daf incl. the flanking arrows (fresh boundary state)
+  await hydrateDaf();                            // re-renders the daf incl. the flanking arrows (fresh boundary state)
+  restoreColScroll(State._dafCol, true);         // the new daf+column: restore its own place, or start at the top if unseen
 }
 function dayNav(dir) {                           // top arrows — whole lecture page
   const [m, d] = (State.route.id || "").split("|");
@@ -697,7 +714,8 @@ function syncInpageRead(masechta, daf) {
 }
 function readerFlip(dir) {
   const nx = dafStep(Reader.masechta, Reader.daf, dir); if (!nx) return;
-  Reader.masechta = nx.masechta; Reader.daf = nx.daf; renderReader();
+  saveColScroll(State._dafCol);                  // remember our place on the daf we're leaving (keyed by reader daf+column)
+  Reader.masechta = nx.masechta; Reader.daf = nx.daf; Reader._restoreScroll = true; renderReader();
 }
 function renderReader() {
   const r = $("#reader"); if (!r) return;
@@ -722,7 +740,9 @@ async function fillReaderBody(m, d, mode) {
   const html = await dafBodyHtml(m, d, mode);
   const body = $("#rdBody");                                       // ignore if the user flipped again while loading
   if (body && Reader.open && Reader.masechta === m && Reader.daf === d && Reader.mode === mode) {
-    body.innerHTML = html; body.scrollTop = 0; applyDafCol(body); attachDafSwipe(body);
+    body.innerHTML = html; applyDafCol(body); attachDafSwipe(body);
+    if (Reader._restoreScroll) { Reader._restoreScroll = false; restoreColScroll(State._dafCol, true); }  // flip → restore this daf+column's place, or its top
+    else body.scrollTop = 0;                                         // initial open / mode change → top
     body.onclick = e => {                                            // delegated so the re-rendered column tabs stay live
       const g = e.target.closest("[data-gemflip]"); if (g) { readerFlip(+g.dataset.gemflip); return; }   // ‹ נד·א › flips the reader
       const c = e.target.closest("[data-dcol]"); if (c) selectDafCol(c.dataset.dcol);                     // phone-mode column switch
@@ -1083,8 +1103,8 @@ function applyEditor() { State.content = gatherEditor(); setStore(CFG.contentLoc
 window.addEventListener("keydown", e => {
   if (Reader.open) {
     if (e.key === "Escape") { e.preventDefault(); closeReader(); }
-    else if (e.key === "ArrowLeft") { e.preventDefault(); readerFlip(-1); }    // ‹ previous daf
-    else if (e.key === "ArrowRight") { e.preventDefault(); readerFlip(1); }     // next daf ›
+    else if (e.key === "ArrowLeft") { e.preventDefault(); readerFlip(1); }      // RTL: ← advances to the next daf
+    else if (e.key === "ArrowRight") { e.preventDefault(); readerFlip(-1); }    // RTL: → goes back to the previous daf
     return;
   }
   if (e.key === "Escape") closeMenu();
