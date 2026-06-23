@@ -323,10 +323,14 @@ html.player-on .reader-body { padding-bottom: calc(130px + env(safe-area-inset-b
   .daf-flip-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
   .daf-flip-lbl { font-family: var(--serif-he); direction: rtl; font-size: 18px; font-weight: 700; color: var(--accent); }
   .daf-cols-row { display: flex; align-items: baseline; justify-content: center; gap: 26px; }
-  .daf-colhead .col-cur, .daf-colhead .col-tab { font-family: var(--serif-he); font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: .01em; }
-  .daf-colhead .col-cur { color: var(--accent); }
-  .daf-colhead .col-tab { -webkit-appearance: none; appearance: none; border: 0; background: none; cursor: pointer; color: var(--ink-faint); padding: 6px 4px; transition: color .14s; }
-  .daf-colhead .col-tab:hover, .daf-colhead .col-tab:active { color: var(--accent); }
+  /* Three fixed tabs — they never move; the selected one is lit maroon with a
+     thin underline, the rest sit faint. (Transparent border on all → no shift.) */
+  .daf-colhead .col-tab { -webkit-appearance: none; appearance: none; background: none; cursor: pointer;
+    font-family: var(--serif-he); font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: .01em;
+    color: var(--ink-faint); padding: 5px 4px 4px; border: 0; border-bottom: 2px solid transparent;
+    transition: color .16s, border-color .16s; }
+  .daf-colhead .col-tab:hover { color: var(--accent-2); }
+  .daf-colhead .col-tab.on { color: var(--accent); border-bottom-color: var(--accent); }
 }
 
 /* ---------- Sponsor ---------- */
@@ -496,12 +500,10 @@ footer a { color: var(--ink-soft); }
   /* tighter sticky daf header */
   .daf-colhead { gap: 3px; padding: 6px 6px 7px; margin: 0 0 12px; }
   .daf-flip-lbl { font-size: 16px; }
-  .daf-colhead .col-cur, .daf-colhead .col-tab { font-size: 19px; }
-  .daf-cols-row { gap: 22px; }
-  /* column-switch polish: the names drop in, the new column's text fades in */
-  @keyframes dyColDrop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+  .daf-colhead .col-tab { font-size: 19px; }
+  .daf-cols-row { gap: 24px; }
+  /* column-switch polish: the names stay put; only the new column's text fades in */
   @keyframes dyColFade { from { opacity: .45; } to { opacity: 1; } }
-  .daf-cols-row.col-drop > * { animation: dyColDrop .22s cubic-bezier(.4,0,.2,1); }
   .col-switched .dafpage { animation: dyColFade .18s ease; }
 
   /* compact bottom player — title shrinks/ellipsizes so the row never wraps */

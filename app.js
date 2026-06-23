@@ -536,15 +536,15 @@ const dafColIndex = k => DAF_COLS.findIndex(c => c[0] === k);
 // what you're reading) flanked by the two columns you can switch to — all in the
 // same serif as the page titles. It sticks to the top while you scroll; you can
 // also swipe the daf left/right. Hidden on desktop, where all three show at once.
-// Inner of the column-switcher row: the lower-index column (left), the current
-// column (center), the higher-index column (right). Extracted so a column switch
-// can update just these names in place — leaving the daf-flip row (and its
-// collapse animation) untouched.
+// The column-switcher row: all three names in their fixed printed-page order
+// (תוספות · גמרא · רש"י) — they never move; only the highlight does. Selecting a
+// column just lights it up, so the names stay put exactly where you tapped.
 function dafColsInner() {
-  const ci = dafColIndex(State._dafCol || "gemara");
-  const other = DAF_COLS.map((c, i) => [c, i]).filter(([, i]) => i !== ci);   // ascending index → lower-left, higher-right
-  const opt = o => `<button data-dcol="${o[0][0]}" role="tab" aria-selected="false" class="col-tab">${o[0][1]}</button>`;
-  return opt(other[0]) + `<span class="col-cur" aria-current="true">${DAF_COLS[ci][1]}</span>` + opt(other[1]);
+  const cur = State._dafCol || "gemara";
+  return DAF_COLS.map(([key, name]) => {
+    const on = key === cur;
+    return `<button data-dcol="${key}" role="tab" aria-selected="${on}" class="col-tab${on ? " on" : ""}">${name}</button>`;
+  }).join("");
 }
 function dafColHead(masechta, daf) {
   const dis = d => dafStep(masechta, daf, d) ? "" : " disabled";
@@ -569,8 +569,11 @@ function selectDafCol(col) {
   const apply = box => {
     if (!box) return;
     applyDafCol(box);
-    const row = box.querySelector(".daf-cols-row");   // swap just the names in place — leaves the daf-flip row (& its state) alone
-    if (row) { row.innerHTML = dafColsInner(); restartAnim(row, "col-drop"); }
+    const row = box.querySelector(".daf-cols-row");   // names stay fixed — just move the highlight to the selected one
+    if (row) row.querySelectorAll(".col-tab").forEach(t => {
+      const on = t.dataset.dcol === State._dafCol;
+      t.classList.toggle("on", on); t.setAttribute("aria-selected", on ? "true" : "false");
+    });
     restartAnim(box, "col-switched");                 // gentle fade-in of the new column's text
   };
   apply($("#dafText"));
