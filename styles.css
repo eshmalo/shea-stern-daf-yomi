@@ -187,7 +187,8 @@ main#view { flex: 1 0 auto; width: 100%; }
 /* ---------- Masechta: daf grid ---------- */
 .crumbs { font-family: var(--sans); font-size: 12.5px; color: var(--ink-faint); margin: 8px 0 2px; letter-spacing: .01em; }
 .crumbs a { color: var(--ink-soft); } .crumbs b { color: var(--ink); font-weight: 600; }
-.daf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 1px; background: var(--hair-2); border: 1px solid var(--hair-2); margin-top: 14px; border-radius: 4px; overflow: hidden; }
+/* Hebrew daf grid (the "calendar"): daf 2 starts top-right and flows right-to-left */
+.daf-grid { display: grid; direction: rtl; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 1px; background: var(--hair-2); border: 1px solid var(--hair-2); margin-top: 14px; border-radius: 4px; overflow: hidden; }
 .daf-cell { -webkit-appearance: none; appearance: none; border: 0; background: var(--paper); min-height: 52px; aspect-ratio: 1.1; display: grid; place-items: center; position: relative; color: var(--ink); transition: background .12s; }
 .daf-cell .he { font-family: var(--serif-he); direction: rtl; font-size: 18px; line-height: 1; }
 .daf-cell .n { position: absolute; bottom: 4px; right: 6px; font-family: var(--sans); font-size: 9px; color: var(--ink-faint); }
@@ -228,7 +229,10 @@ main#view { flex: 1 0 auto; width: 100%; }
 .daynav:hover { background: var(--accent); border-color: var(--accent); color: #fff; transform: scale(1.06); }
 .daynav:active { transform: scale(.95); }
 .daynav:disabled { opacity: .22; pointer-events: none; }
-@media (max-width: 560px) { .daynav { width: 36px; height: 36px; font-size: 21px; } .daf-daynav { gap: 10px; } }
+/* phone layout (is-narrow = viewport 560px OR forced phone view) */
+html.is-narrow .daynav { width: 36px; height: 36px; font-size: 21px; }
+html.is-narrow .daf-daynav { gap: 10px; }
+
 
 /* gemara-flip arrows live INSIDE the daf, flanking the נב·א page number on both
    sides — identical in every mode (Daf / עברית / English / Both). Borderless;
@@ -267,12 +271,12 @@ html.reader-open { overflow: hidden; }
 .reader-body .amud { max-width: 760px; margin-left: auto; margin-right: auto; }
 .reader-body .dafpage { max-width: 100%; }
 html.player-on .reader-body { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
-@media (max-width: 680px) {
-  .reader-bar { gap: 8px 6px; padding-left: 10px; padding-right: 10px; }
-  .reader-bar .rd-right { grid-column: 1 / -1; justify-self: center; }   /* mode switch wraps to its own centered row */
-  .reader-bar .rd-title .he { font-size: 18px; }
-  .reader-body { padding: 12px 14px 48px; }
-}
+/* phone layout (is-phone = viewport 680px OR forced phone view) */
+html.is-phone .reader-bar { gap: 8px 6px; padding-left: 10px; padding-right: 10px; }
+html.is-phone .reader-bar .rd-right { grid-column: 1 / -1; justify-self: center; }
+html.is-phone .reader-bar .rd-title .he { font-size: 18px; }
+html.is-phone .reader-body { padding: 12px 14px 48px; }
+
 
 .amud { margin: 18px 0 24px; }
 .amud .amud-label { font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 15px; letter-spacing: .04em; color: var(--accent); margin-bottom: 12px; position: relative; }
@@ -298,41 +302,32 @@ html.player-on .reader-body { padding-bottom: calc(130px + env(safe-area-inset-b
 .col-empty { color: var(--hair-2); text-align: center; font-size: 18px; padding: 10px 0; }
 /* the phone column selector is hidden on wider screens (all 3 columns show) */
 .daf-colhead { display: none; }
-@media (max-width: 680px) {
-  .dafpage { padding: 14px 13px 10px; }
-  .dafpage-grid { grid-template-columns: 1fr; gap: 0; }
-  /* phone: show only the chosen column — no scrolling through all three */
-  .col-gemara  .dafpage-grid .col:not(.gemara),
-  .col-rashi   .dafpage-grid .col:not(.rashi),
-  .col-tosafos .dafpage-grid .col:not(.tosafos) { display: none; }
-  .dafpage-grid .col.side { border-top: 0; padding-top: 0; margin-top: 0; }
-  .col.gemara .gem { font-size: 20px; line-height: 1.9; }
-  .col.side .comm { font-size: 17px; line-height: 1.8; }
-  .col-h { display: none; }   /* the sticky column bar names the column instead */
-  .daf-toolbar { flex-wrap: wrap; gap: 8px; }
-  .seg button { padding: 6px 10px; }
-  /* Column switcher: the two columns you're NOT on, as small serif words (swipe
-     the daf to switch too). Borderless, title-like, gold chevron toward each. */
-  /* Sticky daf header: the daf-flip row (‹ חולין נג ›) over the column switcher
-     (current column centred + the two you can switch to). Freezes below the top
-     bar on scroll; swipe the daf to switch columns too. */
-  .daf-colhead { display: flex; flex-direction: column; align-items: center; gap: 6px; direction: ltr;
+/* phone layout (is-phone = viewport 680px OR forced phone view) */
+html.is-phone .dafpage { padding: 14px 13px 10px; }
+html.is-phone .dafpage-label .pageflip { display: none; }
+html.is-phone .dafpage-grid { grid-template-columns: 1fr; gap: 0; }
+html.is-phone .col-gemara .dafpage-grid .col:not(.gemara), html.is-phone .col-rashi .dafpage-grid .col:not(.rashi), html.is-phone .col-tosafos .dafpage-grid .col:not(.tosafos) { display: none; }
+html.is-phone .dafpage-grid .col.side { border-top: 0; padding-top: 0; margin-top: 0; }
+html.is-phone .col.gemara .gem { font-size: 20px; line-height: 1.9; }
+html.is-phone .col.side .comm { font-size: 17px; line-height: 1.8; }
+html.is-phone .col-h { display: none; }
+html.is-phone .daf-toolbar { flex-wrap: wrap; gap: 8px; }
+html.is-phone .seg button { padding: 6px 10px; }
+html.is-phone .daf-colhead { display: flex; flex-direction: column; align-items: center; gap: 6px; direction: ltr;
     position: -webkit-sticky; position: sticky; top: var(--bar-h, 54px); z-index: 20;
     margin: 0 0 14px; padding: 9px 6px; background: var(--paper); border-bottom: 1px solid var(--hair);
     transition: top .25s cubic-bezier(.4, 0, .2, 1), box-shadow .25s ease; }
-  .reader-body .daf-colhead { top: 0; }   /* the reader body is its own scroll box */
-  .daf-flip-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
-  .daf-flip-lbl { font-family: var(--serif-he); direction: rtl; font-size: 18px; font-weight: 700; color: var(--accent); }
-  .daf-cols-row { display: flex; align-items: baseline; justify-content: center; gap: 26px; }
-  /* Three fixed tabs — they never move; the selected one is lit maroon with a
-     thin underline, the rest sit faint. (Transparent border on all → no shift.) */
-  .daf-colhead .col-tab { -webkit-appearance: none; appearance: none; background: none; cursor: pointer;
+html.is-phone .reader-body .daf-colhead { top: 0; }
+html.is-phone .daf-flip-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
+html.is-phone .daf-flip-lbl { font-family: var(--serif-he); direction: rtl; font-size: 18px; font-weight: 700; color: var(--accent); }
+html.is-phone .daf-cols-row { display: flex; align-items: baseline; justify-content: center; gap: 26px; }
+html.is-phone .daf-colhead .col-tab { -webkit-appearance: none; appearance: none; background: none; cursor: pointer;
     font-family: var(--serif-he); font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: .01em;
     color: var(--ink-faint); padding: 5px 4px 4px; border: 0; border-bottom: 2px solid transparent;
     transition: color .16s, border-color .16s; }
-  .daf-colhead .col-tab:hover { color: var(--accent-2); }
-  .daf-colhead .col-tab.on { color: var(--accent); border-bottom-color: var(--accent); }
-}
+html.is-phone .daf-colhead .col-tab:hover { color: var(--accent-2); }
+html.is-phone .daf-colhead .col-tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+
 
 /* ---------- Sponsor ---------- */
 .sp-opts { display: grid; gap: 10px; margin: 8px 0 16px; }
@@ -381,6 +376,13 @@ html.player-on .reader-body { padding-bottom: calc(130px + env(safe-area-inset-b
 .menu a, .menu button.mi { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 12px 22px; font-size: 17px; color: var(--ink); transition: background .12s; border-left: 2px solid transparent; }
 .menu a:hover, .menu button.mi:hover { background: var(--paper-2); text-decoration: none; border-left-color: var(--accent); }
 .menu .accent { color: var(--accent); }
+
+/* ---------- phone view (desktop): the toggle forces the real phone layout via the
+   is-phone / is-narrow classes; here we just narrow the whole app to a phone width
+   so it actually looks like a phone (the player + toasts track --app too) ---------- */
+html.force-phone { --app: 460px; }
+html.force-phone #app { box-shadow: 0 0 0 1px rgba(33,30,24,.1), 0 24px 70px -20px rgba(33,30,24,.4); }
+@media (max-width: 680px) { .phoneview-mi { display: none; } }   /* on a real phone the toggle is pointless */
 
 /* ---------- player — one compact bar for audio + video ----------
    A thin full-width scrub sits over a single control row: now-playing on the
@@ -485,44 +487,35 @@ footer a { color: var(--ink-soft); }
   .bar .live { box-shadow: 0 0 0 3px rgba(58,122,72,.18); }
 }
 
-@media (max-width: 560px) {
-  :root { --pad: 18px; }
-  .mas-list { grid-template-columns: 1fr; }
-  body { font-size: 17.5px; }
-  .titlepage { padding-top: 28px; }
-  .daf-progress { flex-direction: column; gap: 7px; }
-}
+/* phone layout (is-narrow = viewport 560px OR forced phone view) */
+html.is-narrow { --pad: 18px; }
+html.is-narrow .mas-list { grid-template-columns: 1fr; }
+html.is-narrow body { font-size: 17.5px; }
+html.is-narrow .titlepage { padding-top: 28px; }
+html.is-narrow .daf-progress { flex-direction: column; gap: 7px; }
+
 
 /* ===== phone: compact chrome + collapse-on-scroll (maximize reading space) ===== */
-@media (max-width: 680px) {
-  /* tighter top bar */
-  .bar { padding-top: calc(5px + env(safe-area-inset-top, 0px)); padding-bottom: 5px; gap: 6px; }
+/* phone layout (is-phone = viewport 680px OR forced phone view) */
+html.is-phone .bar { padding-top: calc(5px + env(safe-area-inset-top, 0px)); padding-bottom: 5px; gap: 6px; }
+html.is-phone .daf-colhead { gap: 3px; padding: 6px 6px 7px; margin: 0 0 12px; }
+html.is-phone .daf-flip-lbl { font-size: 16px; }
+html.is-phone .daf-colhead .col-tab { font-size: 19px; }
+html.is-phone .daf-cols-row { gap: 24px; }
+@keyframes dyColFade { from { opacity: .45; } to { opacity: 1; } }
+html.is-phone .col-switched .dafpage { animation: dyColFade .18s ease; }
+html.is-phone .player { padding: 7px 13px calc(8px + env(safe-area-inset-bottom, 0px)); }
+html.is-phone .player .prow { gap: 9px; margin-top: 6px; }
+html.is-phone .player .pnow { gap: 7px; }
+html.is-phone .player .pnow b { font-size: 13.5px; }
+html.is-phone .player .pnow .ptime { font-size: 10px; }
+html.is-phone .player .ctrls { gap: 8px; }
+html.is-phone .player .ctrls button { min-width: 36px; min-height: 38px; font-size: 13px; }
+html.is-phone .player .ctrls .pp { width: 40px; height: 40px; font-size: 14px; }
+html.is-phone .player .ctrls .pill { padding: 4px 9px; font-size: 11px; }
+html.is-phone .player .x { min-width: 28px; }
+html.is-phone #app.player-active { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+html.is-phone .toast-wrap { bottom: calc(106px + env(safe-area-inset-bottom, 0px)); }
+html.is-phone.dy-min .bar { transform: translateY(-100%); }
+html.is-phone.dy-min .daf-colhead { top: 0; box-shadow: 0 8px 16px -12px rgba(33, 30, 24, .45); }
 
-  /* tighter sticky daf header */
-  .daf-colhead { gap: 3px; padding: 6px 6px 7px; margin: 0 0 12px; }
-  .daf-flip-lbl { font-size: 16px; }
-  .daf-colhead .col-tab { font-size: 19px; }
-  .daf-cols-row { gap: 24px; }
-  /* column-switch polish: the names stay put; only the new column's text fades in */
-  @keyframes dyColFade { from { opacity: .45; } to { opacity: 1; } }
-  .col-switched .dafpage { animation: dyColFade .18s ease; }
-
-  /* compact bottom player — title shrinks/ellipsizes so the row never wraps */
-  .player { padding: 7px 13px calc(8px + env(safe-area-inset-bottom, 0px)); }
-  .player .prow { gap: 9px; margin-top: 6px; }
-  .player .pnow { gap: 7px; }
-  .player .pnow b { font-size: 13.5px; }
-  .player .pnow .ptime { font-size: 10px; }
-  .player .ctrls { gap: 8px; }
-  .player .ctrls button { min-width: 36px; min-height: 38px; font-size: 13px; }
-  .player .ctrls .pp { width: 40px; height: 40px; font-size: 14px; }
-  .player .ctrls .pill { padding: 4px 9px; font-size: 11px; }
-  .player .x { min-width: 28px; }
-  #app.player-active { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
-  .toast-wrap { bottom: calc(106px + env(safe-area-inset-bottom, 0px)); }
-
-  /* collapse-on-scroll: only the app bar slides away — the daf-flip arrows, the
-     page number, and the column switcher all stay open and slide up to the top. */
-  html.dy-min .bar { transform: translateY(-100%); }
-  html.dy-min .daf-colhead { top: 0; box-shadow: 0 8px 16px -12px rgba(33, 30, 24, .45); }
-}

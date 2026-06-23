@@ -82,7 +82,7 @@ async function boot() {
   }
   State.speaker = seed.speaker; State.all = seed.lectures || [];
   [State.content, State.media, State.dafIndex] = await Promise.all([loadContent(), loadJson(CFG.mediaManifest), loadJson(CFG.dafIndex)]);
-  buildIndex(); renderShell(); route("today", {}, { replace: true });
+  buildIndex(); renderShell(); restoreInitialRoute();
   setStatus("checking"); refreshLive(seed.lectures || [], !!cached);
 }
 async function loadContent() { let l = null; try { l = localStorage.getItem(CFG.contentLocalKey); } catch {} if (l) { try { return JSON.parse(l); } catch {} } return loadJson(CFG.contentUrl); }
@@ -211,7 +211,6 @@ function renderShell() {
       <button class="ic-btn back" id="backBtn" aria-label="Back" hidden>‹</button>
       <button class="ic-btn" id="burger" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">☰</button>
       <span class="wordmark" id="home" role="link" tabindex="0" title="Today's daf">${esc(mh.hebrew || "הדף היומי")}</span>
-      <span class="live" id="live" title="updating from source"></span>
       <span class="spacer"></span>
       <button class="ic-btn" id="searchBtn" aria-label="Search">⌕</button>
     </header>
@@ -231,6 +230,7 @@ function renderShell() {
   $("#burger").onclick = openMenu; $("#mask").onclick = closeMenu;
   $("#searchBtn").onclick = () => route("search");
   $("#backBtn").onclick = goBack;
+  applyViewportClasses();
   const homeEl = $("#home"); homeEl.onclick = () => route("today"); homeEl.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); route("today"); } };
   Player.mount(); buildMenu(); setStatus(State._sk || "checking"); updateBackBtn(); setBarH();
 }
@@ -249,10 +249,30 @@ function buildMenu() {
       <button class="mi accent" data-route="sponsor">Sponsor a Daf</button>
       <button class="mi accent" data-route="donate">Donate</button>
       <button class="mi" data-route="about">About</button>
+      <button class="mi phoneview-mi" id="phoneViewBtn">${_forcePhone ? "🖥️ Exit phone view" : "📱 Phone view"}</button>
       <button class="mi" id="editorBtn" style="color:var(--ink-faint);font-size:13px">Editor mode</button>
     </nav>`;
   $$("#menu .mi[data-route]").forEach(b => b.onclick = () => { closeMenu(); route(b.dataset.route); });
+  $("#phoneViewBtn").onclick = togglePhoneView;
   $("#editorBtn").onclick = openEditor;
+}
+// Phone view: switches the ACTUAL desktop UI to the real phone layout (one column at
+// a time, sticky column switcher, compact chrome) by forcing the is-phone/is-narrow
+// classes that the phone CSS keys on — no device mock-up, the whole UI changes.
+function applyViewportClasses() {
+  const html = document.documentElement;
+  const m680 = window.matchMedia("(max-width: 680px)").matches;
+  const m560 = window.matchMedia("(max-width: 560px)").matches;
+  html.classList.toggle("is-phone", m680 || _forcePhone);
+  html.classList.toggle("is-narrow", m560 || _forcePhone);
+  html.classList.toggle("force-phone", _forcePhone);
+}
+function togglePhoneView() {
+  _forcePhone = !_forcePhone;
+  try { localStorage.setItem("dy_force_phone", _forcePhone ? "1" : "0"); } catch {}
+  applyViewportClasses(); setBarH();
+  const b = $("#phoneViewBtn"); if (b) b.textContent = _forcePhone ? "🖥️ Exit phone view" : "📱 Phone view";
+  closeMenu(); window.scrollTo(0, 0);
 }
 function openMenu() { $("#menu").classList.add("open"); $("#mask").classList.add("open"); $("#burger")?.setAttribute("aria-expanded", "true"); $("#app")?.setAttribute("inert", ""); setTimeout(() => $("#menu .mi")?.focus(), 0); }
 function closeMenu() { const wasOpen = $("#menu")?.classList.contains("open"); $("#menu").classList.remove("open"); $("#mask").classList.remove("open"); $("#burger")?.setAttribute("aria-expanded", "false"); $("#app")?.removeAttribute("inert"); if (wasOpen) $("#burger")?.focus(); }
@@ -261,6 +281,8 @@ function closeMenu() { const wasOpen = $("#menu")?.classList.contains("open"); $
    ROUTER
    ===================================================================== */
 let _navDepth = 0;   // how deep into the app we are (0 = home/entry); drives the back button
+const _embedded = (() => { try { return window.top !== window.self; } catch { return true; } })();   // true when embedded in another frame
+let _forcePhone = false; try { _forcePhone = localStorage.getItem("dy_force_phone") === "1"; } catch {}   // desktop "phone view" toggle
 function route(name, params = {}, opts = {}) {
   const next = { name, ...params };
   const same = JSON.stringify(next) === JSON.stringify(State.route);
@@ -270,15 +292,32 @@ function route(name, params = {}, opts = {}) {
   _navDepth = replace ? _navDepth : _navDepth + 1;
   const st = { route: State.route, sponsor: State.sponsor, depth: _navDepth };
   try { replace ? history.replaceState(st, "") : history.pushState(st, ""); } catch {}
+  persistRoute();
   rerender(); window.scrollTo(0, 0); updateBackBtn();
 }
 function goBack() { if (_navDepth > 0) history.back(); else route("today", {}, { replace: true }); }
 function updateBackBtn() { const b = $("#backBtn"); if (b) b.hidden = _navDepth <= 0; }
+// Remember the current page so a refresh returns to it (not Today). history.state
+// already survives reloads; sessionStorage is the fallback. Skipped inside the
+// phone-view iframe so it can't clobber the parent tab's saved page.
+function persistRoute() { if (_embedded) return; try { sessionStorage.setItem("dy_route", JSON.stringify({ route: State.route, sponsor: State.sponsor, depth: _navDepth })); } catch {} }
+function restoreInitialRoute() {
+  let st = history.state;
+  if (!_embedded && !(st && st.route && st.route.name)) { try { st = JSON.parse(sessionStorage.getItem("dy_route") || "null"); } catch { st = null; } }
+  if (st && st.route && st.route.name) {
+    State.route = st.route;
+    if (st.sponsor) State.sponsor = st.sponsor;
+    _navDepth = typeof st.depth === "number" ? st.depth : 0;
+    try { history.replaceState({ route: State.route, sponsor: State.sponsor, depth: _navDepth }, ""); } catch {}
+    rerender(); window.scrollTo(0, 0); updateBackBtn();
+  } else { route("today", {}, { replace: true }); }
+}
 window.addEventListener("popstate", e => {
   if (Reader.open) { hideReader(); return; }   // Back closes the full-screen reader; #view is left untouched
   const st = e.state;
   if (st && st.route) { State.route = st.route; if (st.sponsor) State.sponsor = st.sponsor; _navDepth = st.depth || 0; }
   else { State.route = { name: "today" }; _navDepth = 0; }   // walked back past our entry → home
+  persistRoute();
   closeMenu(); rerender(); window.scrollTo(0, 0); updateBackBtn();
 });
 function rerender() {
@@ -356,8 +395,8 @@ function viewToday() {
       <div class="date">${dateLine(todayStr())}</div>
       <div class="actions">${actions}</div>
       <div class="adjacent">
-        <a data-daf="${esc(tm.dy.masechta)}|${tm.dy.daf}">‹ Tomorrow · <span class="nm">${esc(tm.dy.he)} ${esc(heDaf(tm.dy.daf))}</span></a>
-        <a data-daf="${esc(y.dy.masechta)}|${y.dy.daf}">Yesterday · <span class="nm">${esc(y.dy.he)} ${esc(heDaf(y.dy.daf))}</span> ›</a>
+        <a data-daf="${esc(tm.dy.masechta)}|${tm.dy.daf}" title="Tomorrow">‹ <span class="nm">${esc(tm.dy.he)} ${esc(heDaf(tm.dy.daf))}</span></a>
+        <a data-daf="${esc(y.dy.masechta)}|${y.dy.daf}" title="Yesterday"><span class="nm">${esc(y.dy.he)} ${esc(heDaf(y.dy.daf))}</span> ›</a>
       </div>
     </div>
     ${continueCard()}
@@ -520,7 +559,7 @@ function renderDafLayout(masechta, daf, data, comm) {
   let html = "";
   for (const amud of [daf + "a", daf + "b"]) {
     const seg = data[amud]; if (!seg) continue;
-    html += dafPage(daf, amud, seg, comm[amud], `<div class="dafpage-label">${esc(heAmud(daf, amud))}</div>`);   // plain amud marker; the daf-flip control lives in the sticky header
+    html += dafPage(daf, amud, seg, comm[amud], flipLabel("dafpage-label", esc(heAmud(daf, amud)), masechta, daf));   // per-page daf-flip arrows on each amud (restored)
   }
   if (!html) return `<div class="empty-mini">This amud isn't available.</div>`;
   return dafColHead(masechta, daf) + html + `<div class="daf-src">Talmud, Rashi &amp; Tosafos — Vilna Edition (public domain) · English Steinsaltz, CC-BY-NC · via Sefaria</div>`;
@@ -596,7 +635,10 @@ function saveColScroll(col) { if (!col) return; State._colScroll = State._colScr
 function dafTopScroll() {
   if (Reader.open) return 0;
   const box = $("#dafText"); if (!box) return 0;
-  const barH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--bar-h")) || 0;
+  // collapsed chrome → the bar is hidden and the colhead pins at the very top, so the
+  // "ceiling" sits a bar-height higher; measure accordingly
+  const min = document.documentElement.classList.contains("dy-min");
+  const barH = min ? 0 : (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--bar-h")) || 0);
   return Math.max(0, (window.scrollY || 0) + box.getBoundingClientRect().top - barH - 4);
 }
 // Restore a remembered spot for this daf+column. On a plain column switch we stay
@@ -604,8 +646,14 @@ function dafTopScroll() {
 // daf starts at its top instead of inheriting the previous page's scroll.
 function restoreColScroll(col, toTopIfUnseen) {
   const saved = (State._colScroll || {})[colScrollKey(col)];
-  if (saved == null && !toTopIfUnseen) return;
-  requestAnimationFrame(() => setDafScroll(saved != null ? saved : dafTopScroll()));
+  requestAnimationFrame(() => {
+    const ceil = dafTopScroll();                               // the sticky-header "ceiling" (column top, header pinned)
+    let target = null;
+    if (saved != null) target = Math.max(saved, ceil);        // restore a remembered spot — but never above the ceiling
+    else if (toTopIfUnseen) target = ceil;                    // page-flip into an unseen daf → its top
+    else if (curDafScroll() < ceil) target = ceil;            // column switch, first view → snap down, never above the ceiling
+    if (target != null) { setDafScroll(target); lockReadMin(target); }   // this programmatic scroll must NOT flip the header open/closed
+  });
 }
 
 /* ---------- phone: collapse the top chrome while reading the daf ----------
@@ -614,10 +662,14 @@ function restoreColScroll(col, toTopIfUnseen) {
    Only on phones, and only on the daf view / reader. */
 let _lastReadY = 0, _minLockUntil = 0;
 function resetReadMin() { document.documentElement.classList.remove("dy-min"); _lastReadY = 0; _minLockUntil = 0; }
+// Pin the collapse state across a programmatic scroll (page flip / column switch) so
+// pagination never slides the app bar open or closed — that toggle is the user's
+// own scrolling only.
+function lockReadMin(y) { _minLockUntil = Date.now() + 450; if (typeof y === "number") _lastReadY = y; }
 function onReadScroll() {
   const html = document.documentElement;
   const onDaf = Reader.open || (State.route && State.route.name === "daf");
-  if (!onDaf || !window.matchMedia("(max-width: 680px)").matches) { html.classList.remove("dy-min"); _lastReadY = 0; return; }
+  if (!onDaf || !html.classList.contains("is-phone")) { html.classList.remove("dy-min"); _lastReadY = 0; return; }
   const y = Reader.open ? ($("#rdBody") ? $("#rdBody").scrollTop : 0) : (window.scrollY || 0);
   const now = Date.now(), min = html.classList.contains("dy-min");
   if (now < _minLockUntil) { _lastReadY = y; return; }       // brief settle window after a toggle — avoids reflow-induced flapping
@@ -641,7 +693,7 @@ function attachDafSwipe(box) {
   let x0 = 0, y0 = 0, t0 = 0;
   box.addEventListener("touchstart", e => { const t = e.changedTouches[0]; x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); }, { passive: true });
   box.addEventListener("touchend", e => {
-    if (!window.matchMedia("(max-width: 680px)").matches) return;     // one column shows only on phones
+    if (!document.documentElement.classList.contains("is-phone")) return;     // one column shows only in the phone layout
     if (!box.querySelector(".dafpage-grid")) return;                  // only in the Tzuras-Hadaf "Daf" layout
     const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
     if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.4 || Date.now() - t0 > 700) return;   // deliberate horizontal flick
@@ -1001,6 +1053,46 @@ const Player = {
     if (this.audio) { try { this.audio.pause(); this.audio.src = ""; } catch {} }
     this.audio = new Audio(); this.audio.preload = "metadata";
     this._bind(this.audio);
+    this._session();
+  },
+  // Wire the OS "Now Playing" surface once: play/pause/skip/seek from the
+  // lock screen, headphones, car, and a paired Apple Watch / Wear OS watch.
+  _session() {
+    if (this._sessSet || !("mediaSession" in navigator)) return;
+    this._sessSet = true;
+    const ms = navigator.mediaSession, set = (a, fn) => { try { ms.setActionHandler(a, fn); } catch {} };
+    set("play",  () => { const m = this.media; if (m) m.play().catch(() => {}); });
+    set("pause", () => { const m = this.media; if (m) m.pause(); });
+    set("stop",  () => this.hide());
+    set("seekbackward", e => this.skip(-(e && e.seekOffset || 10)));
+    set("seekforward",  e => this.skip(  e && e.seekOffset || 10));
+    set("seekto", e => { const m = this.media; if (!m || !e) return; try { if (e.fastSeek && "fastSeek" in m) m.fastSeek(e.seekTime); else m.currentTime = e.seekTime; } catch {} });
+    set("previoustrack", null); set("nexttrack", null);   // one long shiur — no track-skip buttons on the watch
+  },
+  // Push the current daf's title/artwork to the OS card.
+  _meta() {
+    if (!("mediaSession" in navigator) || !this.lec) return;
+    const k = this.lec._dk, mh = (State.content && State.content.masthead) || {};
+    const heTitle = k && k.daf ? dafTitleHe(k.masechta, k.daf) : (this.lec.title || "שיעור");
+    const enLine  = k && k.daf ? `${k.masechta} ${k.daf}` : "";
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: heTitle,
+        artist: (enLine ? enLine + " · " : "") + (mh.english || "Rabbi Shea Stern"),
+        album: mh.hebrew || "שיעורי הדף היומי",
+        artwork: [
+          { src: "assets/artwork-192.png", sizes: "192x192", type: "image/png" },
+          { src: "assets/artwork-512.png", sizes: "512x512", type: "image/png" },
+        ],
+      });
+    } catch {}
+  },
+  // Keep the OS scrubber (lock screen / watch) in step with playback.
+  _pos() {
+    const ms = navigator.mediaSession; if (!ms || !ms.setPositionState) return;
+    const m = this.media; if (!m) return;
+    const dur = m.duration || 0; if (!dur || !isFinite(dur)) return;
+    try { ms.setPositionState({ duration: dur, playbackRate: m.playbackRate || 1, position: Math.min(m.currentTime || 0, dur) }); } catch {}
   },
   // Wire one media element's events to the player. Guarded so each element binds
   // once; every handler no-ops unless that element is the active `media`.
@@ -1015,6 +1107,7 @@ const Player = {
     });
     m.addEventListener("play", () => { if (this.media === m) { pauseAllExcept(m); this.ctrls(); } });
     m.addEventListener("pause", () => { if (this.media === m) this.ctrls(); });
+    m.addEventListener("ratechange", () => { if (this.media === m && this.speed !== m.playbackRate) { this.speed = m.playbackRate; this.ctrls(); } });   // keep the bar's speed in sync with the native video menu (and vice-versa)
     m.addEventListener("ended", () => { if (this.media === m && this.lec) { clearPos(this.lec.id); markShiurLearned(this.lec); this.ctrls(); } });
     m.addEventListener("error", () => { if (this.media === m && this.lec && this.local && !this.isVideo) { this.local = false; this._skipPending = true; this.audio.src = this.lec.audio; this.audio.play().catch(() => {}); this.bar(); } });
   },
@@ -1041,6 +1134,7 @@ const Player = {
     if (m && this.lec) { const cur = m.currentTime || 0, dur = m.duration || 0; if (dur && cur > 8 && cur < dur - 8) savePos(this.lec.id, cur, dur); }
     $("#player").classList.add("hidden"); $("#app")?.classList.remove("player-active"); document.documentElement.classList.remove("player-on");
     try { m && m.pause(); } catch {}
+    if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = "none"; navigator.mediaSession.metadata = null; } catch {} }
     this.isVideo = false;
   },
   bar() {
@@ -1054,10 +1148,11 @@ const Player = {
       </div>`;
     $("#pX").onclick = () => this.hide();
     $("#pSeek").oninput = e => { const m = this.media; if (m && m.duration) m.currentTime = (e.target.value / 1000) * m.duration; };
-    this.ctrls(); this.tick();
+    this._meta(); this.ctrls(); this.tick();
   },
   ctrls() {
     const c = $("#pCtrls"); if (!c) return; const m = this.media, playing = m && !m.paused && !m.ended;
+    if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = playing ? "playing" : "paused"; } catch {} }
     c.innerHTML = `<button id="pB" aria-label="Back 10 seconds">↺<span class="d">10</span></button><button class="pp" id="pP" aria-label="${playing ? "Pause" : "Play"}">${playing ? "❚❚" : "▶"}</button><button id="pF" aria-label="Forward 10 seconds"><span class="d">10</span>↻</button><button class="pill" id="pS" aria-label="Playback speed">${this.speed}×</button>`;
     $("#pP").onclick = () => this.toggle(); $("#pB").onclick = () => this.skip(-10); $("#pF").onclick = () => this.skip(10); $("#pS").onclick = () => this.setSpeed();
   },
@@ -1065,6 +1160,7 @@ const Player = {
     const m = this.media, cur = m ? m.currentTime || 0 : 0, dur = m ? m.duration || 0 : 0, c = $("#pCur"), d = $("#pDur"), s = $("#pSeek");
     if (c) c.textContent = clock(cur); if (d) d.textContent = dur ? clock(dur) : "--:--";
     if (s && dur) { s.value = (cur / dur) * 1000; s.style.backgroundSize = (cur / dur) * 100 + "% 100%"; s.setAttribute("aria-valuetext", clock(cur) + " of " + clock(dur)); }
+    this._pos();
     if (this.lec && dur && cur > 8 && cur < dur - 8 && m && !m.paused) { const now = Date.now(); if (now - (this._lastSave || 0) > 4000) { this._lastSave = now; savePos(this.lec.id, cur, dur); } }
   },
 };
@@ -1109,6 +1205,8 @@ window.addEventListener("keydown", e => {
   }
   if (e.key === "Escape") closeMenu();
 });
-window.addEventListener("resize", () => setBarH());
+window.addEventListener("resize", () => { applyViewportClasses(); setBarH(); });
+try { window.matchMedia("(max-width: 680px)").addEventListener("change", applyViewportClasses); } catch {}
+try { window.matchMedia("(max-width: 560px)").addEventListener("change", applyViewportClasses); } catch {}
 window.addEventListener("scroll", onReadScroll, { passive: true });
 boot();
