@@ -28,7 +28,7 @@
   --paper-2:  #f6f2e8;        /* faint panel tint           */
   --ink:      #1c1a16;        /* near-black warm ink        */
   --ink-soft: #514d44;
-  --ink-faint:#8c8678;
+  --ink-faint:#767160;       /* warm gray — bumped from #8c8678 to pass WCAG AA (4.68:1) on --paper */
   --rule:     #211e18;        /* full black rule            */
   --hair:     #e7e2d4;        /* hairline                   */
   --hair-2:   #d2ccba;        /* heavier hairline           */

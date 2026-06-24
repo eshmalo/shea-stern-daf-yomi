@@ -45,16 +45,33 @@ def find_file(khk, sefaria_name, lang, fname):
     return None
 
 
+SPAN_RE = re.compile(r'</?span[^>]*>', re.I)                 # class-only presentation noise (the app's safeEn strips it)
+UNCLOSED_RE = re.compile(r'<(b|strong)>([^<]*)<\1>', re.I)   # WD export's unclosed bold: "<b>x<b>" -> "<b>x</b>"
+
+
+def clean_markup(s):
+    """Normalize WD .txt markup to exactly what the app renders (safeHe/safeEn): keep the
+    meaningful <big>/<strong>/<b>/<i>/<br> (Mishnah openers, emphasis, line breaks); drop
+    class-bearing <span> presentation noise; balance the export's unclosed bold tags."""
+    s = SPAN_RE.sub("", s)
+    s = UNCLOSED_RE.sub(r"<\1>\2</\1>", s)
+    return s
+
+
 def parse(path):
     """split a WD file into {amud: 'joined text'}"""
     if not path:
         return {}
-    txt = open(path, encoding="utf-8", errors="replace").read()
+    try:
+        txt = open(path, encoding="utf-8").read()               # strict: surface a bad byte instead of silently inserting U+FFFD
+    except UnicodeDecodeError as e:
+        print(f"  ! {os.path.basename(path)}: encoding error ({e}) — skipped", file=sys.stderr)
+        return {}
     parts = re.split(r'(Daf \d+[ab])', txt)
     out = {}
     for i in range(1, len(parts), 2):
         amud = parts[i].replace("Daf ", "").strip()
-        body = parts[i + 1] if i + 1 < len(parts) else ""
+        body = clean_markup(parts[i + 1] if i + 1 < len(parts) else "")
         lines = [l.rstrip() for l in body.split("\n") if l.strip()]
         if lines:
             out[amud] = "\n".join(lines)
