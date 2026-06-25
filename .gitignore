@@ -40,3 +40,10 @@ media/.stream_tmp/
 
 # daily-run marker for update_all.py (once/day Sefaria gate)
 build/.sefaria_last_run
+
+# --- logo_audit caches + scratch (regenerable); keep the tool + the JSON deliverables ---
+build/.logo_score_cache.json
+build/.logo_res_cache.json
+build/logo_audit/_frames/
+build/logo_audit/template.npy
+build/logo_audit/*.png
