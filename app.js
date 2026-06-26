@@ -13,6 +13,7 @@ const CFG = {
   contentUrl: "data/content.json",
   mediaManifest: "media/manifest.json",
   dafIndex: "data/daf/_index.json",
+  origAudio: "data/orig_audio.json",
   cacheKey: "dy_lib_587_v3",
   lastVisitKey: "dy_lastVisit_587",
   favKey: "dy_favs_587", progKey: "dy_progress_587", notesKey: "dy_notes_587",
@@ -83,7 +84,7 @@ async function boot() {
     catch { seed = { speaker: { name: "Rabbi Shea Stern" }, lectures: [] }; }
   }
   State.speaker = seed.speaker; State.all = seed.lectures || [];
-  [State.content, State.media, State.dafIndex] = await Promise.all([loadContent(), loadJson(CFG.mediaManifest), loadJson(CFG.dafIndex)]);
+  [State.content, State.media, State.dafIndex, State.origAudio] = await Promise.all([loadContent(), loadJson(CFG.mediaManifest), loadJson(CFG.dafIndex), loadJson(CFG.origAudio)]);
   buildIndex(); renderShell(); restoreInitialRoute();
   setStatus("checking"); refreshLive(seed.lectures || [], !!cached);
 }
@@ -108,6 +109,10 @@ function buildIndex() {
     const mm = State.media[String(lec.id)];
     if (mm) { lec.localAudio = mediaUrl(mm.audio); lec.localVideo = mediaUrl(mm.video); lec.introTrimmed = mm.intro_trimmed; }
     const k = DY.shiurDaf(lec); lec._dk = k;
+    if (k && k.masechta && k.daf != null) {   // prefer the Rabbi's ORIGINAL recording (no TA intro/watermark) when we have one for this daf
+      const o = State.origAudio && State.origAudio[k.masechta] && State.origAudio[k.masechta][String(k.daf)];
+      if (o) lec.origAudio = mediaUrl(o);
+    }
     if (k && k.daf) { const key = dafKey(k.masechta, k.daf); if (!m.has(key)) m.set(key, []); m.get(key).push(lec); }
   }
   State.byDaf = m;
@@ -1037,8 +1042,9 @@ function wireRows(scope) {
 }
 function playId(id) {
   const lec = State.all.find(l => l.id === id); if (!lec) return;
-  const local = State.content.options?.preferSelfHosted !== false && lec.localAudio;
-  const url = local ? lec.localAudio : lec.audio;
+  const localUrl = lec.origAudio || lec.localAudio;   // origAudio = self-hosted original recording, preferred over the TA-sourced copy
+  const local = State.content.options?.preferSelfHosted !== false && localUrl;
+  const url = local ? localUrl : lec.audio;
   if (!url) { toast("This shiur isn't available to play yet."); return; }
   Player.playAudio(lec, url, !!local); noteProgress(id);
 }
