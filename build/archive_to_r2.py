@@ -51,15 +51,15 @@ def main():
                     dup_skipped += 1
                     continue
                 seen.add(i.CRC)
-                todo.append((z, i.filename, i.file_size))
+                todo.append((z, i.filename, i.file_size, i.CRC))
     gb = sum(s for _, _, s in todo) / 1e9
     print(f"to host under {PREFIX}: {len(todo)} unique files, {gb:.1f} GB")
     print(f"  content-duplicates skipped: {dup_skipped} (already in media/orig/ or identical copies)")
     print(f"  (misfiled/ambiguous recordings ARE hosted here so nothing is lost){' [DRY RUN]' if args.dry_run else ''}\n")
 
     done = skipped = failed = 0
-    for n, (z, member, size) in enumerate(todo, 1):
-        key = PREFIX + member.lstrip("/")
+    for n, (z, member, size, crc) in enumerate(todo, 1):
+        key = uo.r2_safe_key(PREFIX, member, crc)
         if not args.force and cloud.exists(key):
             skipped += 1
             continue

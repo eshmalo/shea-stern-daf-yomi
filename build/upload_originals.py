@@ -73,6 +73,20 @@ def collect(zip_globs):
     return best
 
 
+def r2_safe_key(prefix, member, crc):
+    """R2/S3 object keys are capped at 1024 bytes. A few source .txt notes have an entire
+    paragraph as their filename (>1000 bytes). For those, keep the folder path + a short
+    basename + the CRC (for uniqueness); otherwise use the natural path verbatim."""
+    key = prefix + member.lstrip("/")
+    if len(key.encode("utf-8")) <= 1000:
+        return key
+    d, b = os.path.split(member)
+    name, ext = os.path.splitext(b)
+    short = name.encode("utf-8")[:60].decode("utf-8", "ignore").strip() or "note"
+    cand = prefix + ((d + "/") if d else "") + f"{short}__{crc:08x}{ext}"
+    return cand if len(cand.encode("utf-8")) <= 1000 else f"{prefix}_longnames/{crc:08x}{ext}"
+
+
 def find_ambiguous(best):
     """(masechta,daf) pairs whose chosen recording is BYTE-IDENTICAL (same CRC) to another
     daf's recording — i.e. one file misfiled under two identities. We can't know which label
