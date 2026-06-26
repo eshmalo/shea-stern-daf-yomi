@@ -69,8 +69,21 @@ def collect(zip_globs):
                 daf = int(m.group(1))
                 cur = best[mas].get(daf)
                 if cur is None or i.file_size > cur[2]:
-                    best[mas][daf] = (z, i.filename, i.file_size, ext)
+                    best[mas][daf] = (z, i.filename, i.file_size, ext, i.CRC)
     return best
+
+
+def find_ambiguous(best):
+    """(masechta,daf) pairs whose chosen recording is BYTE-IDENTICAL (same CRC) to another
+    daf's recording — i.e. one file misfiled under two identities. We can't know which label
+    is correct, so we EXCLUDE all of them (those dafim fall back to the correctly-labelled TA
+    audio) and report them for manual review."""
+    crc2ids = collections.defaultdict(set)
+    for mas, dd in best.items():
+        for daf, rec in dd.items():
+            crc2ids[rec[4]].add((mas, daf))
+    return {(mas, daf) for mas, dd in best.items() for daf, rec in dd.items()
+            if len(crc2ids[rec[4]]) > 1}
 
 
 def main():
@@ -87,6 +100,15 @@ def main():
         sys.exit("cloud not configured (build/cloud.config)")
 
     best = collect(args.zips)
+    ambiguous = find_ambiguous(best)   # computed on the FULL set so cross-masechta misfiles are caught
+    if ambiguous:
+        rep = os.path.join(os.path.dirname(ORIG_JSON), "..", "build", "logo_audit", "ambiguous_dafim.json")
+        rep = os.path.normpath(rep)
+        os.makedirs(os.path.dirname(rep), exist_ok=True)
+        json.dump(sorted([list(a) for a in ambiguous]), open(rep, "w"))
+        print(f"EXCLUDING {len(ambiguous)} misfiled/ambiguous dafim (same recording under >1 identity) -> {rep}")
+    # drop ambiguous from every masechta
+    best = {mas: {d: r for d, r in dd.items() if (mas, d) not in ambiguous} for mas, dd in best.items()}
     if args.masechta:
         if args.masechta not in best:
             sys.exit(f"no audio found for '{args.masechta}'. have: {sorted(best)}")
@@ -104,7 +126,7 @@ def main():
         key = mas.replace(" ", "_")
         out.setdefault(mas, {})
         for daf in sorted(best[mas]):
-            z, member, size, ext = best[mas][daf]
+            z, member, size, ext, _crc = best[mas][daf]
             r2key = f"media/orig/{key}/daf{daf}{ext}"
             if not args.force and cloud.exists(r2key):
                 out[mas][str(daf)] = r2key; skipped += 1
