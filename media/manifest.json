@@ -9221,5 +9221,18 @@
     "title": "Daf 54 Chullin",
     "video": "media/458120.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "458392": {
+    "video": "media/458392.mp4",
+    "intro_trimmed": 7.5,
+    "title": "Daf 55 Chullin",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "458669": {
+    "audio": "media/458669.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 56 Chullin",
+    "video": "media/458669.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
