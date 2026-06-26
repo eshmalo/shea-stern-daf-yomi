@@ -399,7 +399,7 @@ function viewToday() {
   const ref = `${esc(t.dy.masechta)}|${t.dy.daf}`;
   const hasVid = t.shiur && (t.shiur.localVideo || t.shiur.video);
   const actions = t.shiur
-    ? `<button class="btn solid" data-play="${t.shiur.id}">▶ Listen</button>${hasVid ? `<button class="btn" data-watchdaf="${ref}">▦ Watch</button>` : ""}<button class="btn" data-daf="${ref}">Read the daf</button>`
+    ? `<button class="btn solid" data-play="${t.shiur.id}">▶ Listen</button>${hasVid ? `<button class="btn" data-watchdaf="${ref}"><span class="vic" aria-hidden="true">▦</span>Watch</button>` : ""}<button class="btn" data-daf="${ref}">Read the daf</button>`
     : `<button class="btn accent" data-sponsor-daf="${ref}">✦ Sponsor today's daf</button><button class="btn" data-daf="${ref}">Read the daf</button>`;
   return `
     <div class="titlepage">
@@ -477,7 +477,7 @@ function viewDaf(r) {
   const media = shiur ? `
     <div class="daf-media">
       <button class="btn solid sm" data-play="${shiur.id}">▶ Listen</button>
-      ${(shiur.localVideo || shiur.video) ? `<button class="btn sm" data-watch="${shiur.id}">▦ Watch</button>` : ""}
+      ${(shiur.localVideo || shiur.video) ? `<button class="btn sm" data-watch="${shiur.id}"><span class="vic" aria-hidden="true">▦</span>Watch</button>` : ""}
       <button class="btn sm" data-fav="${shiur.id}" aria-pressed="${isFav(shiur.id)}">${isFav(shiur.id) ? "★ Saved" : "☆ Save"}</button>
     </div>
     <div id="videoSlot"></div>` : "";

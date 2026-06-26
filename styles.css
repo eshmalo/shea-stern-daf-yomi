@@ -129,6 +129,7 @@ main#view { flex: 1 0 auto; width: 100%; }
 .btn.solid:hover { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
 .btn.block { display: flex; width: 100%; }
 .btn.sm { padding: 7px 14px; font-size: 14px; }
+.vic { font-size: 1.4em; line-height: 1; }   /* the ▦ Watch / video icon — sized up so it reads as a screen */
 .textlink { appearance: none; -webkit-appearance: none; background: none; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--link) 45%, transparent); padding: 0 0 1px; font: inherit; cursor: pointer; color: var(--link); }
 .textlink:hover { border-bottom-color: var(--accent-2); text-decoration: none; }
 
@@ -398,7 +399,7 @@ html.force-phone #app { box-shadow: 0 0 0 1px rgba(33,30,24,.1), 0 24px 70px -20
 .player input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border-radius: 50%; background: var(--accent); border: 0; }
 .player .prow { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
 .player .pnow { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; }
-.player .pnow .ptype { flex: none; color: var(--accent); font-size: 13px; line-height: 1; opacity: .85; }
+.player .pnow .ptype { flex: none; color: var(--accent); font-size: 16px; line-height: 1; opacity: .85; }
 .player .pnow .ptxt { min-width: 0; display: flex; flex-direction: column; }
 .player .pnow b { font-weight: 600; font-size: 14.5px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .player .pnow .ptime { font-family: var(--sans); font-size: 10.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; letter-spacing: .02em; margin-top: 1px; }
