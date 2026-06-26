@@ -17,7 +17,14 @@ CONFIG = os.path.join(BUILD, "cloud.config")
 REQUIRED = ["S3_ENDPOINT_URL", "S3_BUCKET", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "CDN_BASE_URL"]
 ALL_KEYS = REQUIRED + ["S3_REGION"]
 CONTENT_TYPE = {"mp3": "audio/mpeg", "mp4": "video/mp4", "m4a": "audio/mp4",
-                "webm": "video/webm", "mov": "video/quicktime", "json": "application/json"}
+                "webm": "video/webm", "mov": "video/quicktime", "json": "application/json",
+                "pdf": "application/pdf", "jpg": "image/jpeg", "jpeg": "image/jpeg",
+                "png": "image/png", "gif": "image/gif", "webp": "image/webp", "svg": "image/svg+xml",
+                "wav": "audio/wav", "ogg": "audio/ogg", "amr": "audio/amr", "wmv": "video/x-ms-wmv",
+                "txt": "text/plain; charset=utf-8", "doc": "application/msword",
+                "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "odt": "application/vnd.oasis.opendocument.text", "eml": "message/rfc822", "zip": "application/zip"}
 
 
 def load_config():
