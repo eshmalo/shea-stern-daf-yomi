@@ -9234,5 +9234,30 @@
     "title": "Daf 56 Chullin",
     "video": "media/458669.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "458995": {
+    "audio": "media/458995.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 58 Chullin"
+  },
+  "459041": {
+    "audio": "media/459041.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parasha Chukas Balak: Treifos-\u05e4\u05d9 \u05d4\u05d0\u05e8\u05e5"
+  },
+  "459050": {
+    "audio": "media/459050.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 57 Chullin"
+  },
+  "459219": {
+    "audio": "media/459219.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 59 Chullin"
+  },
+  "459540": {
+    "audio": "media/459540.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 60 Chullin"
   }
 }
