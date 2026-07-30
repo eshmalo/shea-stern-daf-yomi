@@ -26,6 +26,7 @@ from datetime import datetime, timezone
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUILD = os.path.join(HERE, "build")
 LOG = os.path.join(BUILD, "update_all.log")
+LOCK = os.path.join(BUILD, ".update_all.lock")
 PY = sys.executable or "python3"
 
 
@@ -36,6 +37,20 @@ def log(msg):
         open(LOG, "a").write(line + "\n")
     except Exception:
         pass
+
+
+def acquire_lock():
+    """One run at a time. A long media pass can outlast the hourly interval, and
+    two runs would fight over media/manifest.json and the git index. Returns the
+    held file handle (kept open for the process lifetime) or None if busy."""
+    try:
+        import fcntl
+        fh = open(LOCK, "w")
+        fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fh.write(str(os.getpid())); fh.flush()
+        return fh
+    except Exception:
+        return None
 
 
 def run(label, cmd):
@@ -87,7 +102,9 @@ def publish():
             log("publish: no data changes"); return 0
         if subprocess.call(g + ["commit", "-q", "-m", "auto: refresh library + media manifest"]) != 0:
             log("publish: commit failed"); return 1
-        subprocess.call(g + ["pull", "-q", "--rebase", "origin", "main"])
+        # --autostash: media work in flight leaves other files dirty; rebase must
+        # not abort on them.
+        subprocess.call(g + ["pull", "-q", "--rebase", "--autostash", "origin", "main"])
         if subprocess.call(g + ["push", "-q", "origin", "main"]) != 0:
             log("publish: push failed — will retry next run"); return 1
         log("publish: pushed data refresh (the live site redeploys)")
@@ -105,6 +122,10 @@ def main():
     ap.add_argument("--force-sefaria", action="store_true", help="mirror Sefaria even if already done today")
     ap.add_argument("--no-sefaria", action="store_true", help="skip the Sefaria mirror entirely")
     args = ap.parse_args()
+
+    lock = acquire_lock()
+    if not lock:
+        log("another update is still running — skipping this tick"); return 0
 
     log("================= update: start =================")
     # Lectures EVERY run: a newly-posted shiur is intro-trimmed, de-watermarked

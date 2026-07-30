@@ -47,3 +47,4 @@ build/.logo_res_cache.json
 build/logo_audit/_frames/
 build/logo_audit/template.npy
 build/logo_audit/*.png
+build/.update_all.lock
