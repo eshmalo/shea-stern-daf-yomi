@@ -152,50 +152,62 @@ main#view { flex: 1 0 auto; width: 100%; }
 .row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--accent); transform: scaleY(0); transform-origin: center; transition: transform .15s; }
 .row:hover { background: color-mix(in srgb, var(--paper-2) 70%, var(--paper)); }
 .row:hover::before { transform: scaleY(1); }
-.row .rnum { font-family: var(--serif-he); direction: rtl; font-size: 18px; font-weight: 700; color: var(--accent); min-width: 42px; text-align: center; border-right: 1px solid var(--hair); padding-right: 12px; flex: none; align-self: stretch; display: flex; align-items: center; justify-content: center; }
+.row .rnum, .drow .rnum { font-family: var(--serif-he); direction: rtl; font-size: 18px; font-weight: 700; color: var(--accent); min-width: 42px; text-align: center; border-right: 1px solid var(--hair); padding-right: 12px; flex: none; align-self: stretch; display: flex; align-items: center; justify-content: center; }
 .row .rnum.sym { font-family: var(--sans); font-size: 12px; color: var(--ink-faint); font-weight: 400; }
-.row .rmain { flex: 1; min-width: 0; }
-.row .rmain b { font-weight: 600; font-size: 17.5px; display: block; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; }
-.row .rmeta { display: block; font-family: var(--sans); font-size: 12px; color: var(--ink-faint); margin-top: 2px; letter-spacing: .01em; }
-.row .rgo { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--hair-2); color: var(--accent); font-size: 11px; display: grid; place-items: center; padding-left: 2px; transition: background .14s, color .14s, border-color .14s; }
+.row .rmain, .drow .rmain { flex: 1; min-width: 0; }
+.row .rmain b, .drow .rmain b { font-weight: 600; font-size: 17.5px; display: block; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; }
+.row .rmeta, .drow .rmeta { display: block; font-family: var(--sans); font-size: 12px; color: var(--ink-faint); margin-top: 2px; letter-spacing: .01em; }
+.row .rgo { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--hair-2); color: var(--accent); font-size: 11px; display: grid; place-items: center; transition: background .14s, color .14s, border-color .14s; }
+.svg-ic { display: block; }
 .row:hover .rgo { background: var(--accent); border-color: var(--accent); color: #fff; }
 .row.is-new .rmain b::after { content: "new"; font-family: var(--sans); margin-left: 8px; color: #fff; background: var(--accent); font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 1px 5px; border-radius: 3px; vertical-align: 2px; }
 
-/* ---------- Browse: Shas as a clean index ---------- */
-.toc { margin-top: 8px; }
-.toc .seder { font-family: var(--serif-he); direction: rtl; font-size: 23px; font-weight: 700; margin: 26px 0 6px; padding-bottom: 6px; border-bottom: 2px solid var(--rule); display: flex; justify-content: space-between; align-items: baseline; }
-.toc .seder .ct { font-family: var(--sans); direction: ltr; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
-.mas-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
-.mas { -webkit-appearance: none; appearance: none; width: 100%; background: none; border: 0; border-bottom: 1px dotted var(--hair-2); color: var(--ink); font: inherit;
-  display: flex; justify-content: space-between; align-items: baseline; padding: 9px 4px; direction: rtl; gap: 10px; transition: background .12s; }
-.mas:hover { background: var(--paper-2); }
-.mas .nm { font-family: var(--serif-he); font-size: 18px; }
-.mas .ct { font-family: var(--sans); direction: ltr; font-size: 11px; color: var(--accent); font-weight: 600; flex: none; }
-.mas.empty .nm { color: var(--ink-faint); }
-.mas.empty .ct { color: var(--ink-faint); font-weight: 400; }
+/* ---------- Browse: single-column box navigation (Shas · Parsha · Holidays) ----------
+   Full-width tappable boxes, one per line, that open the next level — styled to
+   the sefer theme: ivory panel, ink border, maroon on touch. */
+.boxcol { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 12px 0 10px; }
+.boxcol-top { margin-top: 22px; }
+.navbox { -webkit-appearance: none; appearance: none; width: 100%; min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  background: linear-gradient(#fdfbf4, #f6f2e8); border: 1.5px solid #5b564a; border-radius: 6px; box-shadow: 0 2px 0 rgba(33,30,24,.16);
+  padding: 17px 16px; color: var(--ink); font: inherit; transition: transform .12s, box-shadow .12s, border-color .12s, color .12s, background .12s; }
+.navbox:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); box-shadow: 0 5px 14px -6px rgba(33,30,24,.4); }
+.navbox:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(33,30,24,.16); }
+.navbox .nb-he { font-family: var(--serif-he); direction: rtl; font-size: 27px; font-weight: 700; line-height: 1.25; }
+.navbox.latin .nb-he { font-family: var(--serif); direction: ltr; font-size: 23px; font-weight: 600; }
+.navbox .nb-sub { font-family: var(--sans); font-size: 11px; color: var(--ink-soft); letter-spacing: .08em; text-transform: uppercase; }
+.navbox.empty { background: var(--paper); box-shadow: none; border-color: var(--hair-2); }
+.navbox.empty .nb-he { color: var(--ink-soft); font-weight: 600; }
 
-/* ---------- Shiurim (non-daf categories) ---------- */
-.cat-list { margin-top: 8px; }
-.cat-row { -webkit-appearance: none; appearance: none; display: flex; justify-content: space-between; align-items: baseline; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--hair); background: none; padding: 16px 6px; font-size: 19px; color: var(--ink); transition: background .12s; }
-.cat-row:hover { background: var(--paper-2); }
-.cat-row .nm { font-weight: 600; }
-.cat-row .ct { font-family: var(--sans); color: var(--ink-faint); font-size: 12.5px; }
-.topic-group { font-family: var(--serif-he); direction: rtl; font-size: 18px; font-weight: 700; margin: 24px 0 4px; padding-bottom: 5px; border-bottom: 1px solid var(--hair-2); color: var(--accent); }
+/* level header: round back button + centered Hebrew title */
+.boxhead { display: grid; grid-template-columns: 46px 1fr 46px; align-items: center; margin: 18px 0 4px; }
+.boxback { grid-column: 1; -webkit-appearance: none; appearance: none; border: 1.5px solid #5b564a; background: var(--paper); color: var(--ink); width: 44px; height: 44px; border-radius: 50%; font-size: 26px; line-height: 1; display: grid; place-items: center; padding: 0 0 3px; transition: background .13s, color .13s, border-color .13s, transform .12s; }
+.boxback:hover { background: var(--accent); border-color: var(--accent); color: #fff; transform: scale(1.05); }
+.boxback:active { transform: scale(.94); }
+.boxhead-t { grid-column: 2; text-align: center; min-width: 0; }
+.boxhead-t .he { font-family: var(--serif-he); direction: rtl; font-size: clamp(30px, 6.4vw, 38px); font-weight: 700; line-height: 1.15; }
+.boxhead-t .he.latin { font-family: var(--serif); direction: ltr; font-size: clamp(26px, 5.6vw, 32px); font-weight: 600; }
+.boxhead-t .en { font-family: var(--sans); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-top: 3px; }
+/* keyboard focus must not square off the circular controls (the global
+   :focus-visible rule sets border-radius: 2px) */
+.boxback:focus-visible, .drow-play:focus-visible { border-radius: 50%; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-/* ---------- Masechta: daf grid ---------- */
+/* masechta → one row per daf, with its shiur where the Rabbi has given it */
+.drows { margin-top: 10px; }
+.drow { display: flex; align-items: stretch; border-bottom: 1px solid var(--hair); position: relative; transition: background .12s; }
+.drow::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--accent); transform: scaleY(0); transform-origin: center; transition: transform .15s; }
+.drow:hover { background: color-mix(in srgb, var(--paper-2) 70%, var(--paper)); }
+.drow:hover::before { transform: scaleY(1); }
+.drow-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; padding: 12px 8px 12px 10px; background: none; border: 0; text-align: left; color: var(--ink); font: inherit; cursor: pointer; }
+.drow.future .rmain b { color: var(--ink-soft); font-weight: 500; }
+.drow.future .rnum { color: var(--ink-faint); font-weight: 400; }
+.drow-chk { flex: none; align-self: center; color: var(--ok); font-weight: 700; font-size: 14px; }
+.drow-play { flex: none; align-self: center; width: 40px; height: 40px; margin: 0 8px 0 4px; border-radius: 50%; border: 1px solid var(--hair-2); background: var(--paper); color: var(--accent); font-size: 13px; display: grid; place-items: center; cursor: pointer; transition: background .14s, color .14s, border-color .14s; }
+.drow-play:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ---------- Daf page: breadcrumbs ---------- */
 .crumbs { font-family: var(--sans); font-size: 12.5px; color: var(--ink-faint); margin: 8px 0 2px; letter-spacing: .01em; }
 .crumbs a, .crumbs button { appearance: none; -webkit-appearance: none; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; color: var(--ink-soft); } .crumbs b { color: var(--ink); font-weight: 600; }
-/* Hebrew daf grid (the "calendar"): daf 2 starts top-right and flows right-to-left */
-.daf-grid { display: grid; direction: rtl; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 1px; background: var(--hair-2); border: 1px solid var(--hair-2); margin-top: 14px; border-radius: 4px; overflow: hidden; }
-.daf-cell { -webkit-appearance: none; appearance: none; border: 0; background: var(--paper); min-height: 52px; aspect-ratio: 1.1; display: grid; place-items: center; position: relative; color: var(--ink); transition: background .12s; }
-.daf-cell .he { font-family: var(--serif-he); direction: rtl; font-size: 18px; line-height: 1; }
-.daf-cell .n { position: absolute; bottom: 4px; right: 6px; font-family: var(--sans); font-size: 9px; color: var(--ink-faint); }
-.daf-cell:hover { background: var(--accent-soft); }
-.daf-cell.has { font-weight: 700; background: color-mix(in srgb, var(--accent-soft) 55%, var(--paper)); }
-.daf-cell.has::before { content: ""; position: absolute; top: 6px; left: 6px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
-.daf-cell.has:hover { background: var(--accent-soft); }
-.daf-cell.future { color: var(--ink-faint); }
-.daf-cell.future .he { font-weight: 400; }
 
 /* ---------- Daf page (native) ---------- */
 .daf-head { text-align: center; margin: 8px 0 6px; }
@@ -285,7 +297,6 @@ html.is-phone .reader-body { padding: 12px 14px 48px; }
 .daf-en b, .daf-en strong { font-weight: 700; color: #000; }
 .seg-pair { margin: 0 0 14px; padding-bottom: 14px; border-bottom: 1px solid var(--hair); }
 .seg-pair .daf-he { margin-bottom: 8px; }
-.daf-src { font-family: var(--sans); font-size: 11px; color: var(--ink-faint); text-align: center; margin-top: 16px; font-style: normal; line-height: 1.6; }
 .daf-loading { text-align: center; color: var(--ink-faint); padding: 34px; font-style: italic; }
 
 /* ---------- "Daf" layout — Tzuras Hadaf (Gemara center · Rashi + Tosafos margins) ---------- */
@@ -362,6 +373,7 @@ html.is-phone .daf-colhead .col-tab.on { color: var(--accent); border-bottom-col
 .faq summary::after { content: "+"; color: var(--accent); font-size: 18px; font-family: var(--sans); transition: transform .18s; }
 .faq[open] summary::after { transform: rotate(45deg); }
 .faq .a { padding: 0 0 16px; color: var(--ink-soft); font-size: 16px; }
+.credits { font-family: var(--sans); font-size: 11px; color: var(--ink-faint); text-align: center; margin-top: 26px; }
 
 /* ---------- menu ---------- */
 .mask { position: fixed; inset: 0; background: rgba(28,26,22,.4); z-index: 60; opacity: 0; pointer-events: none; transition: opacity .22s; -webkit-backdrop-filter: blur(1px); backdrop-filter: blur(1px); }
@@ -443,7 +455,7 @@ footer a { color: var(--ink-soft); }
 .continue { display: grid; gap: 9px; }
 .cont-row { -webkit-appearance: none; appearance: none; width: 100%; text-align: left; background: var(--paper); border: 1px solid var(--hair-2); border-radius: 7px; color: var(--ink); font: inherit; display: flex; align-items: center; gap: 13px; padding: 13px 15px; transition: border-color .14s, background .14s, box-shadow .14s; }
 .cont-row:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent-soft) 45%, var(--paper)); box-shadow: 0 1px 0 rgba(33,30,24,.05); }
-.cont-ic { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-size: 14px; padding-left: 2px; }
+.cont-ic { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-size: 14px; }
 .cont-ic.ghost { background: var(--paper); color: var(--accent); border: 1px solid var(--accent); }
 .cont-main { display: flex; flex-direction: column; min-width: 0; }
 .cont-main b { font-weight: 600; font-size: 16.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -457,13 +469,7 @@ footer a { color: var(--ink-soft); }
 .learn-toggle.on:hover { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
 .learn-meta { font-family: var(--sans); font-size: 12px; color: var(--ink-faint); letter-spacing: .01em; }
 
-.daf-cell.learned { background: color-mix(in srgb, var(--gold) 15%, var(--paper)); }
-.daf-cell.learned.has { background: color-mix(in srgb, var(--gold) 20%, var(--accent-soft)); }
-.daf-cell.learned:hover { background: color-mix(in srgb, var(--gold) 26%, var(--accent-soft)); }
-.daf-cell .cell-chk { position: absolute; top: 2px; right: 5px; font-size: 10px; line-height: 1; color: var(--accent); font-weight: 700; }
-
-.browse-prog, .mas-prog, .mystuff-top { margin: 4px auto 8px; }
-.mystuff-top { max-width: 460px; }
+.mystuff-top { margin: 4px auto 8px; max-width: 460px; }
 
 /* Solid fallbacks for engines without color-mix() (Safari < 16.2, Firefox < 113,
    older Chromium). Modern engines support color-mix and skip this whole block, so
@@ -475,19 +481,16 @@ footer a { color: var(--ink-soft); }
   .sp-form, .donate-box { background: var(--paper); }
   .today { background: linear-gradient(var(--paper), #f9f6ed); }
   .row:hover { background: #f6f2e8; }
+  .drow:hover { background: #f6f2e8; }
   .cont-row:hover { background: #f8f2ed; }
   .pageflip:hover { background: var(--accent-soft); }
-  .daf-cell.has { background: #f8f1ec; }
-  .daf-cell.learned { background: #ede7d8; }
-  .daf-cell.learned.has { background: #e2d3c4; }
-  .daf-cell.learned:hover { background: #ddccba; }
   .textlink { border-bottom: 1px solid rgba(116,32,44,.45); }
   .bar .live { box-shadow: 0 0 0 3px rgba(58,122,72,.18); }
+  .navbox { background: #faf7ef; }
 }
 
 /* phone layout (is-narrow = viewport 560px OR forced phone view) */
 html.is-narrow { --pad: 18px; }
-html.is-narrow .mas-list { grid-template-columns: 1fr; }
 html.is-narrow body { font-size: 17.5px; }
 html.is-narrow .titlepage { padding-top: 28px; }
 html.is-narrow .daf-progress { flex-direction: column; gap: 7px; }

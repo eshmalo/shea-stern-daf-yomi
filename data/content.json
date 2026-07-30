@@ -46,7 +46,7 @@
   "sponsor": {
     "heading": "Sponsor the Shiur",
     "blurb": "Dedicate a day of learning — today's daf, an upcoming daf for a yahrtzeit or simcha, or an entire masechta. Your dedication is shared with everyone who learns it.",
-    "amounts": { "daf": "$54", "week": "$180", "masechta": "$540" },
+    "amounts": { "daf": "$72", "week": "$180", "masechta": "$540" },
     "dedicationTypes": ["L'ilui nishmas", "In honor of", "For a refuah shleima for", "As a zechus for", "In memory of"],
     "note": "After sending your dedication below, complete the sponsorship by Zelle on the Donate page. The Rabbi will confirm and announce the dedication.",
     "contactEmail": "jshmuelstern@gmail.com"

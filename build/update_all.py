@@ -72,6 +72,31 @@ def mark_sefaria():
         pass
 
 
+def publish():
+    """Push the refreshed catalog + media manifest to GitHub so the LIVE site
+    (GitHub Pages) serves them — this is what makes a newly-posted shiur appear
+    on monseydafyomi.com with its de-watermarked R2 copy, hands-free."""
+    paths = ["data/library.json", "data/orig_audio.json", "media/manifest.json"]
+    g = ["git", "-C", HERE]
+    try:
+        if subprocess.call(g + ["rev-parse", "--is-inside-work-tree"],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0:
+            log("publish: not a git checkout — skipped"); return 0
+        subprocess.call(g + ["add", "--"] + [p for p in paths if os.path.exists(os.path.join(HERE, p))])
+        if subprocess.call(g + ["diff", "--cached", "--quiet"]) == 0:
+            log("publish: no data changes"); return 0
+        if subprocess.call(g + ["commit", "-q", "-m", "auto: refresh library + media manifest"]) != 0:
+            log("publish: commit failed"); return 1
+        subprocess.call(g + ["pull", "-q", "--rebase", "origin", "main"])
+        if subprocess.call(g + ["push", "-q", "origin", "main"]) != 0:
+            log("publish: push failed — will retry next run"); return 1
+        log("publish: pushed data refresh (the live site redeploys)")
+        return 0
+    except Exception as e:
+        log(f"publish: FAILED {str(e)[:160]}")
+        return 1
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-media", action="store_true", help="refresh catalog + texts only (skip media processing)")
@@ -102,7 +127,11 @@ def main():
     else:
         log("sefaria: already current today — skipped (runs once/day)")
 
-    log(f"================= update: done (lectures {rc_lec}, sefaria {rc_sef}) =================")
+    # Publish EVERY run (cheap when nothing changed): the site only shows what
+    # GitHub has, so a refreshed manifest must reach the repo to go live.
+    rc_pub = publish()
+
+    log(f"================= update: done (lectures {rc_lec}, sefaria {rc_sef}, publish {rc_pub}) =================")
     return 0 if rc_lec == 0 and rc_sef == 0 else 1
 
 

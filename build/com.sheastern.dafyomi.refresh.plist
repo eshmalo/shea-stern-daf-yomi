@@ -8,11 +8,11 @@
     <key>ProgramArguments</key>
     <array>
         <string>/Library/Frameworks/Python.framework/Versions/3.13/bin/python3</string>
-        <string>/Users/elazarshmalo/Desktop/AI Workspace/shea-stern-daf-yomi/build/update_all.py</string>
+        <string>/Users/elazarshmalo/dev/shea-stern-daf-yomi/build/update_all.py</string>
     </array>
 
     <key>WorkingDirectory</key>
-    <string>/Users/elazarshmalo/Desktop/AI Workspace/shea-stern-daf-yomi</string>
+    <string>/Users/elazarshmalo/dev/shea-stern-daf-yomi</string>
 
     <key>EnvironmentVariables</key>
     <dict>
@@ -32,8 +32,8 @@
     <true/>
 
     <key>StandardOutPath</key>
-    <string>/Users/elazarshmalo/Desktop/AI Workspace/shea-stern-daf-yomi/build/launchd.out.log</string>
+    <string>/Users/elazarshmalo/dev/shea-stern-daf-yomi/build/launchd.out.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/elazarshmalo/Desktop/AI Workspace/shea-stern-daf-yomi/build/launchd.err.log</string>
+    <string>/Users/elazarshmalo/dev/shea-stern-daf-yomi/build/launchd.err.log</string>
 </dict>
 </plist>

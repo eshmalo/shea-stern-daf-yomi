@@ -93,7 +93,7 @@ def main():
     ap.add_argument("--no-video", action="store_true", help="audio only (skip video copies)")
     ap.add_argument("--snapshot-only", action="store_true", help="refresh catalog only, no media")
     ap.add_argument("--trim", type=float, default=7.5)
-    ap.add_argument("--delogo", default="x=1:y=288:w=96:h=71", help="ffmpeg delogo box to erase the TA watermark from new videos ('' to disable)")
+    ap.add_argument("--delogo", default="auto", help="ffmpeg delogo box to erase the TA watermark from new videos; 'auto' (default) picks the right box per video format, '' disables")
     args = ap.parse_args()
 
     log(f"refresh start (speaker {args.speaker}, max {args.max}, backfill {args.backfill}, video {not args.no_video})")

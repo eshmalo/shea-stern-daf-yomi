@@ -190,8 +190,12 @@ const resumePoint = id => { const p = getPos(id); return (p && p.t > 20 && (!p.d
 // The single most-recently-left-off shiur, for the home "Continue" card.
 function lastInProgress() {
   const P = posAll(); let best = null;
-  for (const id in P) { const p = P[id]; if (!p || !p.t) continue; if (p.d && p.t > p.d - 25) continue; if (!best || p.at > best.at) best = { id: +id, ...p }; }
-  if (!best) return null; const lec = State.all.find(l => l.id === best.id); return lec ? { lec, pos: best } : null;
+  for (const id in P) {
+    const p = P[id]; if (!p || !p.t) continue; if (p.d && p.t > p.d - 25) continue;
+    const lec = State.all.find(l => l.id === +id); if (!lec || isHiddenShiur(lec)) continue;   // a retired category never resurfaces via saved progress
+    if (!best || p.at > best.at) best = { id: +id, ...p, lec };
+  }
+  return best ? { lec: best.lec, pos: best } : null;
 }
 
 /* native daf text loader */
@@ -226,8 +230,7 @@ function renderShell() {
     <main id="view"></main>
     <footer>
       <span class="fhe" lang="he">${esc(mh.hebrew || "שיעורי הדף היומי")}</span>
-      ${esc(mh.english || State.speaker?.name || "Rabbi Shea Stern")} · ${esc(mh.subtitle || "Daf Yomi")}<br>
-      Talmud — William Davidson Edition, Sefaria · the library updates automatically
+      ${esc(mh.english || State.speaker?.name || "Rabbi Shea Stern")} · ${esc(mh.subtitle || "Daf Yomi")}
     </footer>
     <div class="player hidden" id="player"></div>
   </div>
@@ -310,7 +313,7 @@ function updateBackBtn() { const b = $("#backBtn"); if (b) b.hidden = _navDepth 
 // already survives reloads; sessionStorage is the fallback. Skipped inside the
 // phone-view iframe so it can't clobber the parent tab's saved page.
 function persistRoute() { if (_embedded) return; try { sessionStorage.setItem("dy_route", JSON.stringify({ route: State.route, sponsor: State.sponsor, depth: _navDepth })); } catch {} }
-const KNOWN_ROUTES = new Set(["today", "browse", "seder", "masechta", "daf", "topics", "category", "search", "mystuff", "sponsor", "about", "donate"]);
+const KNOWN_ROUTES = new Set(["today", "browse", "seder", "masechta", "daf", "topics", "parsha", "sefer", "parshaS", "holidays", "holiday", "category", "search", "mystuff", "sponsor", "about", "donate"]);
 // Validate a route restored from history.state / sessionStorage before trusting it — a forged or
 // corrupt deep-link (bad route name, unknown masechta, out-of-range daf) falls back to Today instead.
 function validRoute(r) {
@@ -318,6 +321,9 @@ function validRoute(r) {
   if (r.name === "daf") { const [m, d] = (r.id || "").split("|"); const mm = DY.BYEN[m], dn = +d; return !!(mm && dn >= mm.firstDaf && dn <= mm.lastDaf); }
   if (r.name === "masechta") return !!DY.BYEN[r.masechta];
   if (r.name === "seder") return DY.SEDARIM.some(s => s.en === r.seder);
+  if (r.name === "sefer") return !!CHUMASH_BY_EN[r.sefer];
+  if (r.name === "parshaS") return CHUMASHIM.some(s => s.parshiyos.some(([en]) => en === r.parsha));
+  if (r.name === "holiday") return typeof r.series === "string" && r.series.length > 0 && r.series.length < 80;
   return true;
 }
 function restoreInitialRoute() {
@@ -345,7 +351,7 @@ function rerender() {
   $$("#view video").forEach(vid => { try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {} });   // flush any in-page video before the view is replaced (no detached audio)
   resetReadMin();                                            // a fresh view starts with full top chrome
   const r = State.route;
-  const fn = { today: viewToday, browse: viewBrowse, seder: viewSeder, masechta: viewMasechta, daf: viewDaf, topics: viewTopics, category: viewCategory, search: viewSearch, mystuff: viewMyStuff, sponsor: viewSponsor, about: viewAbout, donate: viewDonate }[r.name] || viewToday;
+  const fn = { today: viewToday, browse: viewBrowse, seder: viewSeder, masechta: viewMasechta, daf: viewDaf, topics: viewTopics, parsha: viewParsha, sefer: viewSefer, parshaS: viewParshaShiurim, holidays: viewHolidays, holiday: viewHoliday, category: viewCategory, search: viewSearch, mystuff: viewMyStuff, sponsor: viewSponsor, about: viewAbout, donate: viewDonate }[r.name] || viewToday;
   v.innerHTML = `<div class="view">${fn(r)}</div>`;
   wireView(r);
   if (r.name === "daf") { hydrateDaf(); if (r.watch) { const [mm, dd] = (r.id || "").split("|"); const s = shiurFor(mm, +dd); if (s) watchVideo(s.id); } }
@@ -373,7 +379,7 @@ function continueCard() {
   if (lip) {
     const k = lip.lec._dk;
     const title = k && k.daf ? `${k.masechta} · Daf ${k.daf}` : lip.lec.title;
-    rows += `<button class="cont-row" data-play="${lip.lec.id}"><span class="cont-ic" aria-hidden="true">▶</span><span class="cont-main"><b>Resume ${esc(title)}</b><span class="cont-sub">picks up at ${clock(lip.pos.t)}</span></span></button>`;
+    rows += `<button class="cont-row" data-play="${lip.lec.id}"><span class="cont-ic" aria-hidden="true">${svgPlay(13)}</span><span class="cont-main"><b>Resume ${esc(title)}</b><span class="cont-sub">picks up at ${clock(lip.pos.t)}</span></span></button>`;
   }
   const nx = nextUnlearnedDaf();
   if (nx) {
@@ -430,37 +436,55 @@ function recentSection() {
     <p class="center" style="margin-top:16px"><button class="textlink" data-route="browse">Browse all of Shas →</button></p>`;
 }
 
+/* ---------- single-column box navigation (drill-down: tap a box, the next
+   level opens — one column on every screen, per the Rabbi's requested flow) ---------- */
+function boxHead(title, sub, latin) {
+  return `<div class="boxhead">
+    <button class="boxback" data-goback aria-label="Back">‹</button>
+    <div class="boxhead-t"><div class="he${latin ? " latin" : ""}"${latin ? "" : ' lang="he"'} role="heading" aria-level="1">${title}</div>${sub ? `<div class="en">${esc(sub)}</div>` : ""}</div>
+  </div>`;
+}
+const navBox = (attr, label, sub, cls = "") => {
+  const latin = /\blatin\b/.test(cls);
+  return `<button class="navbox${cls ? " " + cls : ""}" ${attr}><span class="nb-he"${latin ? "" : ' lang="he"'}>${label}</span>${sub ? `<span class="nb-sub">${sub}</span>` : ""}</button>`;
+};
+
 function viewBrowse() {
-  return `<div class="pagetitle" role="heading" aria-level="1">Browse Shas</div><p class="lead">Every daf of the Talmud — tap any daf to read it; the Rabbi's shiur appears where he's given it.</p>
-    ${learnedTotal() ? `<div class="browse-prog">${progressBar(learnedTotal(), shasTotal(), { label: "Your Shas progress" })}</div>` : ""}
-    <div class="toc">${DY.SEDARIM.map(s => {
-      const mas = DY.masechtosInSeder(s.en);
-      const total = mas.reduce((n, m) => n + countMasechta(m.en), 0);
-      return `<div class="seder">${esc(s.he)}<span class="ct">${total} shiurim</span></div>
-        <div class="mas-list">${mas.map(m => { const n = countMasechta(m.en); return `<button class="mas ${n ? "" : "empty"}" data-masechta="${esc(m.en)}"><span class="nm" lang="he">${esc(m.he)}</span><span class="ct">${n || "—"}</span></button>`; }).join("")}</div>`;
-    }).join("")}</div>`;
+  return `<h1 class="sr-only">Browse Shas</h1><div class="boxcol boxcol-top">${DY.SEDARIM.map(s => {
+    const mas = DY.masechtosInSeder(s.en);
+    const total = mas.reduce((n, m) => n + countMasechta(m.en), 0);
+    return navBox(`data-seder="${esc(s.en)}"`, esc(s.he), total ? `${total} shiurim` : "");
+  }).join("")}</div>`;
 }
 function countMasechta(en) { let n = 0; for (const [k, a] of State.byDaf) if (k.startsWith(en + "#")) n += a.length; return n; }
 
 function viewSeder(r) {
   const mas = DY.masechtosInSeder(r.seder);
-  return crumbs([["Browse", "browse"]], DY.sederHe(r.seder)) +
-    `<div class="mas-list" style="margin-top:14px">${mas.map(m => { const n = countMasechta(m.en); return `<button class="mas ${n ? "" : "empty"}" data-masechta="${esc(m.en)}"><span class="nm" lang="he">${esc(m.he)}</span><span class="ct">${n || "—"}</span></button>`; }).join("")}</div>`;
+  return boxHead(esc(DY.sederHe(r.seder))) +
+    `<div class="boxcol">${mas.map(m => {
+      const n = countMasechta(m.en);
+      return navBox(`data-masechta="${esc(m.en)}"`, esc(m.he), n ? `${n} shiurim` : "", n ? "" : "empty");
+    }).join("")}</div>`;
 }
 
 function viewMasechta(r) {
   const m = DY.BYEN[r.masechta];
-  if (!m) return crumbs([["Browse", "browse"]], "—") + `<div class="empty-mini">That masechta isn't available.</div>`;
-  let cells = "";
+  if (!m) return boxHead("—") + `<div class="empty-mini">That masechta isn't available.</div>`;
+  let rows = "";
   for (let d = m.firstDaf; d <= m.lastDaf; d++) {
-    const has = State.byDaf.has(dafKey(m.en, d)), lrn = isLearned(m.en, d);
-    cells += `<button class="daf-cell ${has ? "has" : "future"}${lrn ? " learned" : ""}" data-daf="${esc(m.en)}|${d}" aria-label="${esc(m.en)} Daf ${d}${has ? " — shiur available" : ""}${lrn ? ", learned" : ""}"><span class="he" aria-hidden="true">${esc(window.HebCal ? window.HebCal.gematria(d) : d)}</span><span class="n" aria-hidden="true">${d}</span>${lrn ? '<span class="cell-chk" aria-hidden="true">✓</span>' : ""}</button>`;
+    const shiur = shiurFor(m.en, d), lrn = isLearned(m.en, d);
+    const meta = shiur ? [fmtDur(shiur.duration), gregOf(shiur.recorded || shiur.posted)].filter(Boolean).join(" · ") : "read the daf";
+    rows += `<div class="drow${shiur ? "" : " future"}">
+      <button class="drow-main" data-daf="${esc(m.en)}|${d}" aria-label="${esc(m.en)} Daf ${d}${shiur ? " — shiur available" : ""}${lrn ? ", learned" : ""}">
+        <span class="rnum" aria-hidden="true">${esc(window.HebCal ? window.HebCal.gematria(d) : d)}</span>
+        <span class="rmain"><b>${esc(m.en)} · Daf ${d}</b><span class="rmeta">${meta}</span></span>
+        ${lrn ? '<span class="drow-chk" aria-hidden="true">✓</span>' : ""}
+      </button>
+      ${shiur ? `<button class="drow-play" data-play="${shiur.id}" aria-label="Play ${esc(m.en)} Daf ${d}">${svgPlay(13)}</button>` : ""}
+    </div>`;
   }
-  const ln = learnedInMasechta(m.en);
-  return crumbs([["Browse", "browse"], [DY.sederHe(m.seder), "seder", { seder: m.seder }]], m.he) +
-    `<div class="center muted" style="font-size:13px;margin:8px 0 2px">${countMasechta(m.en)} of ${m.dapim} dapim given · tap any daf to read it</div>
-     ${ln ? `<div class="mas-prog">${progressBar(ln, m.dapim, { label: "Learned in " + m.en })}</div>` : ""}
-     <div class="daf-grid">${cells}</div>`;
+  return boxHead(esc(m.he), `${m.en} · ${countMasechta(m.en)} of ${m.dapim} dafim given`) +
+    `<div class="drows">${rows}</div>`;
 }
 
 function viewDaf(r) {
@@ -522,8 +546,7 @@ async function dafBodyHtml(masechta, daf, mode) {
     const seg = data[amud]; if (!seg) continue;
     html += `<div class="amud">${amLabel(esc(window.HebCal ? window.HebCal.gematria(daf) : daf) + (amud.endsWith("a") ? "·א" : "·ב"))}${renderAmud(seg, mode)}</div>`;
   }
-  return (html || `<div class="empty-mini">This amud isn't available.</div>`) +
-    `<div class="daf-src">Talmud text — William Davidson Edition, Sefaria (Hebrew public domain; English © Steinsaltz, CC-BY-NC)</div>`;
+  return html || `<div class="empty-mini">This amud isn't available.</div>`;
 }
 async function hydrateDaf() {
   const box = $("#dafText"); if (!box) return;
@@ -588,7 +611,7 @@ function renderDafLayout(masechta, daf, data, comm) {
     html += dafPage(daf, amud, seg, comm[amud], flipLabel("dafpage-label", esc(heAmud(daf, amud)), masechta, daf));   // per-page daf-flip arrows on each amud (restored)
   }
   if (!html) return `<div class="empty-mini">This amud isn't available.</div>`;
-  return dafColHead(masechta, daf) + html + `<div class="daf-src">Talmud, Rashi &amp; Tosafos — Vilna Edition (public domain) · English Steinsaltz, CC-BY-NC · via Sefaria</div>`;
+  return dafColHead(masechta, daf) + html;
 }
 /* Phone-mode column selector for the Tzuras-Hadaf view: instead of scrolling
    through stacked גמרא / רש"י / תוספות, show ONE full-width column at a time.
@@ -808,7 +831,7 @@ function renderReader() {
       <div class="rd-title" id="rdTitle"><span class="he" lang="he">${esc(dafTitleHe(m, d))}</span><span class="en">${esc(m)} · Daf ${d}</span></div>
       <div class="rd-side rd-right">
         <span class="seg rd-seg" id="rdMode" role="group" aria-label="Daf display mode">${["daf", "he", "en", "both"].map(x => `<button data-rmode="${x}" class="${x === mode ? "on" : ""}" aria-pressed="${x === mode}">${({ daf: "Daf", he: "עברית", en: "English", both: "Both" })[x]}</button>`).join("")}</span>
-        ${shiur ? `<button class="rd-ic play" id="rdPlay" aria-label="Play this shiur" title="Play this daf's shiur">▶</button>` : ""}
+        ${shiur ? `<button class="rd-ic play" id="rdPlay" aria-label="Play this shiur" title="Play this daf's shiur">${svgPlay(13)}</button>` : ""}
       </div>
     </div>
     <div class="reader-body" id="rdBody"><div class="daf-loading">Loading the daf…</div></div>`;
@@ -835,15 +858,15 @@ function viewSearch() { return `<div class="pagetitle" role="heading" aria-level
 function runSearch(q) {
   const box = $("#results"); if (!box) return;
   q = (q || "").trim().toLowerCase();
-  if (!q) { box.innerHTML = `<div class="empty-mini">Type to search ${State.all.length.toLocaleString()} shiurim.</div>`; return; }
-  const res = State.all.filter(l => (l.title + " " + l.series).toLowerCase().includes(q)).slice(0, 60);
+  if (!q) { box.innerHTML = `<div class="empty-mini">Type to search ${State.all.filter(l => !isHiddenShiur(l)).length.toLocaleString()} shiurim.</div>`; return; }
+  const res = State.all.filter(l => !isHiddenShiur(l) && (l.title + " " + l.series).toLowerCase().includes(q)).slice(0, 60);
   box.innerHTML = res.length ? `<div class="rows">${res.map(rowHtml).join("")}</div>` : `<div class="empty-mini">No shiurim match “${esc(q)}”.</div>`;
   wireRows(box);
 }
 function viewMyStuff() {
   const f = favs(), p = getStore(CFG.progKey), lt = learnedTotal();
-  const fav = State.all.filter(l => f[l.id]).sort((a, b) => (+f[b.id] || 0) - (+f[a.id] || 0));
-  const pr = State.all.filter(l => p[l.id]).sort((a, b) => (+p[b.id] || 0) - (+p[a.id] || 0)).slice(0, 12);
+  const fav = State.all.filter(l => f[l.id] && !isHiddenShiur(l)).sort((a, b) => (+f[b.id] || 0) - (+f[a.id] || 0));
+  const pr = State.all.filter(l => p[l.id] && !isHiddenShiur(l)).sort((a, b) => (+p[b.id] || 0) - (+p[a.id] || 0)).slice(0, 12);
   const sec = (t, list, e) => `<div class="section" role="heading" aria-level="2">${t}</div>` + (list.length ? `<div class="rows">${list.map(rowHtml).join("")}</div>` : `<div class="empty-mini">${e}</div>`);
   const head = (lt || lastInProgress())
     ? `<div class="mystuff-top">${progressBar(lt, shasTotal(), { label: "Your Shas progress" })}${upNextLink()}</div>`
@@ -855,36 +878,128 @@ function viewMyStuff() {
 
 /* ---------- Shiurim (non-daf: parsha, holidays, machshava, …) ---------- */
 const isDafShiur = l => (l._dk && l._dk.daf) || /daf yomi|daily talmud/i.test(l.category || "");
+const HIDDEN_CAT = /must\s*see/i;                     // "Must See" is retired — hidden everywhere
+const isHiddenShiur = l => HIDDEN_CAT.test(l.category || "");
+const PARSHA_CAT = /paras/i, HOLIDAY_CAT = /holiday/i;
 function prettyCat(c) { return ({ "Parasha/Torah Portion": "Parsha", "Daf Yomi/Daily Talmud": "Daf Yomi", "Eulogies/Hespedim": "Hespedim", "Jewish Understanding": "Machshava", "Teshuvah/Repentance": "Teshuvah" })[c] || c; }
 function nonDafCats() {
   const m = new Map();
-  for (const l of State.all) { if (isDafShiur(l)) continue; const c = l.category || "Other"; m.set(c, (m.get(c) || 0) + 1); }
+  for (const l of State.all) { if (isDafShiur(l) || isHiddenShiur(l)) continue; const c = l.category || "Other"; m.set(c, (m.get(c) || 0) + 1); }
   return [...m.entries()].map(([name, count]) => ({ name, pretty: prettyCat(name), count })).sort((a, b) => b.count - a.count);
 }
+
+/* The five Chumashim and their parshiyos — spellings match the library's series
+   names once normalized (apostrophes/spaces dropped). */
+const CHUMASHIM = [
+  { en: "Bereishit", he: "בראשית", parshiyos: [["Bereishit", "בראשית"], ["Noach", "נח"], ["Lech Lecha", "לך לך"], ["Vayeira", "וירא"], ["Chayei Sarah", "חיי שרה"], ["Toldot", "תולדות"], ["Vayetzei", "ויצא"], ["Vayishlach", "וישלח"], ["Vayeshev", "וישב"], ["Mikeitz", "מקץ"], ["Vayigash", "ויגש"], ["Vayechi", "ויחי"]] },
+  { en: "Shemot", he: "שמות", parshiyos: [["Shemot", "שמות"], ["Va'eira", "וארא"], ["Bo", "בא"], ["Beshalach", "בשלח"], ["Yitro", "יתרו"], ["Mishpatim", "משפטים"], ["Terumah", "תרומה"], ["Tetzaveh", "תצוה"], ["Ki Tisa", "כי תשא"], ["Vayakhel", "ויקהל"], ["Pekudei", "פקודי"]] },
+  { en: "Vayikra", he: "ויקרא", parshiyos: [["Vayikra", "ויקרא"], ["Tzav", "צו"], ["Shemini", "שמיני"], ["Tazria", "תזריע"], ["Metzora", "מצורע"], ["Acharei Mot", "אחרי מות"], ["Kedoshim", "קדושים"], ["Emor", "אמור"], ["Behar", "בהר"], ["Bechukotai", "בחוקותי"]] },
+  { en: "Bamidbar", he: "במדבר", parshiyos: [["Bamidbar", "במדבר"], ["Naso", "נשא"], ["Be'halot'cha", "בהעלותך"], ["Shelach", "שלח"], ["Korach", "קרח"], ["Chukat", "חקת"], ["Balak", "בלק"], ["Pinchas", "פינחס"], ["Matot", "מטות"], ["Masay", "מסעי"]] },
+  { en: "Devarim", he: "דברים", parshiyos: [["Devarim", "דברים"], ["V'etchanan", "ואתחנן"], ["Ekev", "עקב"], ["Re'eh", "ראה"], ["Shoftim", "שופטים"], ["Ki Tetzei", "כי תצא"], ["Ki Tavo", "כי תבוא"], ["Nitzavim", "נצבים"], ["Vayelech", "וילך"], ["Ha'azinu", "האזינו"], ["V'Zot Haberacha", "וזאת הברכה"]] },
+];
+const CHUMASH_BY_EN = Object.fromEntries(CHUMASHIM.map(s => [s.en, s]));
+const normName = s => (s || "").toLowerCase().replace(/[^a-z]/g, "");
+// A shiur belongs to a parsha when its series matches it exactly, or is a doubled
+// reading that contains it ("Behar-Bechukotai" shows under both Behar and Bechukotai).
+function parshaMatches(series, parshaEn) {
+  const p = normName(parshaEn); if (!p) return false;
+  if (normName(series) === p) return true;
+  return String(series || "").split(/[-–—/]/).some(part => normName(part) === p);
+}
+const parshaShiurim = () => State.all.filter(l => PARSHA_CAT.test(l.category || "") && !isDafShiur(l));
+const holidayShiurim = () => State.all.filter(l => HOLIDAY_CAT.test(l.category || "") && !isDafShiur(l));
+const shiurimForParsha = en => parshaShiurim().filter(l => parshaMatches(l.series, en)).sort((a, b) => (b.posted || "").localeCompare(a.posted || ""));
+const parshaHe = en => { for (const s of CHUMASHIM) for (const [e, h] of s.parshiyos) if (e === en) return h; return en; };
+
+/* Holidays — box per yom tov, in calendar order; anything new in the library
+   is appended automatically. */
+const HOLIDAY_ORDER = [
+  ["Rosh Hashanah", "ראש השנה"], ["Yom Kippur", "יום כיפור"], ["Sukkot", "סוכות"], ["Hoshana Raba", "הושענא רבה"],
+  ["Chanukah", "חנוכה"], ["Purim", "פורים"], ["Pesach/Passover", "פסח"], ["Omer", "ספירת העומר"],
+  ["Shavuot", "שבועות"], ["Tisha B'Av", "תשעה באב"],
+];
+function holidayList() {
+  const counts = new Map();
+  for (const l of holidayShiurim()) { const s = l.series || "Other"; counts.set(s, (counts.get(s) || 0) + 1); }
+  const out = [];
+  for (const [en, he] of HOLIDAY_ORDER) if (counts.has(en)) { out.push({ series: en, he, count: counts.get(en) }); counts.delete(en); }
+  for (const [en, count] of counts) out.push({ series: en, he: en, count, latin: true });   // unknown series: keep its Latin name, styled Latin
+  return out;
+}
+const holidayHe = series => { const h = HOLIDAY_ORDER.find(([en]) => en === series); return h ? h[1] : series; };
+
 function viewTopics() {
   const cats = nonDafCats();
-  if (!cats.length) return `<div class="pagetitle" role="heading" aria-level="1">Shiurim</div><div class="empty-mini">No shiurim found yet.</div>`;
-  return `<div class="pagetitle" role="heading" aria-level="1">Shiurim</div><p class="lead">Beyond the daily daf — parsha, holidays, and more.</p>
-    <div class="cat-list">${cats.map(c => `<button class="cat-row" data-cat="${esc(c.name)}"><span class="nm">${esc(c.pretty)}</span><span class="ct">${c.count} shiurim ›</span></button>`).join("")}</div>`;
+  const parshaN = parshaShiurim().length, holN = holidayShiurim().length;
+  let boxes = "";
+  if (parshaN) boxes += navBox(`data-route="parsha"`, "פרשה", `Parsha · ${parshaN} shiurim`);
+  if (holN) boxes += navBox(`data-route="holidays"`, "ימים טובים", `Holidays · ${holN} shiurim`);
+  for (const c of cats) {
+    if (PARSHA_CAT.test(c.name) || HOLIDAY_CAT.test(c.name)) continue;   // the two rich flows above
+    boxes += navBox(`data-cat="${esc(c.name)}"`, esc(c.pretty), `${c.count} shiur${c.count > 1 ? "im" : ""}`, "latin");
+  }
+  if (!boxes) return `<div class="empty-mini">No shiurim found yet.</div>`;
+  return `<h1 class="sr-only">Shiurim</h1><div class="boxcol boxcol-top">${boxes}</div>`;
 }
+
+function viewParsha() {
+  const all = parshaShiurim();
+  const strays = all.filter(l => !CHUMASHIM.some(s => s.parshiyos.some(([en]) => parshaMatches(l.series, en))))
+    .sort((a, b) => (b.posted || "").localeCompare(a.posted || ""));
+  return boxHead("פרשה", "Parsha") +
+    `<div class="boxcol">${CHUMASHIM.map(s => {
+      const ids = new Set();                                   // distinct shiurim — a doubled parsha counts once
+      for (const [en] of s.parshiyos) for (const l of shiurimForParsha(en)) ids.add(l.id);
+      const n = ids.size;
+      return navBox(`data-sefer="${esc(s.en)}"`, esc(s.he), n ? `${n} shiurim` : "", n ? "" : "empty");
+    }).join("")}</div>` +
+    (strays.length ? `<div class="section" role="heading" aria-level="2">More parsha shiurim</div><div class="rows">${strays.map(rowHtml).join("")}</div>` : "");
+}
+
+function viewSefer(r) {
+  const s = CHUMASH_BY_EN[r.sefer];
+  if (!s) return boxHead("—") + `<div class="empty-mini">That sefer isn't available.</div>`;
+  return boxHead(esc(s.he), s.en) +
+    `<div class="boxcol">${s.parshiyos.map(([en, he]) => {
+      const n = shiurimForParsha(en).length;
+      return navBox(`data-parsha="${esc(en)}"`, esc(he), n ? `${n} shiur${n > 1 ? "im" : ""}` : "", n ? "" : "empty");
+    }).join("")}</div>`;
+}
+
+function viewParshaShiurim(r) {
+  const list = shiurimForParsha(r.parsha);
+  return boxHead(esc(parshaHe(r.parsha)), r.parsha) +
+    (list.length ? `<div class="rows">${list.map(rowHtml).join("")}</div>`
+                 : `<div class="empty-mini">No shiurim on this parsha yet.</div>`);
+}
+
+function viewHolidays() {
+  const hols = holidayList();
+  if (!hols.length) return boxHead("ימים טובים", "Holidays") + `<div class="empty-mini">No holiday shiurim yet.</div>`;
+  return boxHead("ימים טובים", "Holidays") +
+    `<div class="boxcol">${hols.map(h => navBox(`data-holiday="${esc(h.series)}"`, esc(h.he), `${h.count} shiur${h.count > 1 ? "im" : ""}`, h.latin ? "latin" : "")).join("")}</div>`;
+}
+
+function viewHoliday(r) {
+  const list = holidayShiurim().filter(l => (l.series || "Other") === r.series).sort((a, b) => (b.posted || "").localeCompare(a.posted || ""));
+  const he = holidayHe(r.series), latin = /[a-z]/i.test(he);
+  return boxHead(esc(he), latin ? "" : r.series.replace(/\/.*$/, ""), latin) +
+    (list.length ? `<div class="rows">${list.map(rowHtml).join("")}</div>`
+                 : `<div class="empty-mini">No shiurim for this yom tov yet.</div>`);
+}
+
 function viewCategory(r) {
   const cat = r.cat, pretty = prettyCat(cat);
+  if (HIDDEN_CAT.test(cat || "")) return `<div class="empty-mini">No shiurim in this category.</div>`;
+  if (PARSHA_CAT.test(cat || "")) return viewParsha();       // old links land on the new flows
+  if (HOLIDAY_CAT.test(cat || "")) return viewHolidays();
   const list = State.all.filter(l => l.category === cat && !isDafShiur(l)).sort((a, b) => (b.posted || "").localeCompare(a.posted || ""));
-  const back = crumbs([["Shiurim", "topics"]], pretty);
+  const back = boxHead(esc(pretty), "", true);
   if (!list.length) return back + `<div class="empty-mini">No shiurim in this category yet.</div>`;
-  let body;
-  if (/paras|holiday/i.test(cat)) {                 // group by parsha / yom tov (the series)
-    const groups = {};
-    for (const l of list) { const gk = l.series || "—"; (groups[gk] || (groups[gk] = [])).push(l); }
-    const names = Object.keys(groups).sort((a, b) => Math.max(...groups[b].map(x => Date.parse(x.posted || 0) || 0)) - Math.max(...groups[a].map(x => Date.parse(x.posted || 0) || 0)));
-    body = names.map(nm => `<div class="topic-group">${esc(nm)}</div><div class="rows">${groups[nm].map(rowHtml).join("")}</div>`).join("");
-  } else {
-    body = `<div class="rows">${list.map(rowHtml).join("")}</div>`;
-  }
-  return back + `<div class="pagetitle" role="heading" aria-level="1" style="margin-top:6px">${esc(pretty)}</div>${body}`;
+  return back + `<div class="rows">${list.map(rowHtml).join("")}</div>`;
 }
 function moreSection() {
-  const nondaf = State.all.filter(l => !isDafShiur(l)).slice(0, 4);
+  const nondaf = State.all.filter(l => !isDafShiur(l) && !isHiddenShiur(l)).slice(0, 4);
   if (!nondaf.length) return "";
   return `<div class="section" role="heading" aria-level="2">Parsha &amp; more</div><div class="rows">${nondaf.map(rowHtml).join("")}</div>
     <p class="center" style="margin-top:14px"><button class="textlink" data-route="topics">All shiurim →</button></p>`;
@@ -971,10 +1086,16 @@ function viewAbout() {
     ${a.tradition ? `<div class="section" role="heading" aria-level="2">${esc(a.tradition.heading)}</div><div class="prose"><p>${esc(a.tradition.body)}</p></div>` : ""}
     <div class="section" role="heading" aria-level="2">FAQ</div>${(Array.isArray(State.content.faqs) ? State.content.faqs : []).map(x => `<details class="faq"><summary>${esc(x.q)}</summary><div class="a">${esc(x.a)}</div></details>`).join("")}
     <div class="section" role="heading" aria-level="2">Contact</div>
-    <p class="prose"><a class="textlink" href="mailto:${esc(c.email || "")}">${esc(c.email || "")}</a>${p.number ? ` · Listen by phone: ${esc(p.number)} ext. ${esc(p.extension || "")}` : ""}</p>`;
+    <p class="prose"><a class="textlink" href="mailto:${esc(c.email || "")}">${esc(c.email || "")}</a>${p.number ? ` · Listen by phone: ${esc(p.number)} ext. ${esc(p.extension || "")}` : ""}</p>
+    <p class="credits">Daf text courtesy of Sefaria — Hebrew public domain · English © Steinsaltz (CC-BY-NC)</p>`;
 }
 
 /* shared */
+// Geometric play/pause icons — the text "▶" centers differently on every
+// platform (and can render as emoji on phones); an inline SVG is identical
+// everywhere and sits dead-center in its circle.
+const svgPlay = px => `<svg class="svg-ic" viewBox="0 0 12 12" width="${px}" height="${px}" aria-hidden="true" focusable="false"><path d="M3.4 1.6 L11.2 6 L3.4 10.4 Z" fill="currentColor"/></svg>`;
+const svgPause = px => `<svg class="svg-ic" viewBox="0 0 12 12" width="${px}" height="${px}" aria-hidden="true" focusable="false"><rect x="2.7" y="2" width="2.5" height="8" rx=".7" fill="currentColor"/><rect x="6.8" y="2" width="2.5" height="8" rx=".7" fill="currentColor"/></svg>`;
 function rowHtml(lec) {
   const k = lec._dk, isDaf = k && k.daf;
   // For a daf shiur the title ("Daf 52 Chullin") just repeats the reference, so
@@ -985,7 +1106,7 @@ function rowHtml(lec) {
   return `<button class="row${State.newIds.has(lec.id) ? " is-new" : ""}" data-rowdaf="${isDaf ? esc(k.masechta) + "|" + k.daf : ""}" data-play="${lec.id}">
     <span class="rnum${isDaf ? "" : " sym"}"${isDaf ? "" : ' aria-hidden="true"'}>${num}</span>
     <span class="rmain"><b>${title}</b><span class="rmeta">${meta}</span></span>
-    <span class="rgo" aria-hidden="true">▶</span></button>`;
+    <span class="rgo" aria-hidden="true">${svgPlay(11)}</span></button>`;
 }
 function crumbs(parts, title) {
   return `<div class="crumbs" dir="ltr">${parts.map(([l, n, p]) => `<button data-go="${n}" data-p="${esc(JSON.stringify(p || {}))}">${esc(l)}</button>`).join(" › ")} › <b>${esc(title)}</b></div>`;
@@ -998,6 +1119,10 @@ function wireView(r) {
   const v = $("#view");
   v.querySelectorAll("[data-seder]").forEach(b => b.onclick = () => route("seder", { seder: b.dataset.seder }));
   v.querySelectorAll("[data-masechta]").forEach(b => b.onclick = () => route("masechta", { masechta: b.dataset.masechta }));
+  v.querySelectorAll("[data-sefer]").forEach(b => b.onclick = () => route("sefer", { sefer: b.dataset.sefer }));
+  v.querySelectorAll("[data-parsha]").forEach(b => b.onclick = () => route("parshaS", { parsha: b.dataset.parsha }));
+  v.querySelectorAll("[data-holiday]").forEach(b => b.onclick = () => route("holiday", { series: b.dataset.holiday }));
+  v.querySelectorAll("[data-goback]").forEach(b => b.onclick = goBack);
   v.querySelectorAll("[data-cat]").forEach(b => b.onclick = () => route("category", { cat: b.dataset.cat }));
   v.querySelectorAll("[data-daf]").forEach(b => b.onclick = () => route("daf", { id: b.dataset.daf }));
   v.querySelectorAll("[data-go]").forEach(a => a.onclick = () => { let p = {}; try { p = JSON.parse(a.dataset.p || "{}"); } catch {} route(a.dataset.go, p); });
@@ -1186,7 +1311,7 @@ const Player = {
   ctrls() {
     const c = $("#pCtrls"); if (!c) return; const m = this.media, playing = m && !m.paused && !m.ended;
     if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = playing ? "playing" : "paused"; } catch {} }
-    c.innerHTML = `<button id="pB" aria-label="Back 10 seconds">↺<span class="d">10</span></button><button class="pp" id="pP" aria-label="${playing ? "Pause" : "Play"}">${playing ? "❚❚" : "▶"}</button><button id="pF" aria-label="Forward 10 seconds"><span class="d">10</span>↻</button><button class="pill" id="pS" aria-label="Playback speed">${this.speed}×</button>`;
+    c.innerHTML = `<button id="pB" aria-label="Back 10 seconds">↺<span class="d">10</span></button><button class="pp" id="pP" aria-label="${playing ? "Pause" : "Play"}">${playing ? svgPause(16) : svgPlay(16)}</button><button id="pF" aria-label="Forward 10 seconds"><span class="d">10</span>↻</button><button class="pill" id="pS" aria-label="Playback speed">${this.speed}×</button>`;
     $("#pP").onclick = () => this.toggle(); $("#pB").onclick = () => this.skip(-10); $("#pF").onclick = () => this.skip(10); $("#pS").onclick = () => this.setSpeed();
   },
   tick() {
