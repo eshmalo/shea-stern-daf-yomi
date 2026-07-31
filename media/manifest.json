@@ -9308,5 +9308,19 @@
     "audio": "media/460711.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 66 Chullin"
+  },
+  "466658": {
+    "audio": "media/466658.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 92 Chullin ",
+    "video": "media/466658.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "466661": {
+    "audio": "media/466661.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parasha Ekev: \u05d1\u05d8\u05d7\u05d5 \u05d1\u05d5 \u05d1\u05db\u05dc \u05e2\u05ea",
+    "video": "media/466661.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
