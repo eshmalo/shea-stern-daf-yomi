@@ -9327,5 +9327,12 @@
     "audio": "media/466667.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 93 Chullin"
+  },
+  "466842": {
+    "audio": "media/466842.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 94 Chullin",
+    "video": "media/466842.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
