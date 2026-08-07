@@ -9355,5 +9355,24 @@
     "title": "Daf 98 Chullin",
     "video": "media/467700.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "467920": {
+    "audio": "media/467920.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 99 Chullin",
+    "video": "media/467920.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "467931": {
+    "audio": "media/467931.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parasha Re'eh: Tefilla starts before Davening.",
+    "video": "media/467931.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "467933": {
+    "audio": "media/467933.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 100 Chullin"
   }
 }
