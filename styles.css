@@ -520,6 +520,22 @@ html.is-phone .toast-wrap { bottom: calc(106px + env(safe-area-inset-bottom, 0px
 html.is-phone.dy-min .bar { transform: translateY(-100%); }
 html.is-phone.dy-min .daf-colhead { top: 0; box-shadow: 0 8px 16px -12px rgba(33, 30, 24, .45); }
 
+/* ---------- Worksheets & sources (admin-uploaded PDFs/pictures per page) ---------- */
+.ws-list { margin: 4px 0 14px; }
+.ws-row { display: flex; align-items: stretch; gap: 8px; border-bottom: 1px solid var(--hair); }
+.ws-open { flex: 1; display: flex; align-items: center; gap: 11px; padding: 10px 4px; min-width: 0; color: var(--ink); }
+.ws-open:hover { color: var(--accent-2); text-decoration: none; }
+.ws-open:hover .ws-t b { text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: .6px; }
+.ws-ic { color: var(--accent); font-size: 17px; flex: none; }
+.ws-t { display: flex; flex-direction: column; min-width: 0; }
+.ws-t b { font-weight: 600; overflow-wrap: anywhere; }
+.ws-t b[lang="he"] { font-family: var(--serif-he); }
+.ws-meta { font-family: var(--sans); font-size: 12px; color: var(--ink-faint); margin-top: 1px; }
+.ws-go { color: var(--ink-faint); font-size: 13px; margin-left: auto; padding-left: 8px; flex: none; }
+.ws-dl { appearance: none; background: var(--paper); border: 1px solid var(--hair-2); border-left: 1px solid var(--hair); border-top: 0; border-bottom: 0; border-right: 0; color: var(--ink-soft); font: inherit; font-size: 16px; padding: 0 14px; cursor: pointer; flex: none; }
+.ws-dl:hover { color: var(--accent); }
+.ws-pagemedia { margin-top: 12px; }
+
 /* Respect the OS "reduce motion" setting — collapse animations/transitions to
    near-instant. State changes still apply; only the motion is removed. */
 @media (prefers-reduced-motion: reduce) {

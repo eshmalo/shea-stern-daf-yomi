@@ -1,0 +1,61 @@
+/* Admin page — reuses the site's paper/sefer tokens from ../styles.css. */
+#app { padding-bottom: 60px; }
+.adm-wrap { padding: 0 var(--pad); max-width: 640px; margin: 0 auto; }
+.adm-head { text-align: center; padding: 34px 0 10px; }
+.adm-head .he { font-family: var(--serif-he); direction: rtl; font-size: 30px; font-weight: 700; }
+.adm-head .en { font-family: var(--sans); font-size: 11.5px; text-transform: uppercase; letter-spacing: .15em; color: var(--ink-soft); margin-top: 4px; }
+.adm-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 1px solid var(--hair-2); padding: 8px 0 14px; flex-wrap: wrap; }
+.adm-user { font-size: 14px; color: var(--ink-soft); font-style: italic; }
+
+.adm-login { max-width: 380px; margin: 60px auto; padding: 26px 24px; border: 1px solid var(--hair-2); border-radius: 8px; background: var(--paper-2); text-align: center; }
+.adm-login .field-label { text-align: left; margin: 14px 0 5px; }
+.adm-login input { width: 100%; box-sizing: border-box; border: 1px solid var(--hair-2); border-radius: 4px; padding: 11px; font: inherit; background: #fffdf8; }
+.adm-login input:focus { border-color: var(--accent); outline: none; }
+.adm-login input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.adm-err { color: var(--accent); font-size: 14px; min-height: 20px; margin-top: 10px; }
+
+.adm-pick { display: grid; gap: 12px; margin: 18px 0; }
+.adm-pick .seg { justify-content: center; display: flex; }
+.adm-selrow { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.adm-selrow select { flex: 1 1 160px; max-width: 100%; border: 1px solid var(--hair-2); border-radius: 4px; padding: 10px; font: inherit; font-size: 15.5px; background: #fffdf8; color: var(--ink); }
+.adm-selrow select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.adm-panel { border: 1px solid var(--hair-2); border-radius: 8px; padding: 18px 16px 22px; margin-top: 10px; background: color-mix(in srgb, var(--paper-2) 35%, var(--paper)); }
+.adm-panel h2 { font-size: 20px; margin: 0 0 2px; text-align: center; }
+.adm-panel .sub { text-align: center; font-family: var(--sans); font-size: 11.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft); margin-bottom: 14px; }
+
+.adm-sec { font-family: var(--sans); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .15em; color: var(--ink-soft); border-bottom: 1px solid var(--hair); padding-bottom: 5px; margin: 22px 0 10px; }
+.adm-mrow { display: flex; align-items: center; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--hair); flex-wrap: wrap; }
+.adm-mrow .mk { font-weight: 600; min-width: 64px; }
+.adm-mrow .mv { flex: 1; font-size: 14px; color: var(--ink-soft); min-width: 140px; overflow-wrap: anywhere; }
+.adm-mrow .mv b { color: var(--ok); }
+.adm-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.adm-att { display: flex; align-items: center; gap: 8px; padding: 9px 2px; border-bottom: 1px solid var(--hair); flex-wrap: wrap; }
+.adm-att .at { flex: 1 1 200px; min-width: 0; }
+.adm-att .at b { overflow-wrap: anywhere; }
+.adm-att .at .m { display: block; font-family: var(--sans); font-size: 12px; color: var(--ink-faint); }
+.adm-att .at[dir="rtl"] { font-family: var(--serif-he); }
+.adm-ib { appearance: none; border: 1px solid var(--hair-2); background: var(--paper); border-radius: 4px; width: 34px; height: 34px; font-size: 15px; cursor: pointer; color: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
+.adm-ib:hover { border-color: var(--ink); }
+.adm-ib.danger:hover { border-color: var(--accent); color: var(--accent); }
+
+.adm-up { border: 1.5px dashed var(--hair-2); border-radius: 8px; padding: 14px; text-align: center; margin-top: 12px; }
+.adm-up .hint { font-size: 13.5px; color: var(--ink-faint); margin-top: 6px; }
+
+.adm-prog { position: fixed; inset: 0; background: rgba(28,26,22,.45); display: flex; align-items: center; justify-content: center; z-index: 60; padding: 20px; }
+.adm-prog .card { background: var(--paper); border-radius: 8px; padding: 26px 24px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 18px 60px -18px rgba(33,30,24,.5); }
+.adm-prog .fn { font-weight: 600; overflow-wrap: anywhere; }
+.adm-prog .bar { height: 10px; border: 1px solid var(--hair-2); border-radius: 6px; margin: 16px 0 8px; overflow: hidden; background: #fffdf8; }
+.adm-prog .bar > div { height: 100%; width: 0%; background: var(--accent); transition: width .2s; }
+.adm-prog .pct { font-family: var(--sans); font-size: 13px; color: var(--ink-soft); }
+
+.adm-note { font-size: 14px; color: var(--ink-soft); font-style: italic; text-align: center; margin-top: 26px; }
+input[type="file"] { display: none; }
+
+@supports not (background: color-mix(in srgb, red 50%, white)) {
+  .adm-panel { background: #faf7ee; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-prog .bar > div { transition: none; }
+}

@@ -30,6 +30,8 @@ env/
 # --- Secrets: cloud storage / CDN credentials (NEVER commit) ---
 build/cloud.config
 .env
+admin-api/.secrets*
+admin-api/fn.zip
 
 # --- Media pipeline temp files ---
 media/.tmp/

@@ -32,7 +32,7 @@ const safeHe = s => esc(s).replace(/&lt;(\/?(?:big|strong|b|i|em|br))&gt;/gi, "<
 const DY = window.DafYomi;
 
 const State = {
-  speaker: null, all: [], content: {}, media: {}, dafIndex: {}, dafCache: {}, commCache: {},
+  speaker: null, all: [], content: {}, media: {}, admin: {}, dafIndex: {}, dafCache: {}, commCache: {},
   byDaf: new Map(), route: { name: "today" }, newIds: new Set(),
   sponsor: { kind: null }, _dafCol: "gemara",
 };
@@ -84,12 +84,34 @@ async function boot() {
     catch { seed = { speaker: { name: "Rabbi Shea Stern" }, lectures: [] }; }
   }
   State.speaker = seed.speaker; State.all = seed.lectures || [];
-  [State.content, State.media, State.dafIndex, State.origAudio] = await Promise.all([loadContent(), loadJson(CFG.mediaManifest), loadJson(CFG.dafIndex), loadJson(CFG.origAudio)]);
+  [State.content, State.media, State.dafIndex, State.origAudio] = await Promise.all([
+    loadContent().then(async c => { State.content = c; State.admin = await loadAdminData(); return c; }),   // admin data needs options.mediaBaseUrl, so it chains off content
+    loadJson(CFG.mediaManifest), loadJson(CFG.dafIndex), loadJson(CFG.origAudio)]);
   buildIndex(); renderShell(); restoreInitialRoute();
   setStatus("checking"); refreshLive(seed.lectures || [], !!cached);
 }
 async function loadContent() { let l = null; try { l = localStorage.getItem(CFG.contentLocalKey); } catch {} if (l) { try { const p = JSON.parse(l); if (p && typeof p === "object" && !Array.isArray(p)) return p; } catch { try { localStorage.removeItem(CFG.contentLocalKey); } catch {} } } return loadJson(CFG.contentUrl); }
 async function loadJson(u) { try { return await fetch(u).then(r => r.ok ? r.json() : {}); } catch { return {}; } }
+
+// Admin-managed media overrides + worksheet attachments (uploaded by the Rov via
+// /admin/) live in site/admin-data.json on the media CDN. Minute-stamped query
+// param + no-store so an edit is visible on the next load, not next week.
+async function loadAdminData() {
+  const base = String(State.content?.options?.mediaBaseUrl || "").replace(/\/+$/, "");
+  if (!base) return {};
+  try {
+    const r = await fetch(`${base}/site/admin-data.json?t=${Math.floor(Date.now() / 60000)}`, { cache: "no-store" });
+    if (!r.ok) return {};
+    const d = await r.json();
+    return (d && typeof d === "object" && !Array.isArray(d)) ? d : {};
+  } catch { return {}; }
+}
+// Admin refs are RELATIVE R2 keys under a small allowlist; anything else is
+// ignored (admin-data.json is remote content — never let it inject arbitrary URLs).
+const ADMIN_KEY_RE = /^(site\/uploads\/(audio|video|worksheet)\/|media\/|archive\/)/;
+function adminMediaUrl(k) { k = String(k || ""); return (ADMIN_KEY_RE.test(k) && !k.includes("..")) ? encodeURI(mediaUrl(k)) : ""; }
+function adminPageMedia(pk) { const e = State.admin?.media?.pages?.[pk]; return (e && typeof e === "object" && !Array.isArray(e)) ? e : null; }
+function adminAttachments(pk) { const l = State.admin?.attachments?.pages?.[pk]; return Array.isArray(l) ? l : []; }
 
 // Resolve a manifest media path. Paths are stored RELATIVE ("media/<id>.mp3")
 // so the store is portable: leave options.mediaBaseUrl empty to serve from this
@@ -108,6 +130,13 @@ function buildIndex() {
     if (!lec || typeof lec !== "object") continue;   // tolerate a corrupt cache entry without breaking the whole index
     const mm = State.media[String(lec.id)];
     if (mm) { lec.localAudio = mediaUrl(mm.audio); lec.localVideo = mediaUrl(mm.video); lec.introTrimmed = mm.intro_trimmed; }
+    lec.ovAudio = lec.ovVideo = undefined;                       // clear first — cached lecture objects may carry a since-removed override
+    const ov = State.admin?.media?.lectures?.[String(lec.id)];   // admin replacement beats every tier; applied here so refreshLive re-applies it
+    if (ov && typeof ov === "object") {
+      const oa = ov.audio && adminMediaUrl(ov.audio.key), ovi = ov.video && adminMediaUrl(ov.video.key);
+      if (oa) lec.ovAudio = oa;
+      if (ovi) lec.ovVideo = ovi;
+    }
     const k = DY.shiurDaf(lec); lec._dk = k;
     if (k && k.masechta && k.daf != null) {   // prefer the Rabbi's ORIGINAL recording (no TA intro/watermark) when we have one for this daf
       const o = State.origAudio && State.origAudio[k.masechta] && State.origAudio[k.masechta][String(k.daf)];
@@ -354,7 +383,7 @@ function rerender() {
   const fn = { today: viewToday, browse: viewBrowse, seder: viewSeder, masechta: viewMasechta, daf: viewDaf, topics: viewTopics, parsha: viewParsha, sefer: viewSefer, parshaS: viewParshaShiurim, holidays: viewHolidays, holiday: viewHoliday, category: viewCategory, search: viewSearch, mystuff: viewMyStuff, sponsor: viewSponsor, about: viewAbout, donate: viewDonate }[r.name] || viewToday;
   v.innerHTML = `<div class="view">${fn(r)}</div>`;
   wireView(r);
-  if (r.name === "daf") { hydrateDaf(); if (r.watch) { const [mm, dd] = (r.id || "").split("|"); const s = shiurFor(mm, +dd); if (s) watchVideo(s.id); } }
+  if (r.name === "daf") { hydrateDaf(); if (r.watch) { const [mm, dd] = (r.id || "").split("|"); const pk = `daf:${mm}:${+dd}`, ov = adminPageMedia(pk); if (ov && ov.video) playOverride(pk, "video"); else { const s = shiurFor(mm, +dd); if (s) watchVideo(s.id); } } }
 }
 
 /* =====================================================================
@@ -403,9 +432,12 @@ function viewToday() {
   const yDate = new Date(now), tmDate = new Date(now); yDate.setDate(yDate.getDate() - 1); tmDate.setDate(tmDate.getDate() + 1);   // true calendar-day steps (DST-safe), not ±24h
   const t = dafData(now), y = dafData(yDate), tm = dafData(tmDate);
   const ref = `${esc(t.dy.masechta)}|${t.dy.daf}`;
-  const hasVid = t.shiur && (t.shiur.localVideo || t.shiur.video);
-  const actions = t.shiur
-    ? `<button class="btn solid" data-play="${t.shiur.id}">▶ Listen</button>${hasVid ? `<button class="btn" data-watchdaf="${ref}"><span class="vic" aria-hidden="true">▦</span>Watch</button>` : ""}<button class="btn" data-daf="${ref}">Read the daf</button>`
+  const tpk = `daf:${t.dy.masechta}:${t.dy.daf}`, tov = adminPageMedia(tpk);
+  const tovA = tov && tov.audio ? adminMediaUrl(tov.audio.key) : "", tovV = tov && tov.video ? adminMediaUrl(tov.video.key) : "";
+  const hasVid = tovV || (t.shiur && (t.shiur.ovVideo || t.shiur.localVideo || t.shiur.video));
+  const listenBtn = tovA ? `<button class="btn solid" data-oplay="${esc(tpk)}">▶ Listen</button>` : (t.shiur ? `<button class="btn solid" data-play="${t.shiur.id}">▶ Listen</button>` : "");
+  const actions = (listenBtn || hasVid)
+    ? `${listenBtn}${hasVid ? `<button class="btn" data-watchdaf="${ref}"><span class="vic" aria-hidden="true">▦</span>Watch</button>` : ""}<button class="btn" data-daf="${ref}">Read the daf</button>`
     : `<button class="btn accent" data-sponsor-daf="${ref}">✦ Sponsor today's daf</button><button class="btn" data-daf="${ref}">Read the daf</button>`;
   return `
     <div class="titlepage">
@@ -498,14 +530,19 @@ function viewDaf(r) {
        <button class="learn-toggle ${lrn ? "on" : ""}" data-learn="${esc(masechta)}|${daf}" aria-pressed="${lrn}">${lrn ? "✓ Learned" : "Mark as learned"}</button>
        <span class="learn-meta">${esc(masechta)}: ${learnedInMasechta(masechta)} / ${m ? m.dapim : "?"} dapim learned</span>
      </div>`;
-  const media = shiur ? `
+  const pk = `daf:${masechta}:${daf}`, ovm = adminPageMedia(pk);
+  const ovA = ovm && ovm.audio ? adminMediaUrl(ovm.audio.key) : "", ovV = ovm && ovm.video ? adminMediaUrl(ovm.video.key) : "";
+  const listenBtn = ovA ? `<button class="btn solid sm" data-oplay="${esc(pk)}">▶ Listen</button>`
+    : (shiur ? `<button class="btn solid sm" data-play="${shiur.id}">▶ Listen</button>` : "");
+  const watchBtn = ovV ? `<button class="btn sm" data-owatch="${esc(pk)}"><span class="vic" aria-hidden="true">▦</span>Watch</button>`
+    : (shiur && (shiur.ovVideo || shiur.localVideo || shiur.video) ? `<button class="btn sm" data-watch="${shiur.id}"><span class="vic" aria-hidden="true">▦</span>Watch</button>` : "");
+  const media = (listenBtn || watchBtn) ? `
     <div class="daf-media">
-      <button class="btn solid sm" data-play="${shiur.id}">▶ Listen</button>
-      ${(shiur.localVideo || shiur.video) ? `<button class="btn sm" data-watch="${shiur.id}"><span class="vic" aria-hidden="true">▦</span>Watch</button>` : ""}
-      <button class="btn sm" data-fav="${shiur.id}" aria-pressed="${isFav(shiur.id)}">${isFav(shiur.id) ? "★ Saved" : "☆ Save"}</button>
+      ${listenBtn}${watchBtn}
+      ${shiur ? `<button class="btn sm" data-fav="${shiur.id}" aria-pressed="${isFav(shiur.id)}">${isFav(shiur.id) ? "★ Saved" : "☆ Save"}</button>` : ""}
     </div>
     <div id="videoSlot"></div>` : "";
-  const sponsor = shiur
+  const sponsor = (shiur || ovA || ovV)
     ? `<p class="center" style="margin:10px 0"><button class="textlink" data-sponsor-daf="${esc(masechta)}|${daf}">✦ Sponsor this daf</button></p>`
     : `<div class="sponsor-strip"><b>This daf hasn't been given yet.</b><div class="muted" style="font-size:14px;margin-top:4px">Sponsor it for a yahrtzeit or simcha — your dedication is learned by everyone.</div><button class="btn accent" data-sponsor-daf="${esc(masechta)}|${daf}">✦ Sponsor ${esc(masechta)} ${daf}</button></div>`;
   return crumbs([["Browse", "browse"], [m ? m.he : masechta, "masechta", { masechta }]], heDaf(daf)) +
@@ -517,7 +554,7 @@ function viewDaf(r) {
        </div>
        ${shiur ? `<div class="meta">Given ${dateLine(shiur.recorded || shiur.posted)} · ${fmtDur(shiur.duration)}</div>` : ""}</div>
      ${learnCtl}
-     ${media}${sponsor}
+     ${media}${worksheetsHtml(pk)}${sponsor}
      <div class="daf-toolbar">
        <span class="ttl">The Daf</span>
        <span class="seg" id="dafMode" role="group" aria-label="Daf display mode">${["daf", "he", "en", "both"].map(x => `<button data-mode="${x}" class="${x === mode ? "on" : ""}" aria-pressed="${x === mode}"${x === "daf" ? ' title="The full page — Gemara, Rashi &amp; Tosafos, as printed"' : ""}>${({ daf: "Daf", he: "עברית", en: "English", both: "Both" })[x]}</button>`).join("")}</span>
@@ -968,9 +1005,11 @@ function viewSefer(r) {
 
 function viewParshaShiurim(r) {
   const list = shiurimForParsha(r.parsha);
-  return boxHead(esc(parshaHe(r.parsha)), r.parsha) +
+  const pk = `parsha:${r.parsha}`;
+  const admin = pageMediaHtml(pk) + worksheetsHtml(pk);   // gate the empty-state on what actually rendered
+  return boxHead(esc(parshaHe(r.parsha)), r.parsha) + admin +
     (list.length ? `<div class="rows">${list.map(rowHtml).join("")}</div>`
-                 : `<div class="empty-mini">No shiurim on this parsha yet.</div>`);
+                 : admin ? "" : `<div class="empty-mini">No shiurim on this parsha yet.</div>`);
 }
 
 function viewHolidays() {
@@ -983,9 +1022,11 @@ function viewHolidays() {
 function viewHoliday(r) {
   const list = holidayShiurim().filter(l => (l.series || "Other") === r.series).sort((a, b) => (b.posted || "").localeCompare(a.posted || ""));
   const he = holidayHe(r.series), latin = /[a-z]/i.test(he);
-  return boxHead(esc(he), latin ? "" : r.series.replace(/\/.*$/, ""), latin) +
+  const pk = `holiday:${r.series}`;
+  const admin = pageMediaHtml(pk) + worksheetsHtml(pk);   // gate the empty-state on what actually rendered
+  return boxHead(esc(he), latin ? "" : r.series.replace(/\/.*$/, ""), latin) + admin +
     (list.length ? `<div class="rows">${list.map(rowHtml).join("")}</div>`
-                 : `<div class="empty-mini">No shiurim for this yom tov yet.</div>`);
+                 : admin ? "" : `<div class="empty-mini">No shiurim for this yom tov yet.</div>`);
 }
 
 function viewCategory(r) {
@@ -1112,6 +1153,58 @@ function crumbs(parts, title) {
   return `<div class="crumbs" dir="ltr">${parts.map(([l, n, p]) => `<button data-go="${n}" data-p="${esc(JSON.stringify(p || {}))}">${esc(l)}</button>`).join(" › ")} › <b>${esc(title)}</b></div>`;
 }
 
+/* ---------- admin-managed page media + worksheets (see loadAdminData) ---------- */
+const fmtBytes = n => { n = +n || 0; if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + " MB"; if (n >= 1e3) return Math.round(n / 1e3) + " KB"; return n ? n + " B" : ""; };
+
+// Admin-uploaded audio/video for a page that has no catalog shiur to hang
+// buttons on (parsha/holiday pages, or an override-only daf).
+function pageMediaHtml(pk) {
+  const ovm = adminPageMedia(pk); if (!ovm) return "";
+  const a = ovm.audio ? adminMediaUrl(ovm.audio.key) : "", v = ovm.video ? adminMediaUrl(ovm.video.key) : "";
+  if (!a && !v) return "";
+  return `<div class="daf-media ws-pagemedia">
+      ${a ? `<button class="btn solid sm" data-oplay="${esc(pk)}">▶ Listen</button>` : ""}
+      ${v ? `<button class="btn sm" data-owatch="${esc(pk)}"><span class="vic" aria-hidden="true">▦</span>Watch</button>` : ""}
+    </div><div id="videoSlot"></div>`;
+}
+
+// "Worksheets & sources" — the Rov's PDFs/pictures for this daf or parsha.
+// Every item has a proper Open (new tab, our own file on the media CDN) and a
+// Download button (blob fetch — the download attribute is ignored cross-origin).
+function worksheetsHtml(pk) {
+  const items = adminAttachments(pk).map(a => {
+    const url = adminMediaUrl(a && a.key); if (!url) return "";
+    const title = String(a.title || "Worksheet");
+    const he = /[֐-׿]/.test(title);
+    const tail = String(a.key).split(".").pop().replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    const ext = (tail.length >= 2 && tail.length <= 5 && String(a.key).includes(".")) ? tail : "";   // archive keys may have no extension at all
+    const meta = [ext, fmtBytes(a.size)].filter(Boolean).join(" · ");
+    const dlname = (title.replace(/[\\/:*?"<>|]/g, "-").slice(0, 80) || "worksheet") + (ext ? "." + ext.toLowerCase() : "");
+    return `<div class="ws-row">
+      <a class="ws-open" href="${esc(url)}" target="_blank" rel="noopener">
+        <span class="ws-ic" aria-hidden="true">▤</span>
+        <span class="ws-t"><b${he ? ' lang="he" dir="rtl"' : ""}>${esc(title)}</b>${meta ? `<span class="ws-meta">${esc(meta)}</span>` : ""}</span>
+        <span class="ws-go" aria-hidden="true">↗</span>
+      </a>
+      <button class="ws-dl" data-dl="${esc(url)}" data-dlname="${esc(dlname)}" aria-label="Download ${esc(title)}" title="Download">↓</button>
+    </div>`;
+  }).join("");
+  if (!items) return "";
+  return `<div class="section" role="heading" aria-level="2">Worksheets &amp; sources</div><div class="ws-list">${items}</div>`;
+}
+
+async function downloadFile(url, name) {
+  toast("Downloading…");
+  try {
+    const r = await fetch(url); if (!r.ok) throw new Error(r.status);
+    const b = await r.blob();
+    const u = URL.createObjectURL(b);
+    const a = document.createElement("a"); a.href = u; a.download = name || "worksheet";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 30000);
+  } catch { toast("Download failed — try Open instead."); }
+}
+
 /* =====================================================================
    wiring
    ===================================================================== */
@@ -1131,6 +1224,9 @@ function wireView(r) {
   v.querySelectorAll("[data-sponsor-daf]").forEach(b => b.onclick = e => { e.stopPropagation(); const [m, d] = b.dataset.sponsorDaf.split("|"); route("sponsor", { pre: { kind: "daf", masechta: m, daf: +d } }); });
   v.querySelectorAll("[data-watch]").forEach(b => b.onclick = e => { e.stopPropagation(); watchVideo(+b.dataset.watch); });
   v.querySelectorAll("[data-watchdaf]").forEach(b => b.onclick = () => route("daf", { id: b.dataset.watchdaf, watch: true }));
+  v.querySelectorAll("[data-oplay]").forEach(b => b.onclick = e => { e.stopPropagation(); playOverride(b.dataset.oplay, "audio"); });
+  v.querySelectorAll("[data-owatch]").forEach(b => b.onclick = e => { e.stopPropagation(); playOverride(b.dataset.owatch, "video"); });
+  v.querySelectorAll("[data-dl]").forEach(b => b.onclick = e => { e.stopPropagation(); downloadFile(b.dataset.dl, b.dataset.dlname); });
   v.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => {
     const mode = b.dataset.mode; State._dafMode = mode;
     $$("#dafMode button").forEach(x => { const on = x.dataset.mode === mode; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
@@ -1168,10 +1264,25 @@ function wireRows(scope) {
 function playId(id) {
   const lec = State.all.find(l => l.id === id); if (!lec) return;
   const localUrl = lec.origAudio || lec.localAudio;   // origAudio = self-hosted original recording, preferred over the TA-sourced copy
-  const local = State.content.options?.preferSelfHosted !== false && localUrl;
-  const url = local ? localUrl : lec.audio;
+  const local = lec.ovAudio || (State.content.options?.preferSelfHosted !== false && localUrl);   // an admin replacement outranks every tier
+  const url = lec.ovAudio || (local ? localUrl : lec.audio);
   if (!url) { toast("This shiur isn't available to play yet."); return; }
   Player.playAudio(lec, url, !!local); noteProgress(id);
+}
+
+// Play the admin-uploaded media attached to a PAGE (daf/parsha/holiday) —
+// works even where no catalog shiur exists at all.
+function playOverride(pk, kind) {
+  const ovm = adminPageMedia(pk), e = ovm && ovm[kind]; if (!e) return;
+  const url = adminMediaUrl(e.key); if (!url) return;
+  const lec = { id: "ov:" + pk, title: String(e.label || "Shiur"), duration: 0 };
+  const m = /^daf:([^:]+):(\d+)$/.exec(pk);
+  if (m) lec._dk = { masechta: m[1], daf: +m[2] };   // so the player bar titles it and "ended" marks the daf learned
+  if (kind === "audio") { Player.playAudio(lec, url, true); return; }
+  const slot = $("#videoSlot"); if (!slot) return;
+  const old = slot.querySelector("video"); if (old) { try { old.pause(); old.removeAttribute("src"); old.load(); } catch {} }
+  slot.innerHTML = `<video class="daf-video" controls playsinline preload="metadata"></video>`;
+  Player.playVideo(slot.querySelector("video"), lec, url, true);
 }
 // The TorahAnytime source carries a ~7.5s logo intro. Our self-hosted copies are
 // already trimmed; for any not-yet-self-hosted shiur we fall back to TA and skip
@@ -1189,8 +1300,8 @@ function pauseAllExcept(except) {
 function watchVideo(id) {
   const lec = State.all.find(l => l.id === id); if (!lec) return;
   const slot = $("#videoSlot"); if (!slot) return;
-  const local = State.content.options?.preferSelfHosted !== false && lec.localVideo;
-  const src = local ? lec.localVideo : lec.video; if (!src) return;
+  const local = lec.ovVideo || (State.content.options?.preferSelfHosted !== false && lec.localVideo);   // admin replacement first
+  const src = lec.ovVideo || (local ? lec.localVideo : lec.video); if (!src) return;
   const old = slot.querySelector("video"); if (old) { try { old.pause(); old.removeAttribute("src"); old.load(); } catch {} }   // stop a video already playing in this slot before swapping it out (else it keeps decoding, detached)
   slot.innerHTML = `<video class="daf-video" controls playsinline preload="metadata"></video>`;
   Player.playVideo(slot.querySelector("video"), lec, src, !!local);
