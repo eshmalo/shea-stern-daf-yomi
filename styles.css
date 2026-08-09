@@ -784,35 +784,99 @@ html:not(.is-phone) .side-right .leaf-gutter { border: 1px solid var(--leaf-edge
 .side-right .leaf-gutter .lp-txt { margin-right: -264px;
   -webkit-mask-image: linear-gradient(270deg, transparent, #000 260px); mask-image: linear-gradient(270deg, transparent, #000 260px); }
 
-/* ---------- the two transitions ----------
-   TURN (א↔ב, two sides of one leaf): the page pivots on the fold it touches.
-   SHIFT (ב↔א, two pages facing across the fold): the canvas stays fixed and
-   only the seam crosses to the other edge. */
-.pflip { position: fixed; z-index: 70; pointer-events: none; perspective: 2000px; contain: layout paint style; will-change: transform; }
-.pflip .pf-dim { position: absolute; inset: 0; background: rgba(33,30,24,.08); opacity: 0; animation: pfDim .6s ease both; }
-.pflip .pf-leaf { position: absolute; inset: 0; transform-style: preserve-3d; }
-.pflip.turn-r .pf-leaf { transform-origin: 100% 50%; animation: pfTurnR .6s cubic-bezier(.34,.06,.3,1) both; }
-.pflip.turn-l .pf-leaf { transform-origin: 0% 50%; animation: pfTurnL .6s cubic-bezier(.34,.06,.3,1) both; }
-.pflip .pf-face { position: absolute; inset: 0; overflow: hidden; background: var(--paper); box-shadow: 0 0 26px -8px rgba(33,30,24,.42); backface-visibility: hidden; }
-.pflip .pf-face::after { content: ""; position: absolute; top: 0; bottom: 0; width: 18%; pointer-events: none; opacity: .9; }
-.pflip.turn-r .pf-face::after { right: 0; background: linear-gradient(90deg, transparent, rgba(33,30,24,.2)); }
-.pflip.turn-l .pf-face::after { left: 0; background: linear-gradient(270deg, transparent, rgba(33,30,24,.2)); }
+/* ---------- physical page motion ----------
+   The portal is clipped to the visible paper below the operating rail. Its z
+   layer stays under the player/menu/toasts; controls are never cloned or moved. */
+#dafText.page-motion-active > :is(.leaf-book, .amud),
+#rdBody.page-motion-active > :is(.leaf-book, .amud) { opacity: 0; pointer-events: none; }
+.pflip {
+  position: fixed; z-index: 43; pointer-events: none; overflow: hidden;
+  perspective: var(--pf-perspective, 3600px); perspective-origin: 50% 56%;
+  contain: layout paint style; transform: translateZ(0); isolation: isolate;
+}
+.pflip.in-reader { z-index: 3; } /* local to #reader: paper above its body, below the fixed player */
+.pflip button, .pflip [role="button"] { visibility: hidden !important; }
+.pflip .pf-turn-track, .pflip .pf-shift-track { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; }
 .pflip .pf-inner { position: absolute; left: 0; right: 0; }
-.pflip button { visibility: hidden !important; }
-/* the flying clone must render exactly like the live page — its wrapper carries
-   the daf-read/has-spread classes; inline styles pin its width and position */
-@keyframes pfTurnR { from { transform: rotateY(0deg); opacity: 1; } 62% { opacity: 1; } to { transform: rotateY(-96deg); opacity: 0; } }
-@keyframes pfTurnL { from { transform: rotateY(0deg); opacity: 1; } 62% { opacity: 1; } to { transform: rotateY(96deg); opacity: 0; } }
-@keyframes pfDim { 30% { opacity: 1; } to { opacity: 0; } }
-.pflip.spine-shift .pf-leaf { animation: spineAcross .42s cubic-bezier(.4,0,.2,1) both; }
-.pflip.spine-shift .pf-face { box-shadow: 0 0 18px -5px rgba(33,30,24,.35); }
-.pflip.spine-shift .pf-face::after { display: none; }
-.pflip.spine-shift .leaf-gutter { display: block; position: static !important; width: 100%; height: 100%; margin: 0; }
-@keyframes spineAcross { from { transform: translateX(0); opacity: .82; } to { transform: translateX(var(--spine-travel)); opacity: 1; } }
-#dafText.spine-in-flight .leaf-gutter, #rdBody.spine-in-flight .leaf-gutter { opacity: 0; }
-#dafText.paper-refresh > .leaf-book, #dafText.paper-refresh > .amud,
-#rdBody.paper-refresh > .leaf-book, #rdBody.paper-refresh > .amud { animation: paperRefresh .2s ease both; }
-@keyframes paperRefresh { from { opacity: .72; } to { opacity: 1; } }
+.pflip.has-spread .col.side .comm { font-size: calc(15px * var(--daf-scale, 1)); }
+
+/* A same-leaf turn has two real faces. The track carries the hinge to the other
+   edge, the lift wrapper moves only upward, and the leaf rotates toward the
+   viewer (+Y from the right hinge, -Y from the left) before lying flat. */
+.pflip .pf-turn-lift {
+  position: absolute; top: 0; bottom: 0; left: var(--pf-page-inset); width: var(--pf-page-width);
+  z-index: 2; transform-style: preserve-3d; will-change: transform;
+}
+.pflip .pf-turn-leaf { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; }
+.pflip.turn-r .pf-turn-leaf { transform-origin: 100% 50%; }
+.pflip.turn-l .pf-turn-leaf { transform-origin: 0% 50%; }
+.pflip .pf-face {
+  position: absolute; inset: 0; overflow: hidden; background: var(--leaf-paper);
+  transform-style: preserve-3d; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  box-shadow: 0 8px 24px -18px rgba(33,30,24,.34);
+}
+.pflip .pf-back { transform: rotateY(180deg); }
+.pflip .pf-face::after {
+  content: ""; position: absolute; inset-block: 0; width: 16%; pointer-events: none; opacity: .5;
+}
+.pflip.turn-r .pf-front::after, .pflip.turn-l .pf-back::after {
+  right: 0; background: linear-gradient(90deg, transparent, rgba(55,48,36,.18));
+}
+.pflip.turn-l .pf-front::after, .pflip.turn-r .pf-back::after {
+  left: 0; background: linear-gradient(270deg, transparent, rgba(55,48,36,.18));
+}
+.pflip .pf-turn-cast {
+  position: absolute; top: 0; bottom: 0; left: var(--pf-page-inset); width: var(--pf-page-width); z-index: 1;
+  background: radial-gradient(ellipse at 50% 46%, rgba(33,30,24,.11), rgba(33,30,24,.035) 34%, transparent 70%);
+  opacity: 0; filter: blur(7px); transform: scale(.9); pointer-events: none;
+}
+.pflip.is-running.turn-r .pf-turn-track { animation: pfTurnTrackR 700ms cubic-bezier(.45,.05,.55,.95) both; }
+.pflip.is-running.turn-l .pf-turn-track { animation: pfTurnTrackL 700ms cubic-bezier(.45,.05,.55,.95) both; }
+.pflip.is-running.turn-r .pf-turn-leaf { animation: pfTurnLeafR 700ms cubic-bezier(.45,.05,.55,.95) both; }
+.pflip.is-running.turn-l .pf-turn-leaf { animation: pfTurnLeafL 700ms cubic-bezier(.45,.05,.55,.95) both; }
+.pflip.is-running .pf-turn-lift { animation: pfTurnLift 700ms ease-in-out both; }
+.pflip.is-running .pf-turn-cast { animation: pfTurnCast 700ms ease-in-out both; }
+@keyframes pfTurnTrackR { from { transform: translateX(0); } to { transform: translateX(calc(0px - var(--pf-page-width))); } }
+@keyframes pfTurnTrackL { from { transform: translateX(0); } to { transform: translateX(var(--pf-page-width)); } }
+@keyframes pfTurnLeafR { from { transform: rotateY(0deg); } to { transform: rotateY(180deg); } }
+@keyframes pfTurnLeafL { from { transform: rotateY(0deg); } to { transform: rotateY(-180deg); } }
+@keyframes pfTurnLift { 0%, 100% { transform: translate3d(0,0,0); } 48%, 52% { transform: translate3d(0,-3px,0); } }
+@keyframes pfTurnCast { 0%, 100% { opacity: 0; transform: scale(.9); } 48%, 52% { opacity: 1; transform: scale(1); } }
+
+/* Facing pages occupy one continuous two-page track. Because both pages and the
+   gutter share this transform, their boundary cannot tear or crossfade: old ink
+   exits, new ink enters, and the fold remains legible throughout the move. */
+.pflip .pf-sheet {
+  position: absolute; top: 0; bottom: 0; left: var(--pf-page-inset); width: var(--pf-page-width);
+  overflow: hidden; background: var(--leaf-paper); box-shadow: 0 2px 14px -12px rgba(33,30,24,.32);
+}
+.pflip.shift-right .pf-incoming { transform: translateX(calc(0px - var(--pf-page-width))); }
+.pflip.shift-left .pf-incoming { transform: translateX(var(--pf-page-width)); }
+.pflip.is-running.shift-right .pf-shift-track { animation: pfShiftRight 520ms cubic-bezier(.45,.05,.55,.95) both; }
+.pflip.is-running.shift-left .pf-shift-track { animation: pfShiftLeft 520ms cubic-bezier(.45,.05,.55,.95) both; }
+@keyframes pfShiftRight { from { transform: translateX(0); } to { transform: translateX(var(--pf-page-width)); } }
+@keyframes pfShiftLeft { from { transform: translateX(0); } to { transform: translateX(calc(0px - var(--pf-page-width))); } }
+
+/* One shared binding rides either motion track. Its old and new faces exchange
+   at the halfway point, when the paper is edge-on / the facing pages meet. */
+.pflip .pf-spine {
+  position: absolute; top: 0; bottom: 0; left: var(--pf-spine-start); width: calc(var(--leaf-spine-overlap) * 2);
+  z-index: 5; pointer-events: none;
+}
+.pflip .pf-spine::before {
+  content: ""; position: absolute; z-index: -1; top: 0; bottom: 0; left: -24px; width: calc(100% + 48px);
+  background: linear-gradient(90deg, transparent, rgba(33,30,24,.11), transparent); opacity: .75;
+}
+.pflip .pf-spine-face { position: absolute; left: 0; width: 100%; opacity: 1; }
+.pflip .pf-spine-new { opacity: 0; }
+.pflip .pf-spine .leaf-gutter { display: block; position: static !important; inset: auto !important; width: 100%; height: 100%; margin: 0; }
+.pflip.is-running .pf-spine-old { animation: pfSpineOld 520ms ease both; }
+.pflip.is-running .pf-spine-new { animation: pfSpineNew 520ms ease both; }
+.pflip.is-running:is(.turn-r,.turn-l) .pf-spine-old,
+.pflip.is-running:is(.turn-r,.turn-l) .pf-spine-new { animation-duration: 700ms; }
+@keyframes pfSpineOld { 0%, 43% { opacity: 1; } 57%, 100% { opacity: 0; } }
+@keyframes pfSpineNew { 0%, 43% { opacity: 0; } 57%, 100% { opacity: 1; } }
+
 @media (prefers-reduced-motion: reduce) { .pflip { display: none; } }
 
 /* ---------- classic parsha page (chumash · targum · rashi) ---------- */
