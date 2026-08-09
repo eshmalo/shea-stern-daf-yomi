@@ -808,33 +808,50 @@ async function hydrateDaf() {
   sizeDafCarves(box); applyDafCol(box); attachDafSwipe(box);
   consumePendingY();
 }
-// Fit each classic page's carve floats to its gemara block, then hand out the
-// space below it by the printed page's rule: past the gemara's end, a commentary
-// with text left spills across the gemara's region UP TO the other commentary's
-// column (.spill-first); past the end of BOTH, the survivor takes the full page
-// width (.spill-full — its carve is extended to the first spiller's true end).
-// The gemara's height depends only on its own fixed width, so the passes are
-// sequential, never iterative. Re-run on text scale, resize, and font load;
-// a no-op on phones, where the carves are display:none.
+// The interlocking engine. Every stream (gemara included) lives in a full-width
+// container; the carve floats reserve exactly the regions where ANOTHER stream's
+// text is still alive. Region rules at any height: three alive → column | gemara |
+// column; a flank dies → the gemara widens into it; the gemara dies → the two
+// commentaries split the page down the middle; one stream left → the full page.
+// The "death" positions depend on each other (wider lines end sooner), so they're
+// resolved as ordered events: the earliest text-end is exact under the current
+// layout, so fix it, re-lay, and repeat — three passes, never a guess. Re-run on
+// text scale, resize, and font load; a no-op on phones (carves display:none).
 function sizeDafCarves(scope) {
   if (document.documentElement.classList.contains("is-phone")) return;
   (scope || document).querySelectorAll(".dafpage-grid.classic").forEach(g => {
-    const gm = g.querySelector(".col.gemara"), ra = g.querySelector(".col.side.rashi"), to = g.querySelector(".col.side.tosafos");
-    if (!gm || !ra || !to) return;
-    ra.classList.remove("spill-first", "spill-full"); to.classList.remove("spill-first", "spill-full");
-    const headH = parseFloat(getComputedStyle(gm).marginTop) || 0;   // the header band (--dc-head, resolved)
-    const h = gm.offsetHeight + 14;
-    g.querySelectorAll(".cv").forEach(cv => { cv.style.height = h + "px"; });
-    const bottom = headH + h;                                        // the gemara's bottom edge
-    const raMore = ra.offsetHeight > bottom + 4, toMore = to.offsetHeight > bottom + 4;
-    const first = raMore && toMore ? ra : null;                      // both continue → Rashi spills to Tosafos' column first
-    const full = raMore && toMore ? to : raMore ? ra : toMore ? to : null;   // the longest survivor gets the whole page
-    if (first) first.classList.add("spill-first");
-    if (full) {
-      full.classList.add("spill-full");
-      const until = first ? Math.max(first.offsetHeight, bottom) : bottom;   // full width begins where the other text truly ends
-      full.querySelector(".cv").style.height = Math.max(0, until - headH) + "px";
-    }
+    const cols = { gm: g.querySelector(".col.gemara"), ra: g.querySelector(".col.side.rashi"), to: g.querySelector(".col.side.tosafos") };
+    if (!cols.gm || !cols.ra || !cols.to) return;
+    const headH = parseFloat(getComputedStyle(cols.gm).marginTop) || 0;   // the header band (--dc-head, resolved)
+    const BIG = 100000;
+    const setH = (el, sel, h) => { const n = el.querySelector(sel); if (n) n.style.height = Math.max(0, Math.round(h)) + "px"; };
+    const gTop = () => g.getBoundingClientRect().top;
+    const endOf = el => {   // true text end: bottom of the last in-flow (non-carve) child
+      let last = null;
+      for (const ch of el.children) if (!/(^| )cv/.test(ch.className)) last = ch;
+      return last ? last.getBoundingClientRect().bottom - gTop() : 0;
+    };
+    const D = { gm: BIG, ra: BIG, to: BIG };   // page-y where each stream's text dies
+    const apply = () => {
+      setH(cols.gm, ".cvg.r", Math.min(D.ra, D.gm) - headH);   // off Rashi's flank while Rashi lives
+      setH(cols.gm, ".cvg.l", Math.min(D.to, D.gm) - headH);
+      setH(cols.ra, ".cv", Math.min(D.gm, D.ra) - headH);      // narrow column while the gemara lives
+      setH(cols.to, ".cv", Math.min(D.gm, D.to) - headH);
+      setH(cols.ra, ".cv2", Math.min(D.to, D.ra) - Math.min(D.gm, D.ra));   // half page while the other side lives on
+      setH(cols.to, ".cv2", Math.min(D.ra, D.to) - Math.min(D.gm, D.to));
+    };
+    apply();                                                   // pass 1: all immortal → pure three-column
+    const ends = { gm: endOf(cols.gm), ra: endOf(cols.ra), to: endOf(cols.to) };
+    const first = ["gm", "ra", "to"].sort((a, b) => ends[a] - ends[b])[0];
+    D[first] = ends[first];                                    // exact — nothing above it moved
+    apply();                                                   // pass 2: the survivors widen below it
+    const rest = ["gm", "ra", "to"].filter(k => k !== first);
+    rest.forEach(k => { ends[k] = endOf(cols[k]); });
+    rest.sort((a, b) => ends[a] - ends[b]);
+    D[rest[0]] = ends[rest[0]];
+    apply();                                                   // pass 3: the last survivor takes the rest
+    D[rest[1]] = endOf(cols[rest[1]]);
+    apply();                                                   // final: every carve clamped to a real text end
   });
 }
 // Back-restore scroll for the async views: the popstate scrollTo fires before the
@@ -896,11 +913,14 @@ function flipLabel(cls, innerHtml, mas, daf) {
     + `<button class="pageflip prev" data-gemflip="-1" aria-label="Previous daf" title="Previous daf"${dis(-1)}>›</button>`
     + `</div>`;
 }
-// The two <i> carve spacers give each commentary its printed shape: the text opens
-// WIDE across the top (.cv0's height = the header band), then .cv — sized by
-// sizeDafCarves() to the gemara's exact height — floats against the center so the
-// text runs as a narrow flanking column, and widens back out where the gemara ends.
-const CARVES = `<i class="cv0" aria-hidden="true"></i><i class="cv" aria-hidden="true"></i>`;
+// The <i> carve spacers give each stream its printed shape. Sides: .cv0 reserves
+// the header band (the text opens WIDE across its half), .cv keeps a narrow
+// column while the gemara runs, .cv2 keeps a half while the OTHER commentary
+// runs on past the gemara. The gemara's own .cvg pair keeps it off each flank
+// only while that flank's text is alive. sizeDafCarves() sets every height from
+// the real text ends, so all three streams always fill the whole page together.
+const CARVES = `<i class="cv0" aria-hidden="true"></i><i class="cv" aria-hidden="true"></i><i class="cv2" aria-hidden="true"></i>`;
+const GCARVES = `<i class="cvg r" aria-hidden="true"></i><i class="cvg l" aria-hidden="true"></i>`;
 function dafPage(daf, amud, seg, c, labelHtml) {
   const lines = (seg.he || "").split("\n").filter(Boolean);
   let gem = lines.map(safeHe).join("<br>");
@@ -912,7 +932,7 @@ function dafPage(daf, amud, seg, c, labelHtml) {
     ${labelHtml}
     <div class="dafpage-grid classic">
       <div class="col side rashi">${CARVES}<div class="col-h" lang="he">רש"י</div>${commCol(c && c.r)}</div>
-      <div class="col gemara"><div class="col-h" lang="he">גמרא</div><div class="gem">${gem || '<div class="col-empty">—</div>'}</div></div>
+      <div class="col gemara">${GCARVES}<div class="col-h" lang="he">גמרא</div><div class="gem">${gem || '<div class="col-empty">—</div>'}</div></div>
       <div class="col side tosafos">${CARVES}<div class="col-h" lang="he">תוספות</div>${commCol(c && c.t)}</div>
     </div></div>`;
 }
@@ -1047,7 +1067,7 @@ function colScrollKey(col) {
   const pb = $("#parshaText"); if (pb) return `pp:${pb.dataset.sefer}:${pb.dataset.parsha}:${col}`;
   const b = $("#dafText"); return `p:${b ? b.dataset.mas : ""}:${b ? b.dataset.daf : ""}:${col}`;
 }
-function saveColScroll(col) { if (!col) return; State._colScroll = State._colScroll || {}; State._colScroll[colScrollKey(col)] = curDafScroll(); }
+function saveColScroll(col) { State._colScroll = State._colScroll || {}; State._colScroll[colScrollKey(col || "gemara")] = curDafScroll(); }   // no column ever picked = the default gemara column — its spot counts too
 // "The top of this daf" for the active scroller: the reader body scrolls to 0;
 // the in-page view scrolls so the daf reading region sits just under the bar.
 function dafTopScroll() {
@@ -1063,7 +1083,7 @@ function dafTopScroll() {
 // put when the column hasn't been seen; on a page flip (toTopIfUnseen) an unseen
 // daf starts at its top instead of inheriting the previous page's scroll.
 function restoreColScroll(col, toTopIfUnseen) {
-  const saved = (State._colScroll || {})[colScrollKey(col)];
+  const saved = (State._colScroll || {})[colScrollKey(col || "gemara")];
   const wasReaderOpen = Reader.open;
   requestAnimationFrame(() => {
     if (Reader.open !== wasReaderOpen) return;                 // reader opened/closed within the frame — this scroll target is no longer the right surface
@@ -1516,7 +1536,7 @@ function parshaBodyHtml(sef, parsha, mode, data) {
     <div class="dafpage-label" lang="he">${esc(parshaHe(parsha))}</div>
     <div class="dafpage-grid classic">
       <div class="col side rashi">${CARVES}<div class="col-h" lang="he">תרגום אונקלוס</div><div class="tg">${targum || '<div class="col-empty">—</div>'}</div></div>
-      <div class="col gemara"><div class="col-h" lang="he">חומש</div><div class="gem">${mikra}</div></div>
+      <div class="col gemara">${GCARVES}<div class="col-h" lang="he">חומש</div><div class="gem">${mikra}</div></div>
       <div class="col side tosafos">${CARVES}<div class="col-h" lang="he">רש"י</div>${rashi || '<div class="col-empty">—</div>'}</div>
     </div></div>`;
 }
