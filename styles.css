@@ -242,8 +242,8 @@ main#view { flex: 1 0 auto; width: 100%; }
 .daf-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 24px 0 10px; border-top: 2px solid var(--rule); border-bottom: 1px solid var(--hair); padding: 9px 0 8px; flex-wrap: wrap; }
 .daf-toolbar .ttl { font-family: var(--sans); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .13em; color: var(--ink-soft); }
 .seg { display: inline-flex; border: 1px solid var(--hair-2); border-radius: 5px; overflow: hidden; }
-.seg button { border: 0; background: var(--paper); color: var(--ink-soft); font-size: 13.5px; min-height: 40px; padding: 8px 13px; font-family: var(--sans); transition: background .12s, color .12s; }
-.seg button .seg-he { font-family: var(--serif-he); font-size: 15px; }
+.seg button { border: 0; background: var(--paper); color: var(--ink-soft); font-size: 14px; letter-spacing: .02em; min-height: 40px; padding: 8px 14px; font-family: var(--sans); transition: background .12s, color .12s; }
+.seg button .seg-he { font-family: var(--serif-he); font-size: 16.5px; }
 .seg button + button { border-left: 1px solid var(--hair-2); }
 .seg button.on { background: var(--ink); color: var(--paper); }
 .seg button:not(.on):hover { background: var(--paper-2); color: var(--ink); }
@@ -303,8 +303,8 @@ html.reader-open { overflow: hidden; }
 .reader-bar .rd-ic:disabled { opacity: .28; cursor: default; }
 .reader-bar .rd-ic:disabled:hover { background: var(--paper); border-color: var(--hair-2); color: var(--ink-soft); }
 .reader-bar .rd-title { justify-self: center; text-align: center; line-height: 1.12; min-width: 0; padding: 0 8px; }
-.reader-bar .rd-title .he { font-family: var(--serif-he); direction: rtl; font-size: 21px; font-weight: 700; display: block; }
-.reader-bar .rd-title .en { font-family: var(--sans); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-top: 1px; }
+.reader-bar .rd-title .he { font-family: var(--serif-he); direction: rtl; font-size: 24px; font-weight: 700; display: block; letter-spacing: .02em; }
+.reader-bar .rd-title .en { font-family: var(--sans); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-top: 2px; }
 .reader-bar .rd-seg { flex: none; }
 .reader-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 16px 24px 48px; max-width: 1040px; margin: 0 auto; width: 100%; }
 /* full-screen daf uses the width; single-column reading text stays a comfortable measure, centered */
@@ -332,8 +332,9 @@ html.is-phone .reader-body { padding: 12px 14px 48px; }
 
 /* ---------- "Daf" layout — Tzuras Hadaf (Gemara center · Rashi + Tosafos margins) ---------- */
 .dafpage { border: 1px solid var(--hair-2); border-radius: 6px; padding: 16px 16px 10px; margin: 16px 0 24px; background: linear-gradient(#fdfbf4, #fbf8ee); box-shadow: 0 1px 0 var(--hair); }
-.dafpage-label { font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 12px; letter-spacing: .03em; }
-.dafpage-label .lbl-t-mas { color: var(--ink-soft); font-weight: 600; margin-left: 10px; }
+/* the leaf's running head — masechta and daf spread across the top, as printed */
+.dafpage-label { font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 19px; font-weight: 700; color: var(--accent); margin-bottom: 14px; letter-spacing: .12em; border-bottom: 1px solid var(--hair); padding-bottom: 9px; }
+.dafpage-label .lbl-t-mas { color: var(--ink); font-weight: 700; margin-left: 14px; }
 .dafpage-grid { display: grid; grid-template-columns: 1fr 1.75fr 1fr; gap: 18px; direction: rtl; align-items: start; }
 .dafpage-grid .col { direction: rtl; min-width: 0; }
 .col-h { font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-faint); border-bottom: 1px solid var(--hair); padding-bottom: 5px; margin-bottom: 9px; letter-spacing: .03em; }
@@ -342,8 +343,27 @@ html.is-phone .reader-body { padding: 12px 14px 48px; }
    column gets the big square-letter treatment of a real page */
 .col.side .comm { font-family: var(--serif-rashi); direction: rtl; text-align: justify; font-size: calc(14px * var(--daf-scale, 1)); line-height: 1.7; margin: 0 0 9px; color: #3a362d; }
 .col.side .comm b { color: var(--ink); font-weight: 700; }
-.col.side .comm.comm0 b:first-of-type { font-family: var(--serif-he); font-size: 1.85em; line-height: 1.1; font-weight: 700; }
+/* only the FIRST WORD of the opening dibbur gets the big square letters, as printed */
+.col.side .dh0 { font-family: var(--serif-he); font-size: 1.7em; line-height: 1.05; font-weight: 700; }
+.gem .gm0 { font-size: 1.6em; line-height: 1.05; font-weight: 700; }   /* the amud's opening word */
 .col-empty { color: var(--hair-2); text-align: center; font-size: 18px; padding: 10px 0; }
+
+/* ---------- classic tzuras-hadaf shape (all non-phone widths) ----------
+   Rashi and Tosafos open WIDE across the top of the page; the gemara begins a
+   header-band lower, centered; the commentaries run as narrow columns flanking
+   it (the .cv float, sized by sizeDafCarves() to the gemara's exact height,
+   carves the center out of each side); and wherever the gemara ends, the
+   commentary text widens back out — the printed page's silhouette. */
+html:not(.is-phone) .dafpage-grid.classic { grid-template-columns: 50% 50%; gap: 0; --dc-head: calc(96px * var(--daf-scale, 1)); }
+html:not(.is-phone) .dafpage-grid.classic .col-h { display: none; }   /* the real page has no column labels — the running head carries it */
+html:not(.is-phone) .dafpage-grid.classic .col.side { border: 0; margin: 0; }
+html:not(.is-phone) .dafpage-grid.classic .col.side.rashi { grid-area: 1 / 1 / 2 / 2; padding-left: 16px; }
+html:not(.is-phone) .dafpage-grid.classic .col.side.tosafos { grid-area: 1 / 2 / 2 / 3; padding-right: 16px; }
+html:not(.is-phone) .dafpage-grid.classic .col.gemara { grid-area: 1 / 1 / 2 / 3; justify-self: center; width: 49%; margin-top: var(--dc-head); }
+html:not(.is-phone) .dafpage-grid.classic .cv0 { float: left; width: 0; height: var(--dc-head); }
+html:not(.is-phone) .dafpage-grid.classic .cv { float: left; clear: left; width: 52%; height: 0; pointer-events: none; }
+html:not(.is-phone) .dafpage-grid.classic .tosafos .cv0 { float: right; }
+html:not(.is-phone) .dafpage-grid.classic .tosafos .cv { float: right; clear: right; }
 /* the phone column selector is hidden on wider screens (all 3 columns show) */
 .daf-colhead { display: none; }
 /* phone layout (is-phone = viewport 680px OR forced phone view) */
@@ -352,6 +372,8 @@ html.is-phone .dafpage-label .pageflip { display: none; }
 html.is-phone .dafpage-grid { grid-template-columns: 1fr; gap: 0; }
 html.is-phone .col-gemara .dafpage-grid .col:not(.gemara), html.is-phone .col-rashi .dafpage-grid .col:not(.rashi), html.is-phone .col-tosafos .dafpage-grid .col:not(.tosafos) { display: none; }
 html.is-phone .dafpage-grid .col.side { border-top: 0; padding-top: 0; margin-top: 0; }
+html.is-phone .dafpage-grid .cv0, html.is-phone .dafpage-grid .cv { display: none; }   /* the carve floats are a desktop-shape device only */
+html.is-phone .dafpage-label { font-size: 17px; letter-spacing: .06em; }
 html.is-phone .col.gemara .gem { font-size: calc(20px * var(--daf-scale, 1)); line-height: 1.9; }
 html.is-phone .col.side .comm { font-size: calc(18px * var(--daf-scale, 1)); line-height: 1.78; }
 html.is-phone .col-h { display: none; }
@@ -363,7 +385,7 @@ html.is-phone .daf-colhead { display: flex; flex-direction: column; align-items:
     transition: top .25s cubic-bezier(.4, 0, .2, 1), box-shadow .25s ease; }
 html.is-phone .reader-body .daf-colhead { top: 0; }
 html.is-phone .daf-flip-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
-html.is-phone .daf-flip-lbl { font-family: var(--serif-he); direction: rtl; font-size: 18px; font-weight: 700; color: var(--accent); }
+html.is-phone .daf-flip-lbl { font-family: var(--serif-he); direction: rtl; font-size: 21px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
 html.is-phone .daf-cols-row { display: flex; align-items: baseline; justify-content: center; gap: 26px; }
 html.is-phone .daf-colhead .col-tab { -webkit-appearance: none; appearance: none; background: none; cursor: pointer;
     font-family: var(--serif-he); font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: .01em;
@@ -544,7 +566,7 @@ html.is-narrow .daf-progress { flex-direction: column; gap: 7px; }
 /* phone layout (is-phone = viewport 680px OR forced phone view) */
 html.is-phone .bar { padding-top: calc(5px + env(safe-area-inset-top, 0px)); padding-bottom: 5px; gap: 6px; }
 html.is-phone .daf-colhead { gap: 3px; padding: 6px 6px 7px; margin: 0 0 12px; }
-html.is-phone .daf-flip-lbl { font-size: 16px; }
+html.is-phone .daf-flip-lbl { font-size: 19px; }
 html.is-phone .daf-colhead .col-tab { font-size: 19px; }
 html.is-phone .daf-cols-row { gap: 24px; }
 @keyframes dyColFade { from { opacity: .45; } to { opacity: 1; } }
@@ -663,6 +685,7 @@ html.is-wide:not(.is-phone) .sefer-spread::after {
 html.is-wide:not(.is-phone) .sefer-spread .dafpage { border: 0; box-shadow: none; background: none; margin: 0; padding: 4px 10px 2px; }
 html.is-wide:not(.is-phone) .sefer-spread .dafpage-label .pageflip { display: none; }   /* the spread's edge arrows take over */
 html.is-wide:not(.is-phone) .sefer-spread .col.side .comm { font-size: calc(15px * var(--daf-scale, 1)); }
+html.is-wide:not(.is-phone) .sefer-spread .dafpage-grid.classic { --dc-head: calc(102px * var(--daf-scale, 1)); }   /* the spread's larger commentary type needs a taller header band */
 html.is-phone .dafpage-label .lbl-t-mas { display: none; }   /* the phone colhead already names the masechta */
 
 /* page-turn zones at the outer edges of the open sefer */

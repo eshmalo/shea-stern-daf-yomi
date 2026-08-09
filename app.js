@@ -368,6 +368,7 @@ function bumpDafScale(dir) {
   _dafScale = Math.round(Math.min(1.6, Math.max(0.8, _dafScale + dir * 0.1)) * 10) / 10;
   try { localStorage.setItem("dy_dafscale", String(_dafScale)); } catch {}
   applyDafScale();
+  requestAnimationFrame(() => sizeDafCarves());   // the gemara reflows at the new scale — refit the carves to it
 }
 const tsizeHtml = () => `<span class="tsize" role="group" aria-label="Text size"><button data-tsize="-1" aria-label="Smaller text">א−</button><button data-tsize="1" aria-label="Larger text">א+</button></span>`;
 function togglePhoneView() {
@@ -804,8 +805,21 @@ async function hydrateDaf() {
   box.innerHTML = readAheadNote(box) + html;
   box._renderedMas = box.dataset.mas; box._renderedDaf = box.dataset.daf;   // what's actually on screen (guards scroll-save during rapid flips)
   const dr = box.closest(".daf-read"); if (dr) dr.classList.toggle("has-spread", box.dataset.mode === "daf");   // wide breakout only for the printed-page layout
-  applyDafCol(box); attachDafSwipe(box);
+  sizeDafCarves(box); applyDafCol(box); attachDafSwipe(box);
   consumePendingY();
+}
+// Fit each classic page's carve floats to its gemara block: the carve runs exactly
+// the gemara's height, so the flanking commentary widens back out right where the
+// gemara ends — the printed page's shape. The gemara's height depends only on its
+// own fixed width, so one measure pass suffices (no iteration). Re-run on text
+// scale, resize, and font load; a no-op on phones, where the carves are display:none.
+function sizeDafCarves(scope) {
+  if (document.documentElement.classList.contains("is-phone")) return;
+  (scope || document).querySelectorAll(".dafpage-grid.classic").forEach(g => {
+    const gm = g.querySelector(".col.gemara"); if (!gm) return;
+    const h = gm.offsetHeight + 14;
+    g.querySelectorAll(".cv").forEach(cv => { cv.style.height = h + "px"; });
+  });
 }
 // Back-restore scroll for the async views: the popstate scrollTo fires before the
 // text exists, so the saved offset clamps — re-apply it once the content is tall.
@@ -845,8 +859,14 @@ function commCol(arr) {
   if (!arr || !arr.length) return `<div class="col-empty">—</div>`;
   return arr.map((c, i) => {
     const m = c.match(/^(.{1,60}?)\s[-–]\s([\s\S]+)$/);   // dibur hamatchil — explanation
-    const cls = i === 0 ? "comm comm0" : "comm";          // the opening dibbur gets the big square-letter word, as printed
-    return m ? `<p class="${cls}"><b>${esc(m[1])}</b> ${esc(m[2])}</p>` : `<p class="${cls}">${esc(c)}</p>`;
+    const cls = i === 0 ? "comm comm0" : "comm";
+    if (!m) return `<p class="${cls}">${esc(c)}</p>`;
+    let dh = esc(m[1]);
+    if (i === 0) {   // as printed: ONLY the first word of the opening dibbur in big square letters — never the whole dibbur
+      const sp = m[1].indexOf(" "), w = sp > 0 ? m[1].slice(0, sp) : m[1];
+      if (w.length <= 14) dh = `<span class="dh0">${esc(w)}</span>${sp > 0 ? " " + esc(m[1].slice(sp + 1)) : ""}`;
+    }
+    return `<p class="${cls}"><b>${dh}</b> ${esc(m[2])}</p>`;
   }).join("");
 }
 // A daf/amud label (נב·א) flanked by the gemara-flip arrows, on both sides of the
@@ -860,14 +880,24 @@ function flipLabel(cls, innerHtml, mas, daf) {
     + `<button class="pageflip prev" data-gemflip="-1" aria-label="Previous daf" title="Previous daf"${dis(-1)}>›</button>`
     + `</div>`;
 }
+// The two <i> carve spacers give each commentary its printed shape: the text opens
+// WIDE across the top (.cv0's height = the header band), then .cv — sized by
+// sizeDafCarves() to the gemara's exact height — floats against the center so the
+// text runs as a narrow flanking column, and widens back out where the gemara ends.
+const CARVES = `<i class="cv0" aria-hidden="true"></i><i class="cv" aria-hidden="true"></i>`;
 function dafPage(daf, amud, seg, c, labelHtml) {
-  const gem = (seg.he || "").split("\n").filter(Boolean).map(safeHe).join("<br>");
+  const lines = (seg.he || "").split("\n").filter(Boolean);
+  let gem = lines.map(safeHe).join("<br>");
+  if (lines.length) {   // the amud's opening word in large square letters, as printed
+    const first = lines[0], sp = first.indexOf(" "), w = sp > 0 ? first.slice(0, sp) : first;
+    if (w.length <= 14) gem = `<span class="gm0">${safeHe(w)}</span>${sp > 0 ? " " + safeHe(first.slice(sp + 1)) : ""}` + (lines.length > 1 ? "<br>" + lines.slice(1).map(safeHe).join("<br>") : "");
+  }
   return `<div class="dafpage">
     ${labelHtml}
-    <div class="dafpage-grid">
-      <div class="col side rashi"><div class="col-h" lang="he">רש"י</div>${commCol(c && c.r)}</div>
+    <div class="dafpage-grid classic">
+      <div class="col side rashi">${CARVES}<div class="col-h" lang="he">רש"י</div>${commCol(c && c.r)}</div>
       <div class="col gemara"><div class="col-h" lang="he">גמרא</div><div class="gem">${gem || '<div class="col-empty">—</div>'}</div></div>
-      <div class="col side tosafos"><div class="col-h" lang="he">תוספות</div>${commCol(c && c.t)}</div>
+      <div class="col side tosafos">${CARVES}<div class="col-h" lang="he">תוספות</div>${commCol(c && c.t)}</div>
     </div></div>`;
 }
 // The two amudim render side by side as the open sefer (wide desktop CSS turns
@@ -1175,7 +1205,7 @@ async function fillReaderBody(m, d, mode) {
   const body = $("#rdBody");                                       // ignore if the user flipped again while loading
   if (body && Reader.open && Reader.masechta === m && Reader.daf === d && Reader.mode === mode) {
     body.innerHTML = html; Reader._renderedM = m; Reader._renderedD = d;
-    applyDafCol(body); attachDafSwipe(body);
+    sizeDafCarves(body); applyDafCol(body); attachDafSwipe(body);
     if (Reader._restoreScroll) { Reader._restoreScroll = false; restoreColScroll(State._dafCol, true); }  // flip → restore this daf+column's place, or its top
     else body.scrollTop = 0;                                         // initial open / mode change → top
     if (Reader._flipClone) { playSpreadFlip(Reader._flipClone, Reader._flipDir); Reader._flipClone = null; }
@@ -1468,10 +1498,10 @@ function parshaBodyHtml(sef, parsha, mode, data) {
   if (mode === "he") return `<div class="amud"><div class="daf-he" lang="he">${mikra}</div></div>`;
   return parshaColHead(parsha) + `<div class="dafpage parsha-page">
     <div class="dafpage-label" lang="he">${esc(parshaHe(parsha))}</div>
-    <div class="dafpage-grid">
-      <div class="col side rashi"><div class="col-h" lang="he">תרגום אונקלוס</div><div class="tg">${targum || '<div class="col-empty">—</div>'}</div></div>
+    <div class="dafpage-grid classic">
+      <div class="col side rashi">${CARVES}<div class="col-h" lang="he">תרגום אונקלוס</div><div class="tg">${targum || '<div class="col-empty">—</div>'}</div></div>
       <div class="col gemara"><div class="col-h" lang="he">חומש</div><div class="gem">${mikra}</div></div>
-      <div class="col side tosafos"><div class="col-h" lang="he">רש"י</div>${rashi || '<div class="col-empty">—</div>'}</div>
+      <div class="col side tosafos">${CARVES}<div class="col-h" lang="he">רש"י</div>${rashi || '<div class="col-empty">—</div>'}</div>
     </div></div>`;
 }
 async function hydrateParsha() {
@@ -1482,7 +1512,7 @@ async function hydrateParsha() {
   box.innerHTML = data ? parshaBodyHtml(box.dataset.sefer, box.dataset.parsha, box.dataset.mode, data)
     : `<div class="empty-mini">${(typeof navigator !== "undefined" && navigator.onLine === false) ? "You're offline — reconnect to load the parsha." : "The text of this parsha isn't available yet."}</div>`;
   const dr = box.closest(".daf-read"); if (dr) dr.classList.toggle("has-spread", box.dataset.mode === "daf" && !!box.querySelector(".dafpage"));
-  applyDafCol(box); attachDafSwipe(box);
+  sizeDafCarves(box); applyDafCol(box); attachDafSwipe(box);
   consumePendingY();
 }
 
@@ -2082,7 +2112,8 @@ window.addEventListener("keydown", e => {
   }
   if (e.key === "Escape") closeMenu();
 });
-window.addEventListener("resize", () => { applyViewportClasses(); setBarH(); });
+window.addEventListener("resize", () => { applyViewportClasses(); setBarH(); sizeDafCarves(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => sizeDafCarves());   // the gemara's height settles once the webfonts land
 try { window.matchMedia("(max-width: 680px)").addEventListener("change", applyViewportClasses); } catch {}
 try { window.matchMedia("(max-width: 560px)").addEventListener("change", applyViewportClasses); } catch {}
 window.addEventListener("scroll", onReadScroll, { passive: true });
