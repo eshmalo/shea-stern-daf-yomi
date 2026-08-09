@@ -762,48 +762,44 @@ function viewDaf(r) {
        <button class="fs-btn" id="dafFsBtn" aria-label="Read full screen" title="Read full screen — the daf fills the screen while the shiur keeps playing">${svgExpand(14)}<span class="fs-lbl">Full screen</span></button>
      </div>
      <div class="daf-read">
-       <div id="dafText" data-mas="${esc(masechta)}" data-daf="${daf}" data-mode="${mode}"><div class="daf-loading">Loading the daf…</div></div>
+       <div id="dafText" data-mas="${esc(masechta)}" data-daf="${daf}" data-amud="${esc(amudKeysFor(masechta, daf)[0])}" data-mode="${mode}"><div class="daf-loading">Loading the daf…</div></div>
      </div>
      ${worksheetsHtml(pk)}${learnCtl}${sponsorLine}`;
 }
 
 // Build the inner HTML for one daf in a given mode — shared by the in-page
 // reading region (#dafText) and the full-screen reader overlay.
-async function dafBodyHtml(masechta, daf, mode) {
+async function dafBodyHtml(masechta, daf, mode, amud) {
   const data = await loadDafText(masechta);
+  const keys = amudKeysFor(masechta, daf);
+  const key = keys.indexOf(String(amud)) >= 0 ? String(amud) : keys[0];
   if (!data) {
     const special = { Shekalim: "Shekalim is learned from the Talmud Yerushalmi, which isn't in the native reader yet.", Kinnim: "Kinnim is a Mishnah-only masechta — it has no Gemara text.", Middos: "Middos is a Mishnah-only masechta — it has no Gemara text." }[masechta];
     const reason = special || ((typeof navigator !== "undefined" && navigator.onLine === false) ? "You're offline — reconnect to load this daf's text." : "Native text for this masechta isn't available yet.");   // don't blame the masechta when it's really a connection drop
-    return `<div class="empty-mini">${esc(reason)}</div>` + dafEndNav(masechta, daf);   // keep the flip controls — a text-less masechta must never dead-end the reader
+    return `<div class="empty-mini">${esc(reason)}</div>` + dafEndNav(masechta, daf, key);   // keep the flip controls — a text-less masechta must never dead-end the reader
   }
-  if (mode === "daf") { const comm = await loadDafComm(masechta); return renderDafLayout(masechta, daf, data, comm) + dafEndNav(masechta, daf); }
-  let html = "", first = true;
-  const amLabel = (txt) => { const l = first ? flipLabel("amud-label", txt, masechta, daf) : `<div class="amud-label">${txt}</div>`; first = false; return l; };
-  // Tamid's opening Mishnah sits on Vilna daf 25b; surface it on its first daf (26)
-  if (masechta === "Tamid" && daf === 26 && data["25b"]) html += `<div class="amud">${amLabel(esc(window.HebCal ? window.HebCal.gematria(25) : 25) + "·ב")}${renderAmud(data["25b"], mode)}</div>`;
-  for (const amud of [daf + "a", daf + "b"]) {
-    const seg = data[amud]; if (!seg) continue;
-    html += `<div class="amud">${amLabel(esc(window.HebCal ? window.HebCal.gematria(daf) : daf) + (amud.endsWith("a") ? "·א" : "·ב"))}${renderAmud(seg, mode)}</div>`;
-  }
-  return (html || `<div class="empty-mini">This amud isn't available.</div>`) + dafEndNav(masechta, daf);
+  if (mode === "daf") { const comm = await loadDafComm(masechta); return renderDafLayout(masechta, daf, key, data, comm) + dafEndNav(masechta, daf, key); }
+  const seg = data[key];   // one amud at a time in every mode — the flip controls step leaf by leaf
+  const html = seg ? `<div class="amud">${flipLabel("amud-label", esc(heAmud(amudLeaf(key), key)), masechta, daf, key)}${renderAmud(seg, mode)}</div>` : "";
+  return (html || `<div class="empty-mini">This amud isn't available.</div>`) + dafEndNav(masechta, daf, key);
 }
 // Catchword-style continuation at the end of the reading region — after several
 // screens of scrolling, the next daf is one tap away (every mode).
-function dafEndNav(masechta, daf) {
-  const nx = dafStep(masechta, daf, 1), pv = dafStep(masechta, daf, -1);
-  const he = x => x ? `${esc(DY.masechtaHe(x.masechta))} ${esc(window.HebCal ? window.HebCal.gematria(x.daf) : x.daf)}` : "";
+function dafEndNav(masechta, daf, amud) {
+  const nx = amudStep(masechta, daf, amud, 1), pv = amudStep(masechta, daf, amud, -1);
+  const he = x => x ? `${esc(DY.masechtaHe(x.masechta))} ${esc(heAmud(amudLeaf(x.amud), x.amud))}` : "";
   return `<div class="daf-endnav">
-    <button class="en-btn" data-gemflip="1"${nx ? "" : " disabled"}><span class="en-cap">Next daf</span><span lang="he">‹ ${he(nx)}</span></button>
+    <button class="en-btn" data-gemflip="1"${nx ? "" : " disabled"}><span class="en-cap">Next amud</span><span lang="he">‹ ${he(nx)}</span></button>
     <button class="en-btn" data-gemflip="-1"${pv ? "" : " disabled"}><span class="en-cap">Previous</span><span lang="he">${he(pv)} ›</span></button>
   </div>`;
 }
 async function hydrateDaf() {
   const box = $("#dafText"); if (!box) return;
   const gen = (box._hydGen = (box._hydGen || 0) + 1);          // serialize overlapping hydrates
-  const html = await dafBodyHtml(box.dataset.mas, +box.dataset.daf, box.dataset.mode);
+  const html = await dafBodyHtml(box.dataset.mas, +box.dataset.daf, box.dataset.mode, box.dataset.amud);
   if (!box.isConnected || box._hydGen !== gen) return;          // a newer flip superseded this one — drop the stale render
   box.innerHTML = readAheadNote(box) + html;
-  box._renderedMas = box.dataset.mas; box._renderedDaf = box.dataset.daf;   // what's actually on screen (guards scroll-save during rapid flips)
+  box._renderedMas = box.dataset.mas; box._renderedDaf = box.dataset.daf; box._renderedAmud = box.dataset.amud;   // what's actually on screen (guards scroll-save during rapid flips)
   const dr = box.closest(".daf-read"); if (dr) dr.classList.toggle("has-spread", box.dataset.mode === "daf");   // wide breakout only for the printed-page layout
   sizeDafCarves(box); applyDafCol(box); attachDafSwipe(box);
   consumePendingY();
@@ -871,6 +867,28 @@ function readAheadNote(box) {
     <button class="textlink" data-openread="${esc(box.dataset.mas)}|${+box.dataset.daf}">open its full page</button>
     <button class="textlink" data-backread="${esc(pm)}|${+pd}">back to ${esc(pm)} ${+pd}</button></div>`;
 }
+/* ---------- amudim, as leaves of a real sefer ----------
+   A daf is one LEAF. Amud א is its recto and sits on the LEFT page of an open
+   spread; amud ב is the verso, on the RIGHT page. So א and ב are two sides of
+   the same sheet (turning between them turns the leaf), while ב and the next
+   daf's א face each other across the gutter (moving between them turns nothing
+   — the book just shifts). Every transition animation follows from that. */
+function amudKeysFor(masechta, daf) {
+  const k = [daf + "a", daf + "b"];
+  if (masechta === "Tamid" && daf === 26) k.unshift("25b");   // Tamid's opening Mishnah sits on Vilna 25b
+  return k;
+}
+const amudLeaf = key => parseInt(String(key), 10);            // the sheet this amud is a side of
+const amudSide = key => /b$/.test(String(key)) ? "right" : "left";
+const sameLeaf = (a, b) => amudLeaf(a) === amudLeaf(b);       // same sheet → the leaf itself turns
+// Step one amud, crossing daf and masechta boundaries in Shas order.
+function amudStep(masechta, daf, amud, dir) {
+  const keys = amudKeysFor(masechta, daf), i = keys.indexOf(String(amud)), j = i + dir;
+  if (i >= 0 && j >= 0 && j < keys.length) return { masechta, daf, amud: keys[j] };
+  const nx = dafStep(masechta, daf, dir); if (!nx) return null;
+  const nk = amudKeysFor(nx.masechta, nx.daf);
+  return { masechta: nx.masechta, daf: nx.daf, amud: dir > 0 ? nk[0] : nk[nk.length - 1] };
+}
 // Step to the previous / next daf, crossing masechta boundaries in Daf Yomi
 // (Shas) order. Returns {masechta, daf} or null at the very start/end of Shas.
 function dafStep(masechta, daf, dir) {
@@ -905,12 +923,12 @@ function commCol(arr) {
 // A daf/amud label (נב·א) flanked by the gemara-flip arrows, on both sides of the
 // page number. Rendered INTO the daf so it sits identically in every mode and
 // re-renders with the right boundary state on each flip. Clicks are delegated.
-function flipLabel(cls, innerHtml, mas, daf) {
-  const dis = d => dafStep(mas, daf, d) ? "" : " disabled";
+function flipLabel(cls, innerHtml, mas, daf, amud) {
+  const dis = d => amudStep(mas, daf, amud, d) ? "" : " disabled";
   return `<div class="${cls} flip-label">`
-    + `<button class="pageflip next" data-gemflip="1" aria-label="Next daf" title="Next daf"${dis(1)}>‹</button>`
+    + `<button class="pageflip next" data-gemflip="1" aria-label="Next amud" title="Next amud"${dis(1)}>‹</button>`
     + `<span class="lbl-t">${innerHtml}</span>`
-    + `<button class="pageflip prev" data-gemflip="-1" aria-label="Previous daf" title="Previous daf"${dis(-1)}>›</button>`
+    + `<button class="pageflip prev" data-gemflip="-1" aria-label="Previous amud" title="Previous amud"${dis(-1)}>›</button>`
     + `</div>`;
 }
 // The <i> carve spacers give each stream its printed shape. Sides: .cv0 reserves
@@ -936,31 +954,38 @@ function dafPage(daf, amud, seg, c, labelHtml) {
       <div class="col side tosafos">${CARVES}<div class="col-h" lang="he">תוספות</div>${commCol(c && c.t)}</div>
     </div></div>`;
 }
-// Each amud renders as one big classic page, stacked in reading order — one page
-// is THE page on every screen (the two-leaf spread was an artifact of print).
+// One amud = one big page, exactly as it sits in the open sefer: amud א on the
+// left of the gutter, amud ב on its right. The gutter shows the fold and a faded
+// sliver of the page facing it across the seam — decorative only (it carries no
+// scroll memory and nothing interactive).
 const folioLabel = (masechta, dafN, amud) =>
   `<span class="lbl-t-mas" lang="he">${esc(DY.masechtaHe(masechta))}</span><span lang="he">${esc(heAmud(dafN, amud))}</span>`;
-function renderDafLayout(masechta, daf, data, comm) {
+function gutterHtml(facing, data) {
+  let peek = "";
+  const seg = facing && data && data[facing.amud];   // only when the facing amud is in this masechta's loaded text
+  if (seg && seg.he) peek = safeHe(String(seg.he).replace(/\n/g, " ").slice(0, 700));
+  return `<div class="leaf-gutter" aria-hidden="true"><div class="leaf-fold"></div><div class="leaf-peek"><div class="lp-txt" lang="he">${peek}</div></div></div>`;
+}
+function renderDafLayout(masechta, daf, key, data, comm) {
   comm = comm || {};
-  let pre = "", html = "";
-  if (masechta === "Tamid" && daf === 26 && data["25b"])   // opening Mishnah sits on Vilna 25b — surface it in daf mode too (the he/en path already does)
-    pre = dafPage(daf, "25b", data["25b"], comm["25b"], flipLabel("dafpage-label", folioLabel(masechta, 25, "25b"), masechta, daf));
-  for (const amud of [daf + "a", daf + "b"]) {
-    const seg = data[amud]; if (!seg) continue;
-    html += dafPage(daf, amud, seg, comm[amud], flipLabel("dafpage-label", folioLabel(masechta, daf, amud), masechta, daf));   // per-page daf-flip arrows on each amud
-  }
-  if (!html) return `<div class="empty-mini">This amud isn't available.</div>`;
-  return dafColHead(masechta, daf) + pre + html;
+  const seg = data[key];
+  if (!seg) return dafColHead(masechta, daf, key) + `<div class="empty-mini">This amud isn't available.</div>`;
+  const side = amudSide(key);                                   // א → left page, ב → right page
+  const facing = amudStep(masechta, daf, key, side === "left" ? -1 : 1);   // the page across the gutter
+  const page = dafPage(daf, key, seg, comm[key], flipLabel("dafpage-label", folioLabel(masechta, amudLeaf(key), key), masechta, daf, key));
+  return dafColHead(masechta, daf, key) + `<div class="leaf-book side-${side}">${page}${gutterHtml(facing, data)}</div>`;
 }
 
-/* ---------- the page turn (single leaf — every size, phones included) ----------
-   Before a flip we clone the reading region; after the new daf renders, the
-   clone's on-screen slice turns like a leaf in a fixed overlay above the live
-   page: forward pivots on the right edge (the direction a Hebrew page turns),
-   back on the left. Reduced-motion skips the capture entirely. */
+/* ---------- the two transitions, straight from the physical sefer ----------
+   TURN (א↔ב — the two sides of one leaf): the page you're on lifts and rotates
+   about the gutter it touches — א pivots on its right edge, ב on its left — and
+   the book shifts as your eye crosses from one side of the fold to the other.
+   SHIFT (ב↔א — pages facing each other across the fold): nothing turns; the
+   book slides so the facing page comes under your eye. Both animate an actual
+   clone of the actual page. Reduced-motion skips the capture entirely. */
 function capturePage() {
   const box = Reader.open ? $("#rdBody") : $("#dafText");
-  if (!box || !box.querySelector(".dafpage")) return null;      // the leaf animation belongs to the printed-page mode
+  if (!box || !box.querySelector(".dafpage, .amud")) return null;
   try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) return null; } catch {}
   const r = box.getBoundingClientRect();
   const top = Math.max(r.top, 0), bottom = Math.min(r.bottom, window.innerHeight || 800);
@@ -970,20 +995,33 @@ function capturePage() {
   clone.style.cssText = "height:auto;overflow:visible;position:static;margin:0;width:100%";
   return { clone, top, left: r.left, width: r.width, height: bottom - top, shift: (r.top - top) - (box.scrollTop || 0) };
 }
-function playPageFlip(cap, dir) {
+// kind: "turn" (same leaf) or "shift" (across the fold); outSide: which page of the
+// spread we're leaving — that's the edge a turn pivots on and the way the book slides.
+function playPageFlip(cap, kind, outSide) {
+  const box = Reader.open ? $("#rdBody") : $("#dafText");
+  // going to a page on the RIGHT of the one we left means the eye travels right,
+  // so the book slides left, and vice-versa
+  const bookGoesLeft = outSide === "left";
+  if (box) {                                                     // the live page settles in from the direction the book came
+    const cls = bookGoesLeft ? "bk-from-right" : "bk-from-left";
+    box.classList.remove("bk-from-right", "bk-from-left"); void box.offsetWidth; box.classList.add(cls);
+    setTimeout(() => box.classList.remove(cls), 700);
+  }
   if (!cap) return;
   document.querySelectorAll(".pflip").forEach(n => n.remove());
-  const ov = el("div", "pflip " + (dir > 0 ? "fwd" : "back"));
+  const move = kind === "turn" ? (outSide === "left" ? "turn-r" : "turn-l")   // א pivots on its right edge, ב on its left
+                               : (bookGoesLeft ? "out-left" : "out-right");
+  const ov = el("div", "pflip " + move);
   ov.setAttribute("aria-hidden", "true"); ov.inert = true;      // a decorative clone — out of the a11y tree and tab order
   ov.style.cssText = `top:${cap.top}px;left:${cap.left}px;width:${cap.width}px;height:${cap.height}px`;
   // the wrapper carries the reading-region classes so the clone renders identically; inline styles pin it
-  ov.innerHTML = `<div class="pf-dim"></div><div class="pf-leaf"><div class="pf-face"><div class="pf-inner daf-read has-spread" style="top:${cap.shift}px;width:${cap.width}px;left:0;transform:none;position:absolute"></div></div></div>`;
+  ov.innerHTML = `${kind === "turn" ? '<div class="pf-dim"></div>' : ""}<div class="pf-leaf"><div class="pf-face"><div class="pf-inner daf-read has-spread" style="top:${cap.shift}px;width:${cap.width}px;left:0;transform:none;position:absolute"></div></div></div>`;
   ov.querySelector(".pf-inner").appendChild(cap.clone);
   document.body.appendChild(ov);
   let done = false;
   const cleanup = () => { if (done) return; done = true; ov.remove(); };
   ov.querySelector(".pf-leaf").addEventListener("animationend", cleanup);
-  setTimeout(cleanup, 800);   // safety — the overlay must never outlive the turn
+  setTimeout(cleanup, 900);   // safety — the overlay must never outlive the turn
 }
 /* Phone-mode column selector for the Tzuras-Hadaf view: instead of scrolling
    through stacked גמרא / רש"י / תוספות, show ONE full-width column at a time.
@@ -1010,14 +1048,15 @@ function dafColsInner(labels, curCol) {
     return `<button data-dcol="${key}" role="tab" aria-selected="${on}" class="col-tab${on ? " on" : ""}">${(labels && labels[key]) || name}</button>`;
   }).join("");
 }
-function dafColHead(masechta, daf) {
-  const dis = d => dafStep(masechta, daf, d) ? "" : " disabled";
-  const dafLbl = `${DY.BYEN[masechta] ? DY.BYEN[masechta].he : masechta} ${window.HebCal ? window.HebCal.gematria(daf) : daf}`;
+function dafColHead(masechta, daf, amud) {
+  const key = amud || amudKeysFor(masechta, daf)[0];
+  const dis = d => amudStep(masechta, daf, key, d) ? "" : " disabled";
+  const dafLbl = `${DY.BYEN[masechta] ? DY.BYEN[masechta].he : masechta} ${heAmud(amudLeaf(key), key)}`;
   return `<div class="daf-colhead">
     <div class="daf-flip-row">
-      <button class="pageflip next" data-gemflip="1" aria-label="Next daf" title="Next daf"${dis(1)}>‹</button>
+      <button class="pageflip next" data-gemflip="1" aria-label="Next amud" title="Next amud"${dis(1)}>‹</button>
       <span class="daf-flip-lbl">${esc(dafLbl)}</span>
-      <button class="pageflip prev" data-gemflip="-1" aria-label="Previous daf" title="Previous daf"${dis(-1)}>›</button>
+      <button class="pageflip prev" data-gemflip="-1" aria-label="Previous amud" title="Previous amud"${dis(-1)}>›</button>
     </div>
     <div class="daf-cols-row" role="tablist" aria-label="Daf column — tap a name or swipe">${dafColsInner()}</div>
   </div>`;
@@ -1053,10 +1092,10 @@ function restartAnim(el, cls) { if (!el) return; el.classList.remove(cls); void 
 function dafScrollEl() { return Reader.open ? $("#rdBody") : null; }   // null → the window scrolls
 function curDafScroll() { const el = dafScrollEl(); return el ? el.scrollTop : (window.scrollY || 0); }
 function setDafScroll(y) { const el = dafScrollEl(); if (el) el.scrollTop = y; else window.scrollTo(0, y); }
-function colScrollKey(col) {
-  if (Reader.open) return `r:${Reader.masechta}:${Reader.daf}:${col}`;
+function colScrollKey(col) {   // keyed per AMUD — each side of the leaf keeps its own place
+  if (Reader.open) return `r:${Reader.masechta}:${Reader.amud || Reader.daf}:${col}`;
   const pb = $("#parshaText"); if (pb) return `pp:${pb.dataset.sefer}:${pb.dataset.parsha}:${col}`;
-  const b = $("#dafText"); return `p:${b ? b.dataset.mas : ""}:${b ? b.dataset.daf : ""}:${col}`;
+  const b = $("#dafText"); return `p:${b ? b.dataset.mas : ""}:${b ? (b.dataset.amud || b.dataset.daf) : ""}:${col}`;
 }
 function saveColScroll(col) { State._colScroll = State._colScroll || {}; State._colScroll[colScrollKey(col || "gemara")] = curDafScroll(); }   // no column ever picked = the default gemara column — its spot counts too
 // "The top of this daf" for the active scroller: the reader body scrolls to 0;
@@ -1149,14 +1188,16 @@ function renderAmud(seg, mode) {
       a different day's full lecture page. */
 async function gemaraFlip(dir) {                 // label arrows — daf text only, in place
   const box = $("#dafText"); if (!box) return;
-  const nx = dafStep(box.dataset.mas, +box.dataset.daf, dir); if (!nx) return;
-  const cap = capturePage();                     // for the page-turn animation
-  if (!box._renderedDaf || (box._renderedMas === box.dataset.mas && box._renderedDaf === box.dataset.daf))
-    saveColScroll(State._dafCol);                // remember our place — but only when what's on screen IS this daf (rapid double-flip guard)
-  box.dataset.mas = nx.masechta; box.dataset.daf = nx.daf;
-  await hydrateDaf();                            // re-renders the daf incl. the flanking arrows (fresh boundary state)
-  restoreColScroll(State._dafCol, true);         // the new daf+column: restore its own place, or start at the top if unseen
-  playPageFlip(cap, dir);
+  const cur = box.dataset.amud || amudKeysFor(box.dataset.mas, +box.dataset.daf)[0];
+  const nx = amudStep(box.dataset.mas, +box.dataset.daf, cur, dir); if (!nx) return;
+  const cap = capturePage();                     // an actual clone of the actual page
+  const kind = sameLeaf(cur, nx.amud) ? "turn" : "shift", outSide = amudSide(cur);
+  if (!box._renderedDaf || (box._renderedMas === box.dataset.mas && box._renderedDaf === box.dataset.daf && box._renderedAmud === cur))
+    saveColScroll(State._dafCol);                // remember our place — but only when what's on screen IS this amud (rapid double-flip guard)
+  box.dataset.mas = nx.masechta; box.dataset.daf = nx.daf; box.dataset.amud = nx.amud;
+  await hydrateDaf();                            // re-renders the amud incl. the flanking arrows (fresh boundary state)
+  restoreColScroll(State._dafCol, true);         // the new amud+column: restore its own place, or start at the top if unseen
+  playPageFlip(cap, kind, outSide);
 }
 function dayNav(dir) {                           // top arrows — whole lecture page
   const [m, d] = (State.route.id || "").split("|");
@@ -1168,11 +1209,12 @@ function dayNav(dir) {                           // top arrows — whole lecture
    The full daf, full-bleed, with a minimal bar. Flips between dapim in place
    and never touches the underlying page — so the shiur (audio or video) keeps
    playing untouched while you read ahead or back. */
-const Reader = { masechta: null, daf: null, mode: "daf", open: false };
+const Reader = { masechta: null, daf: null, amud: null, mode: "daf", open: false };
 let _readerClosing = false, _readerOpener = null;
-function openReader(masechta, daf, mode) {
+function openReader(masechta, daf, mode, amud) {
   if (Reader.open) return;   // already open — don't stack a second history entry or clobber the opener
-  Reader.masechta = masechta; Reader.daf = +daf; Reader.mode = mode || State._dafMode || "daf"; Reader.open = true;
+  Reader.masechta = masechta; Reader.daf = +daf; Reader.amud = amud || amudKeysFor(masechta, +daf)[0];
+  Reader.mode = mode || State._dafMode || "daf"; Reader.open = true;
   const r = $("#reader"); if (!r) return;
   _readerOpener = document.activeElement;
   r.hidden = false; r.setAttribute("aria-hidden", "false");
@@ -1191,20 +1233,22 @@ function hideReader() {
   $("#view")?.removeAttribute("inert"); $("#app > header")?.removeAttribute("inert");
   resetReadMin();
   try { _readerOpener && _readerOpener.focus(); } catch {}   // restore focus to whatever opened the reader
-  syncInpageRead(Reader.masechta, Reader.daf);   // leave the in-page reader where we stopped
+  syncInpageRead(Reader.masechta, Reader.daf, Reader.amud);   // leave the in-page reader where we stopped
 }
-function syncInpageRead(masechta, daf) {
+function syncInpageRead(masechta, daf, amud) {
   const box = $("#dafText"); if (!box) return;
-  if (box.dataset.mas === masechta && +box.dataset.daf === daf) return;
-  box.dataset.mas = masechta; box.dataset.daf = daf;
+  if (box.dataset.mas === masechta && +box.dataset.daf === daf && box.dataset.amud === amud) return;
+  box.dataset.mas = masechta; box.dataset.daf = daf; box.dataset.amud = amud;
   hydrateDaf();   // re-renders #dafText incl. the flip arrows; no separate UI step needed
 }
 function readerFlip(dir) {
-  const nx = dafStep(Reader.masechta, Reader.daf, dir); if (!nx) return;
-  Reader._flipClone = capturePage(); Reader._flipDir = dir;   // page-turn plays once the new daf has rendered
-  if (!Reader._renderedD || (Reader._renderedM === Reader.masechta && Reader._renderedD === Reader.daf))
-    saveColScroll(State._dafCol);                // save a spot only for the daf actually rendered (rapid double-flip guard)
-  Reader.masechta = nx.masechta; Reader.daf = nx.daf; Reader._restoreScroll = true; renderReader();
+  const cur = Reader.amud || amudKeysFor(Reader.masechta, Reader.daf)[0];
+  const nx = amudStep(Reader.masechta, Reader.daf, cur, dir); if (!nx) return;
+  Reader._flipClone = capturePage();                          // plays once the new amud has rendered
+  Reader._flipKind = sameLeaf(cur, nx.amud) ? "turn" : "shift"; Reader._flipSide = amudSide(cur);
+  if (!Reader._renderedD || (Reader._renderedM === Reader.masechta && Reader._renderedD === cur))
+    saveColScroll(State._dafCol);                // save a spot only for the amud actually rendered (rapid double-flip guard)
+  Reader.masechta = nx.masechta; Reader.daf = nx.daf; Reader.amud = nx.amud; Reader._restoreScroll = true; renderReader();
 }
 function renderReader() {
   const r = $("#reader"); if (!r) return;
@@ -1213,7 +1257,7 @@ function renderReader() {
   r.innerHTML = `
     <div class="reader-bar">
       <div class="rd-side rd-left"><button class="rd-ic close" id="rdClose" aria-label="Close full screen">✕</button></div>
-      <div class="rd-title" id="rdTitle"><span class="he" lang="he">${esc(dafTitleHe(m, d))}</span><span class="en">${esc(m)} · Daf ${d}</span></div>
+      <div class="rd-title" id="rdTitle"><span class="he" lang="he">${esc(dafTitleHe(m, d))}${esc(/b$/.test(String(Reader.amud || "")) ? " ב" : " א")}</span><span class="en">${esc(m)} · Daf ${d}${/b$/.test(String(Reader.amud || "")) ? "b" : "a"}</span></div>
       <div class="rd-side rd-right">
         ${modeSegHtml("rdMode", mode, "rmode")}
         ${tsizeHtml()}
@@ -1225,17 +1269,17 @@ function renderReader() {
   $$("#rdMode button").forEach(b => b.onclick = () => { Reader.mode = b.dataset.rmode; State._dafMode = Reader.mode; renderReader(); });
   $$("#reader [data-tsize]").forEach(b => b.onclick = () => bumpDafScale(+b.dataset.tsize));
   if (shiur) $("#rdPlay").onclick = () => { playId(shiur.id); toast("Playing — keep reading"); };
-  fillReaderBody(m, d, mode);
+  fillReaderBody(m, d, mode, Reader.amud);
 }
-async function fillReaderBody(m, d, mode) {
-  const html = await dafBodyHtml(m, d, mode);
+async function fillReaderBody(m, d, mode, amud) {
+  const html = await dafBodyHtml(m, d, mode, amud);
   const body = $("#rdBody");                                       // ignore if the user flipped again while loading
-  if (body && Reader.open && Reader.masechta === m && Reader.daf === d && Reader.mode === mode) {
-    body.innerHTML = html; Reader._renderedM = m; Reader._renderedD = d;
+  if (body && Reader.open && Reader.masechta === m && Reader.daf === d && Reader.amud === amud && Reader.mode === mode) {
+    body.innerHTML = html; Reader._renderedM = m; Reader._renderedD = amud;
     sizeDafCarves(body); applyDafCol(body); attachDafSwipe(body);
     if (Reader._restoreScroll) { Reader._restoreScroll = false; restoreColScroll(State._dafCol, true); }  // flip → restore this daf+column's place, or its top
     else body.scrollTop = 0;                                         // initial open / mode change → top
-    if (Reader._flipClone) { playPageFlip(Reader._flipClone, Reader._flipDir); Reader._flipClone = null; }
+    if (Reader._flipKind) { playPageFlip(Reader._flipClone, Reader._flipKind, Reader._flipSide); Reader._flipClone = null; Reader._flipKind = null; }
     body.onclick = e => {                                            // delegated so the re-rendered column tabs stay live
       const g = e.target.closest("[data-gemflip]"); if (g) { readerFlip(+g.dataset.gemflip); return; }   // ‹ נד·א › flips the reader
       const c = e.target.closest("[data-dcol]"); if (c) selectDafCol(c.dataset.dcol);                     // phone-mode column switch
@@ -1829,7 +1873,7 @@ function wireView(r) {
   if (dr) dr.onclick = e => {
     const g = e.target.closest("[data-gemflip]"); if (g) { e.preventDefault(); gemaraFlip(+g.dataset.gemflip); return; }
     const or = e.target.closest("[data-openread]"); if (or) { route("daf", { id: or.dataset.openread }); return; }
-    const br = e.target.closest("[data-backread]"); if (br) { const box = $("#dafText"); if (box) { const [m2, d2] = br.dataset.backread.split("|"); box.dataset.mas = m2; box.dataset.daf = +d2; hydrateDaf(); } return; }
+    const br = e.target.closest("[data-backread]"); if (br) { const box = $("#dafText"); if (box) { const [m2, d2] = br.dataset.backread.split("|"); box.dataset.mas = m2; box.dataset.daf = +d2; box.dataset.amud = amudKeysFor(m2, +d2)[0]; hydrateDaf(); } return; }
     const c = e.target.closest("[data-dcol]"); if (c) selectDafCol(c.dataset.dcol);
   };
   v.querySelectorAll("[data-daynav]").forEach(b => b.onclick = () => dayNav(+b.dataset.daynav));
@@ -1852,7 +1896,7 @@ function wireView(r) {
     jd.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); jump(); } };
     const jg = $("#jumpGo"); if (jg) jg.onclick = jump;
   }
-  if ($("#dafFsBtn")) $("#dafFsBtn").onclick = () => { const box = $("#dafText"); if (box) openReader(box.dataset.mas, +box.dataset.daf, box.dataset.mode); };
+  if ($("#dafFsBtn")) $("#dafFsBtn").onclick = () => { const box = $("#dafText"); if (box) openReader(box.dataset.mas, +box.dataset.daf, box.dataset.mode, box.dataset.amud); };
   const bx = $("#bkExport"); if (bx) bx.onclick = exportProgress;
   const bi = $("#bkImport"), bf = $("#bkFile");
   if (bi && bf) { bi.onclick = () => bf.click(); bf.onchange = () => { if (bf.files && bf.files[0]) importProgress(bf.files[0]); bf.value = ""; }; }

@@ -676,22 +676,58 @@ html:not(.is-phone) .daf-read.has-spread .col.side .comm { font-size: calc(15px 
 html:not(.is-phone) .daf-read.has-spread .dafpage-grid.classic { --dc-head: calc(102px * var(--daf-scale, 1)); }
 html.is-phone .dafpage-label .lbl-t-mas { display: none; }   /* the phone colhead already names the masechta */
 
-/* ---------- the page turn (single leaf — every size, phones included) ----------
-   The visible slice of the outgoing page is cloned into a fixed overlay and
-   turned like a leaf: forward pivots on the right edge (the direction a Hebrew
-   page turns), back on the left. The new page is already live beneath it. */
-.pflip { position: fixed; z-index: 70; pointer-events: none; perspective: 2200px; }
-.pflip .pf-dim { position: absolute; inset: 0; background: rgba(33,30,24,.1); opacity: 0; animation: pfDim .55s ease both; }
+/* ---------- the gutter: the fold, and the page facing it ----------
+   Amud א sits on the LEFT page of the open sefer (fold on its right); amud ב on
+   the RIGHT page (fold on its left). The peek beyond the fold is the real text
+   of the facing page, blurred back to a suggestion — decoration only. */
+html:not(.is-phone) .leaf-book { display: flex; align-items: stretch; }
+html:not(.is-phone) .leaf-book > .dafpage { flex: 1 1 auto; min-width: 0; }
+html:not(.is-phone) .leaf-book.side-left { flex-direction: row; }           /* page, then the fold on its right */
+html:not(.is-phone) .leaf-book.side-right { flex-direction: row-reverse; }  /* the fold on its left */
+.leaf-gutter { display: none; }
+html:not(.is-phone) .leaf-gutter {
+  display: block; position: relative; flex: 0 0 54px; margin: 16px 0 24px; overflow: hidden;
+  border-radius: 6px; background: linear-gradient(#fdfbf4, #faf6ea); border: 1px solid var(--hair-2); border-left: 0;
+}
+html:not(.is-phone) .side-right .leaf-gutter { border: 1px solid var(--hair-2); border-right: 0; }
+.leaf-gutter .leaf-fold { position: absolute; top: 0; bottom: 0; width: 26px; z-index: 2;
+  background: linear-gradient(90deg, rgba(33,30,24,.16), rgba(33,30,24,.05) 55%, transparent); }
+.side-left .leaf-gutter .leaf-fold { left: 0; }
+.side-right .leaf-gutter .leaf-fold { right: 0; transform: scaleX(-1); }
+.leaf-gutter .leaf-peek { position: absolute; inset: 0 0 0 22px; overflow: hidden; opacity: .5; }
+.side-right .leaf-gutter .leaf-peek { inset: 0 22px 0 0; }
+.leaf-gutter .lp-txt { font-family: var(--serif-he); direction: rtl; text-align: justify; font-size: 13px; line-height: 1.7;
+  color: #6b6558; filter: blur(1.1px); width: 300px; padding: 4px 6px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 260px); mask-image: linear-gradient(90deg, transparent, #000 260px); }
+.side-left .leaf-gutter .lp-txt { margin-left: -246px; }   /* only the far edge of the facing page shows past the fold */
+.side-right .leaf-gutter .lp-txt { margin-right: -246px;
+  -webkit-mask-image: linear-gradient(270deg, transparent, #000 260px); mask-image: linear-gradient(270deg, transparent, #000 260px); }
+
+/* ---------- the two transitions ----------
+   TURN (א↔ב, two sides of one leaf): the page pivots on the fold it touches.
+   SHIFT (ב↔א, two pages facing across the fold): nothing turns — the book slides.
+   Either way the live page settles in from the direction the book travelled. */
+.pflip { position: fixed; z-index: 70; pointer-events: none; perspective: 2000px; }
+.pflip .pf-dim { position: absolute; inset: 0; background: rgba(33,30,24,.12); opacity: 0; animation: pfDim .6s ease both; }
 .pflip .pf-leaf { position: absolute; inset: 0; transform-style: preserve-3d; }
-.pflip.fwd .pf-leaf { transform-origin: 100% 50%; animation: pfFwd .55s cubic-bezier(.3,.1,.3,1) both; }
-.pflip.back .pf-leaf { transform-origin: 0% 50%; animation: pfBack .55s cubic-bezier(.3,.1,.3,1) both; }
+.pflip.turn-r .pf-leaf { transform-origin: 100% 50%; animation: pfTurnR .6s cubic-bezier(.34,.06,.3,1) both; }
+.pflip.turn-l .pf-leaf { transform-origin: 0% 50%; animation: pfTurnL .6s cubic-bezier(.34,.06,.3,1) both; }
+.pflip.out-left .pf-leaf { animation: pfOutLeft .46s cubic-bezier(.4,0,.25,1) both; }
+.pflip.out-right .pf-leaf { animation: pfOutRight .46s cubic-bezier(.4,0,.25,1) both; }
 .pflip .pf-face { position: absolute; inset: 0; overflow: hidden; background: var(--paper); box-shadow: 0 0 30px -6px rgba(33,30,24,.45); }
 .pflip .pf-inner { position: absolute; left: 0; right: 0; }
 /* the flying clone must render exactly like the live page — its wrapper carries
    the daf-read/has-spread classes; inline styles pin its width and position */
-@keyframes pfFwd { from { transform: rotateY(0deg); opacity: 1; } 70% { opacity: 1; } to { transform: rotateY(88deg); opacity: 0; } }
-@keyframes pfBack { from { transform: rotateY(0deg); opacity: 1; } 70% { opacity: 1; } to { transform: rotateY(-88deg); opacity: 0; } }
+@keyframes pfTurnR { from { transform: rotateY(0deg); opacity: 1; } 62% { opacity: 1; } to { transform: rotateY(-96deg); opacity: 0; } }
+@keyframes pfTurnL { from { transform: rotateY(0deg); opacity: 1; } 62% { opacity: 1; } to { transform: rotateY(96deg); opacity: 0; } }
+@keyframes pfOutLeft { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-56%); opacity: 0; } }
+@keyframes pfOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(56%); opacity: 0; } }
 @keyframes pfDim { 30% { opacity: 1; } to { opacity: 0; } }
+/* the book settling under your eye */
+#dafText.bk-from-left > *, #rdBody.bk-from-left > * { animation: bkFromLeft .44s cubic-bezier(.25,.8,.35,1) both; }
+#dafText.bk-from-right > *, #rdBody.bk-from-right > * { animation: bkFromRight .44s cubic-bezier(.25,.8,.35,1) both; }
+@keyframes bkFromLeft { from { transform: translateX(-5%); opacity: .25; } to { transform: none; opacity: 1; } }
+@keyframes bkFromRight { from { transform: translateX(5%); opacity: .25; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pflip { display: none; } }
 
 /* ---------- classic parsha page (chumash · targum · rashi) ---------- */
