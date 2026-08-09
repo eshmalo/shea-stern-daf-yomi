@@ -85,9 +85,11 @@
 
   const S = {
     tab: "pages", data: null, base: null, cdnBase: "",
+    lib: { lectures: [], byId: {}, manifest: {}, orig: {} },   // the catalog + the pipeline's auto-hosted files
     sel: { type: "daf", masechta: "Berachos", daf: 2, sefer: "Bereishit", parsha: "Bereishit", holiday: "Rosh Hashanah" },
     pendingFile: null, busy: false, note: "",
   };
+  const fmtDur = s => { s = Math.round(s || 0); if (!s) return ""; const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h ? `${h}h ${m}m` : `${m} min`; };
 
   /* ---------- session + api ---------- */
   function token() {
@@ -160,6 +162,38 @@
 
   const pageMedia = pk => { const e = S.data && S.data.media && S.data.media.pages && S.data.media.pages[pk]; return (e && typeof e === "object" && !Array.isArray(e)) ? e : {}; };
   const pageAtts = pk => { const l = S.data && S.data.attachments && S.data.attachments.pages && S.data.attachments.pages[pk]; return (Array.isArray(l) ? l : []).filter(a => a && typeof a === "object"); };
+  const lecOverride = id => { const m = S.data && S.data.media && S.data.media.lectures; const e = m && m[String(id)]; return (e && typeof e === "object" && !Array.isArray(e)) ? e : {}; };
+
+  /* ---------- the catalog: which shiurim sit on a page, and each one's files ---------- */
+  const normName = s => String(s || "").toLowerCase().replace(/[^a-z]/g, "");
+  function lecturesForPage(sel) {
+    const s = sel || S.sel, L = S.lib.lectures;
+    if (s.type === "daf") return L.filter(l => l._dk && l._dk.masechta === s.masechta && l._dk.daf === s.daf);
+    if (s.type === "parsha") {
+      const p = normName(s.parsha);
+      return L.filter(l => /paras/i.test(l.category || "") &&
+        (normName(l.series) === p || String(l.series || "").split(/[-–—/]/).some(x => normName(x) === p)));
+    }
+    return L.filter(l => /holiday/i.test(l.category || "") && (l.series || "Other") === s.holiday);
+  }
+  // What actually plays for one lecture, per kind — mirrors the site's tier order:
+  // the Rov's replacement > original recording > pipeline's auto-hosted copy > TorahAnytime.
+  function lecSource(l, kind) {
+    const ov = lecOverride(l.id)[kind];
+    if (ov && ov.key) return { tier: "replaced", label: "Replaced by the Rov's upload", url: fileUrl(ov.key), key: ov.key };
+    const mm = S.lib.manifest[String(l.id)] || {};
+    if (kind === "audio") {
+      const k = l._dk || {};
+      const orig = k.masechta && S.lib.orig[k.masechta] && S.lib.orig[k.masechta][String(k.daf)];
+      if (typeof orig === "string" && orig) return { tier: "original", label: "Original recording (auto)", url: fileUrl(orig) };
+      if (typeof mm.audio === "string" && mm.audio) return { tier: "auto", label: "Auto-hosted recording", url: fileUrl(mm.audio) };
+      if (l.audio) return { tier: "ta", label: "TorahAnytime recording", url: String(l.audio) };
+    } else {
+      if (typeof mm.video === "string" && mm.video) return { tier: "auto", label: "Auto-hosted video", url: fileUrl(mm.video) };
+      if (l.video) return { tier: "ta", label: "TorahAnytime video", url: String(l.video) };
+    }
+    return null;
+  }
 
   /* ---------- rendering ---------- */
   function render() {
@@ -232,17 +266,53 @@
   function panelHtml() {
     const pk = pageKey(), t = pageTitle();
     const media = pageMedia(pk), atts = pageAtts(pk);
+    const lecs = lecturesForPage();
+    const newest = lecs[0] || null;
     const mrow = kind => {
       const e = media[kind], label = kind === "audio" ? "Audio" : "Video";
+      let current;
+      if (e) {
+        current = `<b>✓ Replaced by the Rov's upload</b> · ${esc(fmtDate(e.updated))} · <a href="${esc(fileUrl(e.key))}" target="_blank" rel="noopener">listen / view ↗</a>`;
+      } else {
+        const src = newest && lecSource(newest, kind);
+        current = src
+          ? `${esc(src.label)}${newest.posted ? " · " + esc(newest.posted) : ""} · <a href="${esc(src.url)}" target="_blank" rel="noopener">listen / view ↗</a>`
+          : `No ${kind} on this page yet — upload one and it appears here`;
+      }
       return `<div class="adm-mrow">
         <span class="mk">${label}</span>
-        <span class="mv">${e ? `<b>✓ Replaced by the Rov's upload</b> · ${esc(fmtDate(e.updated))} · <a href="${esc(fileUrl(e.key))}" target="_blank" rel="noopener">listen / view ↗</a>` : `Using the regular shiur (nothing uploaded here)`}</span>
+        <span class="mv">${current}</span>
         <span class="adm-acts">
           <button class="btn sm" data-upmedia="${kind}">${e ? "Replace" : "Upload"}</button>
           ${e ? `<button class="btn sm" data-clearmedia="${kind}">Remove</button>` : ""}
         </span>
       </div>`;
     };
+    // every shiur the catalog puts on this page, with its files and per-recording replace
+    const lecBlock = lecs.length ? `
+      <div class="adm-sec">Recordings on this page (${lecs.length})</div>
+      ${lecs.map(l => {
+        const isDaf = l._dk && l._dk.daf;
+        const title = isDaf ? `${l._dk.masechta} · Daf ${l._dk.daf}` : (l.title || "Shiur " + l.id);
+        const meta = [l.posted || l.recorded, fmtDur(l.duration)].filter(Boolean).join(" · ");
+        const srcLine = kind => {
+          const src = lecSource(l, kind);
+          const name = kind === "audio" ? "Audio" : "Video";
+          if (!src) return `<div class="adm-lsrc"><span class="lk">${name}</span><span class="lv">none</span></div>`;
+          return `<div class="adm-lsrc">
+            <span class="lk">${name}</span>
+            <span class="lv${src.tier === "replaced" ? " rep" : ""}">${src.tier === "replaced" ? "✓ " : ""}${esc(src.label)} · <a href="${esc(src.url)}" target="_blank" rel="noopener">open ↗</a></span>
+            <span class="adm-acts">
+              <button class="btn sm" data-lrep="${l.id}" data-kind="${kind}">${src.tier === "replaced" ? "Replace again" : "Replace"}</button>
+              ${src.tier === "replaced" ? `<button class="btn sm" data-lundo="${l.id}" data-kind="${kind}">Undo</button>` : ""}
+            </span>
+          </div>`;
+        };
+        return `<div class="adm-lec">
+          <div class="adm-lechead"><b${hebrew(title) ? ' lang="he" dir="rtl"' : ""}>${esc(title)}</b>${meta ? `<span class="m">${esc(meta)}</span>` : ""}</div>
+          ${srcLine("audio")}${srcLine("video")}
+        </div>`;
+      }).join("")}` : "";
     const attRows = atts.map((a, i) => `
       <div class="adm-att">
         <span class="at"${hebrew(a.title) ? ' dir="rtl"' : ""}><b${hebrew(a.title) ? ' lang="he"' : ""}>${esc(a.title)}</b>
@@ -271,8 +341,9 @@
       </div>`;
     return `<div class="adm-panel">
       <h2 lang="he" dir="rtl">${esc(t.he)}</h2><div class="sub">${esc(t.en)}</div>
-      <div class="adm-sec">Shiur recording</div>
+      <div class="adm-sec">What plays on this page</div>
       ${mrow("audio")}${mrow("video")}
+      ${lecBlock}
       <div class="adm-sec">Worksheets &amp; sources (${atts.length})</div>
       ${attRows || `<div class="adm-mrow"><span class="mv">Nothing attached to this page yet.</span></div>`}
       ${pending}
@@ -297,7 +368,26 @@
 
   function overviewHtml() {
     const pages = allPages();
-    if (!pages.length) {
+    const lecOv = (S.data.media && S.data.media.lectures) || {};
+    const lecIds = Object.keys(lecOv);
+    const lecBlock = lecIds.length ? `<div class="adm-group">
+      <div class="adm-grouphead"><span class="gt"><b>Replaced shiur recordings</b><span class="gs">these play instead of the regular recording, everywhere</span></span></div>
+      ${lecIds.map(id => {
+        const l = S.lib.byId[id], ov = lecOv[id] || {};
+        const title = l ? (l._dk && l._dk.daf ? `${l._dk.masechta} · Daf ${l._dk.daf}` : (l.title || "Shiur " + id)) : "Shiur " + id;
+        return ["audio", "video"].map(kind => {
+          const e = ov[kind]; if (!e) return "";
+          return `<div class="adm-item">
+            <span class="ic" aria-hidden="true">${kind === "audio" ? "♪" : "▦"}</span>
+            <span class="it"${hebrew(title) ? ' dir="rtl"' : ""}><b${hebrew(title) ? ' lang="he"' : ""}>${esc(title)}</b><span class="m" dir="ltr">${esc([kind, fmtDate(e.updated)].filter(Boolean).join(" · "))}</span></span>
+            <span class="adm-acts">
+              <a class="adm-ib" href="${esc(fileUrl(e.key))}" target="_blank" rel="noopener" aria-label="Open" title="Open">↗</a>
+              <button class="adm-ib danger" data-ovlec="${esc(id)}" data-kind="${kind}" aria-label="Undo replacement for ${esc(title)}" title="Undo replacement">✕</button>
+            </span></div>`;
+        }).join("");
+      }).join("")}
+    </div>` : "";
+    if (!pages.length && !lecIds.length) {
       return `<div class="adm-panel"><h2>Nothing uploaded yet</h2>
         <div class="sub">everything you add will be listed here</div>
         <p class="adm-note" style="margin-top:4px">Go to <b>Pages</b>, pick a daf, parsha or yom tov, and upload a recording or a worksheet.</p></div>`;
@@ -334,8 +424,8 @@
       </div>`;
     }).join("");
     return `<div class="adm-panel">
-      <h2>Uploaded content</h2><div class="sub">${pages.length} page${pages.length > 1 ? "s" : ""} · everything you've added</div>
-      ${blocks}
+      <h2>Uploaded content</h2><div class="sub">everything you've added</div>
+      ${blocks}${lecBlock}
     </div>`;
   }
 
@@ -416,12 +506,20 @@
     document.querySelectorAll("[data-attren]").forEach(b => b.onclick = () => renameAttachment(b.dataset.attren));
     document.querySelectorAll("[data-attup]").forEach(b => b.onclick = () => moveAttachment(b.dataset.attup, -1));
     document.querySelectorAll("[data-attdn]").forEach(b => b.onclick = () => moveAttachment(b.dataset.attdn, 1));
+    document.querySelectorAll("[data-lrep]").forEach(b => b.onclick = () => {
+      const id = +b.dataset.lrep, kind = b.dataset.kind, inp = $("#fileMedia");
+      inp.accept = ACCEPT[kind];
+      inp.onchange = () => { if (inp.files[0]) uploadLectureMedia(inp.files[0], id, kind); inp.value = ""; };
+      inp.click();
+    });
+    document.querySelectorAll("[data-lundo]").forEach(b => b.onclick = () => undoLectureMedia(+b.dataset.lundo, b.dataset.kind));
   }
 
   function wireOverview() {
     document.querySelectorAll("[data-goedit]").forEach(b => b.onclick = () => selectPage(b.dataset.goedit));
     document.querySelectorAll("[data-ovmedia]").forEach(b => b.onclick = () => clearMedia(b.dataset.ovmedia, b.dataset.kind));
     document.querySelectorAll("[data-ovatt]").forEach(b => b.onclick = () => deleteAttachment(b.dataset.pk, b.dataset.ovatt));
+    document.querySelectorAll("[data-ovlec]").forEach(b => b.onclick = () => undoLectureMedia(+b.dataset.ovlec, b.dataset.kind));
   }
 
   function wireText() {
@@ -431,11 +529,17 @@
 
   async function refresh() {
     try {
-      const [out, base] = await Promise.all([
-        api("/state"),
-        fetch("../data/content.json").then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      const j = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+      const [out, base, lib, manifest, orig] = await Promise.all([
+        api("/state"), j("../data/content.json"),
+        j("../data/library.json"), j("../media/manifest.json"), j("../data/orig_audio.json"),
       ]);
       S.data = out.data; S.cdnBase = out.cdnBase; S.base = base && typeof base === "object" ? base : {};
+      const lectures = (Array.isArray(lib.lectures) ? lib.lectures : []).filter(l => l && typeof l === "object");
+      for (const l of lectures) { try { l._dk = DY.shiurDaf(l); } catch { l._dk = null; } }
+      S.lib = { lectures, byId: Object.fromEntries(lectures.map(l => [String(l.id), l])),
+                manifest: manifest && typeof manifest === "object" ? manifest : {},
+                orig: orig && typeof orig === "object" ? orig : {} };
       render();
     } catch (ex) {
       if (token()) {
@@ -542,6 +646,34 @@
       render();
     } catch (ex) { if (ex.message !== "cancelled") alert(ex.message); }
     finally { prog.done(); S.busy = false; }
+  }
+
+  async function uploadLectureMedia(file, lectureId, kind) {
+    if (S.busy) return; S.busy = true;
+    const prog = progUI(file.name);
+    try {
+      const old = lecOverride(lectureId)[kind];
+      const key = await uploadToR2(file, kind, prog);
+      prog.set(1, "Saving…");
+      const out = await api("/mutate", { ops: [{ op: "set_lecture_media", lectureId, kind, key }] });
+      S.data = out.data;
+      if (old && /^site\/uploads\//.test(old.key)) { try { await api("/delete-object", { key: old.key }); } catch {} }
+      S.note = `The ${kind} of that shiur is replaced — everywhere it plays on the site.`;
+      render();
+    } catch (ex) { if (ex.message !== "cancelled") alert(ex.message); }
+    finally { prog.done(); S.busy = false; }
+  }
+
+  async function undoLectureMedia(lectureId, kind) {
+    if (!confirm(`Put back the regular ${kind} for this shiur?`)) return;
+    const old = lecOverride(lectureId)[kind];
+    try {
+      const out = await api("/mutate", { ops: [{ op: "clear_lecture_media", lectureId, kind }] });
+      S.data = out.data;
+      if (old && /^site\/uploads\//.test(old.key)) { try { await api("/delete-object", { key: old.key }); } catch {} }
+      S.note = "The regular recording is back.";
+      render();
+    } catch (ex) { alert(ex.message); }
   }
 
   async function clearMedia(pk, kind) {

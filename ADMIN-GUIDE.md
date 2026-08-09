@@ -19,9 +19,14 @@ arrows re-order, the ✕ removes it.
 
 ## Replace the audio or video of a shiur
 
-1. Pick the page the same way.
-2. Under **Shiur recording**, press **Upload** (or **Replace**) next to Audio
-   or Video and choose the file.
+1. Pick the page the same way. Under **What plays on this page** you can see
+   (and listen to) exactly what visitors currently get — including the
+   automatic recordings the site already hosts.
+2. Press **Upload** (or **Replace**) next to Audio or Video and choose the
+   file. To fix one specific shiur (for example one recording on a parsha
+   page), use the **Replace** button next to that recording under
+   **Recordings on this page** — your file then plays everywhere that shiur
+   appears, and **Undo** brings the regular one back.
 3. Wait for the bar to finish — a large video can take a while; keep the page
    open until it says done.
 

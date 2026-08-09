@@ -349,6 +349,29 @@ class TestMutate(Base):
         self.assertEqual(out["data"]["media"]["pages"], {})
 
 
+class TestLectureMedia(Base):
+    def test_set_and_clear(self):
+        token = login()
+        key = "site/uploads/audio/daf-chullin-100/1754700000-aabbccdd.mp3"
+        lf._s3.objects[key] = b"aud"
+        code, out, _ = call("POST", "/mutate", {"ops": [{
+            "op": "set_lecture_media", "lectureId": 457353, "kind": "audio", "key": key}]}, token=token)
+        self.assertEqual(code, 200)
+        self.assertEqual(out["data"]["media"]["lectures"]["457353"]["audio"]["key"], key)
+        code, out, _ = call("POST", "/mutate", {"ops": [{
+            "op": "clear_lecture_media", "lectureId": 457353, "kind": "audio"}]}, token=token)
+        self.assertEqual(code, 200)
+        self.assertNotIn("457353", out["data"]["media"]["lectures"])
+
+    def test_bad_lecture_id(self):
+        token = login()
+        for lid in ["abc", None, {"x": 1}]:
+            code, _, _ = call("POST", "/mutate", {"ops": [{
+                "op": "set_lecture_media", "lectureId": lid, "kind": "audio",
+                "key": "site/uploads/audio/x/1754700000-aabbccdd.mp3"}]}, token=token)
+            self.assertEqual(code, 400, repr(lid))
+
+
 class TestContent(Base):
     def set(self, values, token=None):
         return call("POST", "/mutate", {"ops": [{"op": "set_content", "values": values}]},

@@ -28,6 +28,15 @@
 .adm-item .it b { overflow-wrap: anywhere; }
 .adm-item .it .m { font-family: var(--sans); font-size: 12px; color: var(--ink-faint); }
 
+.adm-lec { border-bottom: 1px solid var(--hair); padding: 10px 2px 12px; }
+.adm-lechead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.adm-lechead b { overflow-wrap: anywhere; }
+.adm-lechead .m { font-family: var(--sans); font-size: 12px; color: var(--ink-faint); }
+.adm-lsrc { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 5px 0 5px 12px; }
+.adm-lsrc .lk { font-family: var(--sans); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); min-width: 44px; }
+.adm-lsrc .lv { flex: 1; font-size: 14px; color: var(--ink-soft); min-width: 150px; overflow-wrap: anywhere; }
+.adm-lsrc .lv.rep { color: var(--ok); }
+
 .adm-field { margin: 12px 0; }
 .adm-field .field-label { display: block; margin-bottom: 5px; }
 .adm-field .field-label .chg { color: var(--accent); text-transform: none; letter-spacing: 0; }

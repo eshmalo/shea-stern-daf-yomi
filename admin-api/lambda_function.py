@@ -275,7 +275,10 @@ def apply_op(d, op):
         if not ent:
             d["media"]["pages"].pop(pk, None)
     elif name == "set_lecture_media":
-        lid = str(int(op.get("lectureId")))
+        try:
+            lid = str(int(op.get("lectureId")))
+        except (TypeError, ValueError):
+            raise Bad("bad lectureId")
         kind = s(op.get("kind"), 10)
         if kind not in ("audio", "video"):
             raise Bad("kind must be audio|video")
@@ -284,7 +287,10 @@ def apply_op(d, op):
             raise Bad("object not found: " + key)
         d["media"]["lectures"].setdefault(lid, {})[kind] = {"key": key, "updated": int(time.time())}
     elif name == "clear_lecture_media":
-        lid = str(int(op.get("lectureId")))
+        try:
+            lid = str(int(op.get("lectureId")))
+        except (TypeError, ValueError):
+            raise Bad("bad lectureId")
         kind = s(op.get("kind"), 10)
         ent = d["media"]["lectures"].get(lid) or {}
         ent.pop(kind, None)
