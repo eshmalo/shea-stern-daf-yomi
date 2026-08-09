@@ -38,6 +38,10 @@
   --rule:     #211e18;        /* full black rule            */
   --hair:     #e7e2d4;        /* hairline                   */
   --hair-2:   #d2ccba;        /* heavier hairline           */
+  --leaf-paper:#fffdf7;       /* the bound reading sheet    */
+  --leaf-edge:#aaa18d;        /* visible, print-like edge   */
+  --leaf-rule:#918875;        /* running-head / fold rule   */
+  --fold-ink: #746c5c;        /* darkest point of the seam  */
   --accent:   #74202c;        /* deep maroon (rubric/links) */
   --accent-2: #8c2c38;        /* lighter maroon for hover   */
   --accent-soft:#f4e9e6;
@@ -81,7 +85,7 @@ main#view { flex: 1 0 auto; width: 100%; }
 /* ---------- top bar ---------- */
 .bar {
   position: -webkit-sticky; position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 10px;
-  padding: 10px 18px;
+  padding: 10px calc(18px + env(safe-area-inset-right, 0px)) 10px calc(18px + env(safe-area-inset-left, 0px));
   padding-top: calc(10px + env(safe-area-inset-top, 0px));   /* clear the iPhone notch / status bar */
   background: var(--paper);
   background: color-mix(in srgb, var(--paper) 90%, transparent);
@@ -90,7 +94,15 @@ main#view { flex: 1 0 auto; width: 100%; }
   border-bottom: 1px solid var(--hair);
   transition: transform .25s cubic-bezier(.4, 0, .2, 1);
 }
-.bar .ic-btn { border: 0; background: none; font-size: 19px; color: var(--ink-soft); min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; padding: 5px 7px; line-height: 1; border-radius: 6px; transition: background .12s, color .12s; }
+/* Wide reading pages break beyond the 720px app shell. Extend the sticky bar's
+   quiet paper scrim across that same viewport so live text never shows in two
+   exposed strips beside the centered header. The scrim moves away with the bar. */
+html.reading-view .bar { isolation: isolate; }
+html.reading-view .bar::before {
+  content: ""; position: absolute; z-index: -1; top: 0; bottom: -1px; left: 50%; width: 100vw; transform: translateX(-50%);
+  background: var(--paper); border-bottom: 1px solid var(--hair);
+}
+.bar .ic-btn { border: 0; background: none; font-size: 19px; color: var(--ink-soft); min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 5px 7px; line-height: 1; border-radius: 6px; transition: background .12s, color .12s; }
 .bar .ic-btn:hover { background: var(--paper-2); color: var(--ink); }
 .bar .ic-btn.back { font-size: 26px; padding: 2px 8px 5px; }
 .bar .ic-btn[hidden] { display: none; }
@@ -240,9 +252,10 @@ main#view { flex: 1 0 auto; width: 100%; }
 .sponsor-strip .btn { margin-top: 12px; }
 
 .daf-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 24px 0 10px; border-top: 2px solid var(--rule); border-bottom: 1px solid var(--hair); padding: 9px 0 8px; flex-wrap: wrap; }
+.daf-read, .reader-body { overflow-anchor: none; } /* source/page reflow is restored explicitly; browser anchoring must not move the operating rail */
 .daf-toolbar .ttl { font-family: var(--sans); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .13em; color: var(--ink-soft); }
 .seg { display: inline-flex; border: 1px solid var(--hair-2); border-radius: 5px; overflow: hidden; }
-.seg button { border: 0; background: var(--paper); color: var(--ink-soft); font-size: 14px; letter-spacing: .02em; min-height: 40px; padding: 8px 14px; font-family: var(--sans); transition: background .12s, color .12s; }
+.seg button { border: 0; background: var(--paper); color: var(--ink-soft); font-size: 14px; letter-spacing: .02em; min-height: 44px; padding: 8px 14px; font-family: var(--sans); transition: background .12s, color .12s; }
 .seg button .seg-he { font-family: var(--serif-he); font-size: 16.5px; }
 .seg button + button { border-left: 1px solid var(--hair-2); }
 .seg button.on { background: var(--ink); color: var(--paper); }
@@ -250,72 +263,94 @@ main#view { flex: 1 0 auto; width: 100%; }
 
 /* א− / א+ text-size control — the reading region only; chrome stays put */
 .tsize { display: inline-flex; border: 1px solid var(--hair-2); border-radius: 5px; overflow: hidden; }
-.tsize button { border: 0; background: var(--paper); color: var(--ink-soft); font-family: var(--serif-he); font-size: 15px; min-width: 40px; min-height: 40px; padding: 0 10px; transition: background .12s, color .12s; }
-.tsize button + button { border-left: 1px solid var(--hair-2); font-size: 18px; }
+.tsize button { border: 0; background: var(--paper); color: var(--ink-soft); font-family: var(--serif-he); font-size: 15px; min-width: 44px; min-height: 44px; padding: 0 10px; transition: background .12s, color .12s; }
+.tsize button:last-child { border-left: 1px solid var(--hair-2); font-size: 18px; }
 .tsize button:hover { background: var(--paper-2); color: var(--ink); }
+.tsize button:disabled { opacity: .35; cursor: default; background: var(--paper); color: var(--ink-faint); }
 
-.fs-btn { -webkit-appearance: none; appearance: none; border: 1px solid var(--hair-2); background: var(--paper); color: var(--ink-soft); min-height: 40px; padding: 0 13px; border-radius: 6px; font-size: 15px; display: inline-flex; align-items: center; gap: 7px; transition: background .12s, color .12s, border-color .12s; }
+.fs-btn { -webkit-appearance: none; appearance: none; border: 1px solid var(--hair-2); background: var(--paper); color: var(--ink-soft); min-height: 44px; padding: 0 13px; border-radius: 6px; font-size: 15px; display: inline-flex; align-items: center; gap: 7px; transition: background .12s, color .12s, border-color .12s; }
 .fs-btn .fs-lbl { font-family: var(--sans); font-size: 12px; letter-spacing: .04em; }
 .fs-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 /* top-section day/lecture nav — turns the WHOLE page to the prev / next daf.
    The destination daf is NAMED in the pill (catchword-style) so the RTL arrow
    direction teaches itself instead of confusing. */
-.daf-daynav { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.daf-daynav { width: min(100%, 480px); margin-inline: auto; display: grid; grid-template-columns: clamp(56px, 26vw, 94px) minmax(0, 1fr) clamp(56px, 26vw, 94px); align-items: center; gap: 8px; }
 .daf-head-titles { min-width: 0; }
-.daynav { -webkit-appearance: none; appearance: none; flex: none; border: 1px solid var(--hair-2); background: var(--paper); color: var(--accent); min-height: 40px; border-radius: 999px; font-size: 19px; line-height: 1; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px 8px; transition: background .13s, color .13s, border-color .13s, opacity .14s, transform .12s; }
-.daynav .dn-t { font-family: var(--serif-he); direction: rtl; font-size: 17px; font-weight: 600; padding-top: 2px; }
-.daynav:hover { background: var(--accent); border-color: var(--accent); color: #fff; transform: scale(1.04); }
-.daynav:active { transform: scale(.96); }
+.daf-daynav .next { grid-column: 1; justify-self: stretch; }
+.daf-daynav .daf-head-titles { grid-column: 2; grid-row: 1; }
+.daf-daynav .prev { grid-column: 3; justify-self: stretch; }
+.daf-daynav.parsha-daynav { margin: 2px auto 10px; }
+/* A long masechta title may wrap, but its operating buttons keep the same
+   baseline instead of being recentered around a variable-height title. */
+.daf-head .daf-daynav { align-items: start; }
+.daf-head .daynav { margin-top: 15px; }
+.daynav { -webkit-appearance: none; appearance: none; width: 100%; min-width: 0; border: 1px solid var(--hair-2); background: var(--paper); color: var(--accent); min-height: 44px; border-radius: 999px; font-size: 19px; line-height: 1; display: inline-flex; justify-content: center; align-items: center; gap: 6px; padding: 6px 10px 8px; transition: background .13s, color .13s, border-color .13s, opacity .14s; }
+.daynav .dn-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--serif-he); direction: rtl; font-size: 17px; font-weight: 600; padding-top: 2px; }
+.daynav:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.daynav:active { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
 .daynav:disabled { opacity: .22; pointer-events: none; }
 /* phone layout (is-narrow = viewport 560px OR forced phone view) */
-html.is-narrow .daynav { min-height: 36px; font-size: 17px; padding: 4px 11px 6px; }
+html.is-narrow .daynav { min-height: 44px; font-size: 17px; padding: 4px 11px 6px; }
 html.is-narrow .daynav .dn-t { font-size: 15px; }
 html.is-narrow .daf-daynav { gap: 8px; }
 
 
-/* gemara-flip arrows live INSIDE the daf, flanking the נב·א page number on both
-   sides — identical in every mode (Daf / עברית / English / Both). Borderless;
-   they flip ONLY the gemara in place. */
-.flip-label { display: flex; align-items: center; justify-content: center; gap: 18px; }
-/* hold the DOM order (Hebrew RTL pagination: ‹ next = left, › prev = right) against
-   the rtl label — keep the row itself ltr so the chevrons don't bidi-flip */
-.dafpage-label.flip-label, .amud-label.flip-label { direction: ltr !important; }
-.flip-label .lbl-t { direction: rtl; }
-.amud-label.flip-label::before, .amud-label.flip-label::after { display: none; }   /* drop the side rules when arrows flank the number */
-.pageflip { -webkit-appearance: none; appearance: none; flex: none; border: 0; background: none; color: var(--accent); width: 30px; height: 30px; border-radius: 50%; font-size: 23px; line-height: 1; display: grid; place-items: center; padding: 0 0 3px; transition: background .13s, color .13s, opacity .14s, transform .12s; }
-.pageflip:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-2); transform: scale(1.15); }
-.pageflip:active { transform: scale(.92); }
+/* Stable amud navigation buttons: borderless and generous to tap. */
+.pageflip { -webkit-appearance: none; appearance: none; flex: none; border: 0; background: none; color: var(--accent); width: 44px; height: 44px; border-radius: 50%; font-size: 23px; line-height: 1; display: grid; place-items: center; padding: 0 0 3px; transition: background .13s, color .13s, opacity .14s; }
+.pageflip:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-2); }
+.pageflip:active { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent-2); }
 .pageflip:disabled { opacity: .22; pointer-events: none; }
 
 /* ---------- full-screen Daf reader (overlay) ---------- */
 html.reader-open { overflow: hidden; }
 .reader { position: fixed; inset: 0; z-index: 44; background: var(--paper); display: flex; flex-direction: column; animation: fade .18s ease; }
 .reader[hidden] { display: none; }
-.reader-bar { flex: none; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 11px 18px; padding-top: calc(11px + env(safe-area-inset-top, 0px)); background: color-mix(in srgb, var(--paper) 92%, transparent); -webkit-backdrop-filter: saturate(1.1) blur(8px); backdrop-filter: saturate(1.1) blur(8px); border-bottom: 1px solid var(--hair-2); }
+.reader-bar { flex: none; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: calc(11px + env(safe-area-inset-top, 0px)) calc(18px + env(safe-area-inset-right, 0px)) 11px calc(18px + env(safe-area-inset-left, 0px)); background: color-mix(in srgb, var(--paper) 92%, transparent); -webkit-backdrop-filter: saturate(1.1) blur(8px); backdrop-filter: saturate(1.1) blur(8px); border-bottom: 1px solid var(--hair-2); }
 .reader-bar .rd-side { display: flex; align-items: center; gap: 8px; }
 .reader-bar .rd-left { justify-self: start; }
 .reader-bar .rd-right { justify-self: end; }
-.reader-bar .rd-ic { -webkit-appearance: none; appearance: none; border: 1px solid var(--hair-2); background: var(--paper); color: var(--ink-soft); width: 36px; height: 36px; border-radius: 8px; font-size: 21px; line-height: 1; display: grid; place-items: center; flex: none; padding: 0 0 2px; transition: background .12s, color .12s, border-color .12s, opacity .12s; }
+.reader-bar .rd-modes, .reader-bar .rd-tools { display: flex; align-items: center; gap: 8px; }
+.reader-bar .rd-ic { -webkit-appearance: none; appearance: none; border: 1px solid var(--hair-2); background: var(--paper); color: var(--ink-soft); width: 44px; height: 44px; border-radius: 8px; font-size: 21px; line-height: 1; display: grid; place-items: center; flex: none; padding: 0 0 2px; transition: background .12s, color .12s, border-color .12s, opacity .12s; }
 .reader-bar .rd-ic:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 .reader-bar .rd-ic.close { font-size: 15px; padding: 0; }
 .reader-bar .rd-ic.play { color: var(--accent); font-size: 14px; padding: 0; }
 .reader-bar .rd-ic:disabled { opacity: .28; cursor: default; }
+.reader-bar .rd-ic[hidden] { display: none; }
 .reader-bar .rd-ic:disabled:hover { background: var(--paper); border-color: var(--hair-2); color: var(--ink-soft); }
 .reader-bar .rd-title { justify-self: center; text-align: center; line-height: 1.12; min-width: 0; padding: 0 8px; }
 .reader-bar .rd-title .he { font-family: var(--serif-he); direction: rtl; font-size: 24px; font-weight: 700; display: block; letter-spacing: .02em; }
 .reader-bar .rd-title .en { font-family: var(--sans); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-top: 2px; }
 .reader-bar .rd-seg { flex: none; }
-.reader-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 16px 24px 48px; max-width: 1040px; margin: 0 auto; width: 100%; }
+.reader-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 16px calc(24px + env(safe-area-inset-right, 0px)) 48px calc(24px + env(safe-area-inset-left, 0px)); max-width: 1040px; margin: 0 auto; width: 100%; }
 /* full-screen daf uses the width; single-column reading text stays a comfortable measure, centered */
 .reader-body .amud { max-width: 760px; margin-left: auto; margin-right: auto; }
 .reader-body .dafpage { max-width: 100%; }
 html.player-on .reader-body { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
-/* phone layout (is-phone = viewport 680px OR forced phone view) */
-html.is-phone .reader-bar { gap: 8px 6px; padding-left: 10px; padding-right: 10px; }
-html.is-phone .reader-bar .rd-right { grid-column: 1 / -1; justify-self: center; }
+/* compact reading layout (is-phone = viewport 960px OR forced phone view) */
+html.is-phone .reader-bar { grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 8px 6px; padding-left: calc(10px + env(safe-area-inset-left, 0px)); padding-right: calc(10px + env(safe-area-inset-right, 0px)); }
+html.is-phone .reader-bar .rd-title { grid-column: 2; }
+html.is-phone .reader-bar .rd-right { grid-column: 1 / -1; justify-self: stretch; width: 100%; flex-direction: column; justify-content: center; gap: 7px; }
+html.is-phone .reader-bar .rd-modes, html.is-phone .reader-bar .rd-tools { justify-content: center; width: 100%; }
 html.is-phone .reader-bar .rd-title .he { font-size: 18px; }
-html.is-phone .reader-body { padding: 12px 14px 48px; }
+html.is-phone .reader-body { padding: 12px calc(14px + env(safe-area-inset-right, 0px)) 48px calc(14px + env(safe-area-inset-left, 0px)); }
+
+/* Tablet readers keep the readable one-source page, but their toolbar has room
+   for a single calm row. Decoupling the chrome from the 960px text breakpoint
+   prevents a one-pixel resize from gaining or losing an entire toolbar row. */
+@media (min-width: 700px) and (max-width: 960px) {
+  html.is-phone .reader-bar { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; padding-left: calc(18px + env(safe-area-inset-left, 0px)); padding-right: calc(18px + env(safe-area-inset-right, 0px)); }
+  html.is-phone .reader-bar .rd-title { grid-column: 2; }
+  html.is-phone .reader-bar .rd-right { grid-column: 3; justify-self: end; width: auto; flex-direction: row; justify-content: flex-end; gap: 8px; }
+  html.is-phone .reader-bar .rd-modes, html.is-phone .reader-bar .rd-tools { width: auto; }
+}
+/* Just above the one-source breakpoint the desktop grid is already one row,
+   but the full labels still need the tablet measure. Keep that row at the same
+   height until the standard labels genuinely fit, avoiding a 960/961px cliff. */
+@media (min-width: 700px) and (max-width: 1199px) {
+  .reader-bar .rd-modes .seg button { padding: 5px 8px; font-size: 12px; white-space: nowrap; }
+  .reader-bar .rd-modes .seg button .seg-he { font-size: 15px; }
+}
 
 
 .amud { margin: 18px 0 24px; }
@@ -331,10 +366,34 @@ html.is-phone .reader-body { padding: 12px 14px 48px; }
 .daf-loading { text-align: center; color: var(--ink-faint); padding: 34px; font-style: italic; }
 
 /* ---------- "Daf" layout — Tzuras Hadaf (Gemara center · Rashi + Tosafos margins) ---------- */
-.dafpage { border: 1px solid var(--hair-2); border-radius: 6px; padding: 16px 16px 10px; margin: 16px 0 24px; background: linear-gradient(#fdfbf4, #fbf8ee); box-shadow: 0 1px 0 var(--hair); }
+.dafpage {
+  position: relative; border: 1px solid var(--leaf-edge); border-block-color: var(--leaf-rule); border-radius: 2px;
+  padding: 16px 16px 10px; margin: 16px 0 24px;
+  background:
+    linear-gradient(90deg, rgba(76,62,38,.025), transparent 22px, transparent calc(100% - 22px), rgba(76,62,38,.025)),
+    linear-gradient(180deg, var(--leaf-paper), #faf6e9);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.68),
+    inset 0 0 24px rgba(76,62,38,.025),
+    0 1px 0 rgba(55,48,36,.14),
+    0 9px 24px -22px rgba(33,30,24,.55);
+}
 /* the leaf's running head — masechta and daf spread across the top, as printed */
-.dafpage-label { font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 19px; font-weight: 700; color: var(--accent); margin-bottom: 14px; letter-spacing: .12em; border-bottom: 1px solid var(--hair); padding-bottom: 9px; }
+.dafpage-label {
+  font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 19px; font-weight: 700; color: var(--accent);
+  margin-bottom: 15px; letter-spacing: .12em; border-bottom: 1px solid var(--leaf-rule); padding: 0 3px 9px;
+  box-shadow: 0 3px 0 -2px rgba(145,136,117,.32);
+}
 .dafpage-label .lbl-t-mas { color: var(--ink); font-weight: 700; margin-left: 14px; }
+.dafpage-label.page-running-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; direction: ltr; }
+.page-running-head .lbl-t { grid-column: 2; direction: rtl; white-space: nowrap; }
+.page-running-head .source-key { font-family: var(--serif-he); direction: rtl; color: #625c4f; font-size: 11px; font-weight: 600; letter-spacing: .045em; opacity: .92; }
+.page-running-head .key-tosafos { grid-column: 1; text-align: left; }
+.page-running-head .key-rashi { grid-column: 3; text-align: right; }
+:is(.leaf-book, .pf-inner).side-right .page-running-head .key-rashi { grid-column: 1; grid-row: 1; text-align: left; }
+:is(.leaf-book, .pf-inner).side-right .page-running-head .key-tosafos { grid-column: 3; grid-row: 1; text-align: right; }
+html.is-phone .page-running-head .source-key { display: none; }
+html.is-phone .dafpage-label.page-running-head { display: flex; justify-content: center; }
 .dafpage-grid { display: grid; grid-template-columns: 1fr 1.75fr 1fr; gap: 18px; direction: rtl; align-items: start; }
 .dafpage-grid .col { direction: rtl; min-width: 0; }
 .col-h { font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-faint); border-bottom: 1px solid var(--hair); padding-bottom: 5px; margin-bottom: 9px; letter-spacing: .03em; }
@@ -343,47 +402,60 @@ html.is-phone .reader-body { padding: 12px 14px 48px; }
    column gets the big square-letter treatment of a real page */
 .col.side .comm { font-family: var(--serif-rashi); direction: rtl; text-align: justify; font-size: calc(14px * var(--daf-scale, 1)); line-height: 1.7; margin: 0 0 9px; color: #3a362d; }
 .col.side .comm b { color: var(--ink); font-weight: 700; }
+.col.side .comm-transition { margin: 10px 4px; padding: 6px 3px; border-block: 1px solid var(--hair); font-family: var(--serif-he); font-size: .78em; line-height: 1.45; text-align: center; color: var(--ink-faint); }
 /* only the FIRST WORD of the opening dibbur gets the big square letters, as printed */
 .col.side .dh0 { font-family: var(--serif-he); font-size: 1.7em; line-height: 1.05; font-weight: 700; }
 .gem .gm0 { font-size: 1.6em; line-height: 1.05; font-weight: 700; }   /* the amud's opening word */
 .col-empty { color: var(--hair-2); text-align: center; font-size: 18px; padding: 10px 0; }
 
 /* ---------- classic tzuras-hadaf shape (all non-phone widths) ----------
-   Rashi and Tosafos open WIDE across the top of the page; the gemara begins a
-   header-band lower, centered; the commentaries run as narrow columns flanking
-   it (the .cv float, sized by sizeDafCarves() to the gemara's exact height,
-   carves the center out of each side); and wherever the gemara ends, the
-   commentary text widens back out — the printed page's silhouette. */
-html:not(.is-phone) .dafpage-grid.classic { grid-template-columns: 100%; gap: 0; --dc-head: calc(96px * var(--daf-scale, 1)); }
+   The three streams open together in their traditional quarter / half /
+   quarter proportions. The .cv floats, sized by sizeDafCarves(), keep Rashi
+   and Tosafos on the margins while Gemara is alive; wherever a stream ends,
+   the survivors widen into its space — the printed page's silhouette. */
+html:not(.is-phone) .dafpage-grid.classic { grid-template-columns: 100%; gap: 0; --dc-head: 0px; }
 html:not(.is-phone) .dafpage-grid.classic .col-h { display: none; }   /* the real page has no column labels — the running head carries it */
 html:not(.is-phone) .dafpage-grid.classic .col.side,
 html:not(.is-phone) .dafpage-grid.classic .col.gemara { border: 0; margin: 0; grid-area: 1 / 1 / 2 / 2; width: 100%; }
 html:not(.is-phone) .dafpage-grid.classic .col.gemara { margin-top: var(--dc-head); }
 /* every stream is full-width; the carves reserve where the OTHERS still live.
-   Sides: cv0 = header half, cv = column-while-gemara-lives, cv2 = half-while-the-
+   Sides: cv = column-while-gemara-lives, cv2 = half-while-the-
    other-side-lives. Gemara: cvg r/l = off each flank while that flank lives.
    Heights come from sizeDafCarves; widths here set the printed proportions. */
-html:not(.is-phone) .dafpage-grid.classic .cv0 { float: left; width: 51%; height: var(--dc-head); }
 html:not(.is-phone) .dafpage-grid.classic .cv { float: left; clear: left; width: 77%; height: 0; }
 html:not(.is-phone) .dafpage-grid.classic .cv2 { float: left; clear: left; width: 51%; height: 0; }
-html:not(.is-phone) .dafpage-grid.classic .tosafos .cv0 { float: right; }
 html:not(.is-phone) .dafpage-grid.classic .tosafos .cv { float: right; clear: right; }
 html:not(.is-phone) .dafpage-grid.classic .tosafos .cv2 { float: right; clear: right; }
+/* On amud ב the gutter moves left, so Rashi follows it inward and Tosafos moves outward. */
+html:not(.is-phone) :is(.leaf-book, .pf-inner).side-right .dafpage-grid.classic .rashi .cv,
+html:not(.is-phone) :is(.leaf-book, .pf-inner).side-right .dafpage-grid.classic .rashi .cv2 { float: right; clear: right; }
+html:not(.is-phone) :is(.leaf-book, .pf-inner).side-right .dafpage-grid.classic .tosafos .cv,
+html:not(.is-phone) :is(.leaf-book, .pf-inner).side-right .dafpage-grid.classic .tosafos .cv2 { float: left; clear: left; }
 html:not(.is-phone) .dafpage-grid.classic .cvg { height: 0; }
 html:not(.is-phone) .dafpage-grid.classic .cvg.r { float: right; width: 26.5%; }
 html:not(.is-phone) .dafpage-grid.classic .cvg.l { float: left; width: 26.5%; }
-html:not(.is-phone) .dafpage-grid.classic .cv0, html:not(.is-phone) .dafpage-grid.classic .cv,
-html:not(.is-phone) .dafpage-grid.classic .cv2, html:not(.is-phone) .dafpage-grid.classic .cvg { pointer-events: none; }
-/* the phone column selector is hidden on wider screens (all 3 columns show) */
-.daf-colhead { display: none; }
-/* phone layout (is-phone = viewport 680px OR forced phone view) */
+html:not(.is-phone) .dafpage-grid.classic .cv, html:not(.is-phone) .dafpage-grid.classic .cv2,
+html:not(.is-phone) .dafpage-grid.classic .cvg { pointer-events: none; }
+/* One operating rail is stable above the paper at every width. The leaf may
+   change sides; these controls never travel with it or chase a variable label. */
+.daf-colhead { display: flex; flex-direction: column; align-items: center; gap: 5px; direction: ltr;
+  position: sticky; top: var(--bar-h, 65px); z-index: 24; margin: 0 0 12px; padding: 7px 8px;
+  background: color-mix(in srgb, var(--paper) 94%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--hair); transition: top .25s cubic-bezier(.4,0,.2,1), box-shadow .2s; }
+.daf-flip-row { width: min(100%, 360px); display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 10px; direction: ltr; }
+.daf-flip-row .next { grid-column: 1; }
+.daf-flip-row .prev { grid-column: 3; }
+.daf-flip-lbl { grid-column: 2; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-family: var(--serif-he); direction: rtl; font-size: 19px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
+.daf-cols-row { display: none; }
+.reader-body .daf-colhead { top: 0; }
+html.dy-min .daf-colhead { top: 0; box-shadow: 0 8px 16px -12px rgba(33,30,24,.45); }
+/* compact reading layout (is-phone = viewport 960px OR forced phone view) */
 html.is-phone .dafpage { padding: 14px 13px 10px; }
-html.is-phone .dafpage-label .pageflip { display: none; }
 html.is-phone .dafpage-grid { grid-template-columns: 1fr; gap: 0; }
 html.is-phone .col-gemara .dafpage-grid .col:not(.gemara), html.is-phone .col-rashi .dafpage-grid .col:not(.rashi), html.is-phone .col-tosafos .dafpage-grid .col:not(.tosafos) { display: none; }
 html.is-phone .dafpage-grid .col.side { border-top: 0; padding-top: 0; margin-top: 0; }
-html.is-phone .dafpage-grid .cv0, html.is-phone .dafpage-grid .cv,
-html.is-phone .dafpage-grid .cv2, html.is-phone .dafpage-grid .cvg { display: none; }   /* the carve floats are a desktop-shape device only */
+html.is-phone .dafpage-grid .cv, html.is-phone .dafpage-grid .cv2,
+html.is-phone .dafpage-grid .cvg { display: none; }   /* the carve floats are a desktop-shape device only */
 html.is-phone .dafpage-label { font-size: 17px; letter-spacing: .06em; }
 html.is-phone .col.gemara .gem { font-size: calc(20px * var(--daf-scale, 1)); line-height: 1.9; }
 html.is-phone .col.side .comm { font-size: calc(18px * var(--daf-scale, 1)); line-height: 1.78; }
@@ -395,15 +467,16 @@ html.is-phone .daf-colhead { display: flex; flex-direction: column; align-items:
     margin: 0 0 14px; padding: 9px 6px; background: var(--paper); border-bottom: 1px solid var(--hair);
     transition: top .25s cubic-bezier(.4, 0, .2, 1), box-shadow .25s ease; }
 html.is-phone .reader-body .daf-colhead { top: 0; }
-html.is-phone .daf-flip-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
+html.is-phone .daf-flip-row { display: grid; align-items: center; gap: 10px; }
 html.is-phone .daf-flip-lbl { font-family: var(--serif-he); direction: rtl; font-size: 21px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
-html.is-phone .daf-cols-row { display: flex; align-items: baseline; justify-content: center; gap: 26px; }
+html.is-phone .daf-cols-row { width: min(100%, 360px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: baseline; gap: 0; }
 html.is-phone .daf-colhead .col-tab { -webkit-appearance: none; appearance: none; background: none; cursor: pointer;
-    font-family: var(--serif-he); font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: .01em;
-    color: var(--ink-faint); min-height: 42px; padding: 5px 10px 4px; border: 0; border-bottom: 2px solid transparent;
+    width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--serif-he); font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: .01em;
+    color: var(--ink-faint); min-height: 44px; padding: 5px 10px 4px; border: 0; border-bottom: 2px solid transparent;
     transition: color .16s, border-color .16s; }
 html.is-phone .daf-colhead .col-tab:hover { color: var(--accent-2); }
 html.is-phone .daf-colhead .col-tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+html.is-phone .daf-colhead .col-tab:disabled { opacity: .3; cursor: default; border-bottom-color: transparent; }
 
 
 /* ---------- Sponsor ---------- */
@@ -450,6 +523,8 @@ html.is-phone .daf-colhead .col-tab.on { color: var(--accent); border-bottom-col
 .mask.open { opacity: 1; pointer-events: auto; }
 .menu { position: fixed; top: 0; left: 0; height: 100%; width: min(300px, 86vw); background: var(--paper); border-right: 1px solid var(--hair-2); box-shadow: 8px 0 40px -8px rgba(33,30,24,.35); z-index: 65; transform: translateX(-100%); transition: transform .24s ease; overflow-y: auto; }
 .menu.open { transform: none; }
+.menu .menu-close { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--ink-soft); font-size: 15px; z-index: 1; }
+.menu .menu-close:hover { background: var(--paper-2); color: var(--accent); }
 .menu .mtitle { font-family: var(--serif-he); direction: rtl; font-size: 24px; font-weight: 700; padding: calc(24px + env(safe-area-inset-top, 0px)) 22px 6px; }
 .menu .msub { font-family: var(--sans); padding: 0 22px 16px; font-size: 12px; color: var(--ink-faint); border-bottom: 1px solid var(--hair); letter-spacing: .01em; }
 .menu nav { padding: 10px 0; }
@@ -462,7 +537,7 @@ html.is-phone .daf-colhead .col-tab.on { color: var(--accent); border-bottom-col
    so it actually looks like a phone (the player + toasts track --app too) ---------- */
 html.force-phone { --app: 460px; }
 html.force-phone #app { box-shadow: 0 0 0 1px rgba(33,30,24,.1), 0 24px 70px -20px rgba(33,30,24,.4); }
-@media (max-width: 680px) { .phoneview-mi { display: none; } }   /* on a real phone the toggle is pointless */
+@media (max-width: 960px) { .phoneview-mi { display: none; } }   /* compact screens already use the readable single-source layout */
 
 /* ---------- player — one compact bar for audio + video ----------
    A thin full-width scrub sits over a single control row: now-playing on the
@@ -574,12 +649,12 @@ html.is-narrow .daf-progress { flex-direction: column; gap: 7px; }
 
 
 /* ===== phone: compact chrome + collapse-on-scroll (maximize reading space) ===== */
-/* phone layout (is-phone = viewport 680px OR forced phone view) */
+/* compact reading layout (is-phone = viewport 960px OR forced phone view) */
 html.is-phone .bar { padding-top: calc(5px + env(safe-area-inset-top, 0px)); padding-bottom: 5px; gap: 6px; }
 html.is-phone .daf-colhead { gap: 3px; padding: 6px 6px 7px; margin: 0 0 12px; }
 html.is-phone .daf-flip-lbl { font-size: 19px; }
 html.is-phone .daf-colhead .col-tab { font-size: 19px; }
-html.is-phone .daf-cols-row { gap: 24px; }
+html.is-phone .daf-cols-row { gap: 0; }
 @keyframes dyColFade { from { opacity: .45; } to { opacity: 1; } }
 html.is-phone .col-switched .dafpage { animation: dyColFade .18s ease; }
 html.is-phone .player { padding: 7px 13px calc(8px + env(safe-area-inset-bottom, 0px)); }
@@ -594,9 +669,8 @@ html.is-phone .player .ctrls .pill { padding: 4px 9px; font-size: 11px; }
 html.is-phone .player .x { min-width: 28px; }
 html.is-phone #app.player-active { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
 html.is-phone .toast-wrap { bottom: calc(106px + env(safe-area-inset-bottom, 0px)); }
-html.is-phone.dy-min .bar { transform: translateY(-100%); }
+html.dy-min .bar { transform: translateY(-100%); }
 html.is-phone.dy-min .daf-colhead { top: 0; padding-top: calc(6px + env(safe-area-inset-top, 0px)); box-shadow: 0 8px 16px -12px rgba(33, 30, 24, .45); }
-html.is-phone.dy-min .daf-colhead .daf-flip-row { display: none; }   /* collapsed chrome: just the thin column switcher, as promised */
 
 /* ---------- Worksheets & sources (admin-uploaded PDFs/pictures per page) ---------- */
 .ws-list { margin: 4px 0 14px; }
@@ -639,18 +713,8 @@ html.is-narrow .navgrid { grid-template-columns: repeat(2, 1fr); }
 .adjacent .adj-cap { font-family: var(--sans); font-size: 9.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
 .adjacent .adj-row { display: inline-flex; align-items: center; gap: 6px; }
 
-/* ---------- catchword-style end-of-daf continuation (every mode) ---------- */
-.daf-endnav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 6px 0 8px; padding-top: 14px; border-top: 1px solid var(--hair); }
-.daf-endnav .en-btn { -webkit-appearance: none; appearance: none; font: inherit; background: none; border: 1px solid var(--hair-2); border-radius: 999px; color: var(--accent); font-family: var(--serif-he); font-size: 16px; padding: 7px 16px 9px; min-height: 42px; cursor: pointer; text-align: center; transition: background .13s, color .13s, border-color .13s; }
-.daf-endnav .en-btn .en-cap { display: block; font-family: var(--sans); font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 1px; }
-.daf-endnav .en-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
-.daf-endnav .en-btn:hover .en-cap { color: #f4d9d0; }
-.daf-endnav .en-btn:disabled { opacity: .25; pointer-events: none; }
-
-/* "reading ahead" notice — the in-place flip walked away from this page's daf */
-.read-ahead { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; background: var(--accent-soft); border: 1px solid #dcbcb6; border-radius: 6px; padding: 8px 12px; margin: 0 0 12px; font-size: 14.5px; color: var(--accent); }
-.read-ahead .he { font-family: var(--serif-he); font-weight: 700; }
-.read-ahead .textlink { color: var(--accent); }
+/* ---------- quiet end-of-amud catchword (navigation remains in the fixed rail) ---------- */
+.daf-endmark { display: flex; align-items: center; justify-content: center; color: var(--gold); margin: 16px 0 8px; padding-top: 12px; border-top: 1px solid var(--hair); font-size: 14px; }
 
 /* ---------- masechta list: orientation tools ---------- */
 .mas-tools { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 12px 0 2px; }
@@ -671,63 +735,76 @@ html.is-narrow .navgrid { grid-template-columns: repeat(2, 1fr); }
    any desktop size; plain גמרא/English text keeps its comfortable measure. */
 html:not(.is-phone) body { overflow-x: hidden; }
 html:not(.is-phone) .daf-read.has-spread { width: min(94vw, 1200px); position: relative; left: 50%; transform: translateX(-50%); }
+@media (min-width: 600px) {
+  html.is-phone:not(.force-phone) .daf-read.has-spread { width: min(92vw, 820px); position: relative; left: 50%; transform: translateX(-50%); }
+}
 html.is-wide:not(.is-phone) .reader-body { max-width: 1400px; }
 html:not(.is-phone) .daf-read.has-spread .col.side .comm { font-size: calc(15px * var(--daf-scale, 1)); }
-html:not(.is-phone) .daf-read.has-spread .dafpage-grid.classic { --dc-head: calc(102px * var(--daf-scale, 1)); }
+html:not(.is-phone) .daf-read.has-spread .dafpage-grid.classic { --dc-head: 0px; }
 html.is-phone .dafpage-label .lbl-t-mas { display: none; }   /* the phone colhead already names the masechta */
 
 /* ---------- the gutter: the fold, and the page facing it ----------
    Amud א sits on the LEFT page of the open sefer (fold on its right); amud ב on
    the RIGHT page (fold on its left). The peek beyond the fold is the real text
    of the facing page, blurred back to a suggestion — decoration only. */
-html:not(.is-phone) .leaf-book { display: flex; align-items: stretch; }
-html:not(.is-phone) .leaf-book > .dafpage { flex: 1 1 auto; min-width: 0; }
-html:not(.is-phone) .leaf-book.side-left { flex-direction: row; }           /* page, then the fold on its right */
-html:not(.is-phone) .leaf-book.side-right { flex-direction: row-reverse; }  /* the fold on its left */
+/* The reading canvas never changes x-position or width. Only the seam moves
+   from edge to edge, half-overlapping the fixed paper like a real binding. */
+html:not(.is-phone) .leaf-book { position: relative; display: flow-root; overflow: visible; }
+html:not(.is-phone) .leaf-book > .dafpage { width: 100%; min-width: 0; }
 .leaf-gutter { display: none; }
 html:not(.is-phone) .leaf-gutter {
-  display: block; position: relative; flex: 0 0 54px; margin: 16px 0 24px; overflow: hidden;
-  border-radius: 6px; background: linear-gradient(#fdfbf4, #faf6ea); border: 1px solid var(--hair-2); border-left: 0;
+  display: block; position: absolute; top: 16px; bottom: 24px; width: 36px; margin: 0; z-index: 3; overflow: hidden;
+  background: linear-gradient(180deg, var(--leaf-paper), #f8f2e4); border: 1px solid var(--leaf-edge); border-left: 0;
+  border-radius: 0 2px 2px 0; box-shadow: 2px 0 5px -4px rgba(33,30,24,.48);
 }
-html:not(.is-phone) .side-right .leaf-gutter { border: 1px solid var(--hair-2); border-right: 0; }
-.leaf-gutter .leaf-fold { position: absolute; top: 0; bottom: 0; width: 26px; z-index: 2;
-  background: linear-gradient(90deg, rgba(33,30,24,.16), rgba(33,30,24,.05) 55%, transparent); }
+html:not(.is-phone) .side-left > .leaf-gutter { left: auto; right: -18px; }
+html:not(.is-phone) .side-right > .leaf-gutter { left: -18px; right: auto; }
+html:not(.is-phone) .side-right .leaf-gutter { border: 1px solid var(--leaf-edge); border-right: 0; border-radius: 2px 0 0 2px; box-shadow: -2px 0 5px -4px rgba(33,30,24,.48); }
+.leaf-gutter .leaf-fold { position: absolute; top: 0; bottom: 0; width: 18px; z-index: 2;
+  background: linear-gradient(90deg, rgba(33,30,24,.2), rgba(33,30,24,.065) 54%, transparent); }
+.leaf-gutter .leaf-fold::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: var(--fold-ink); opacity: .8; }
 .side-left .leaf-gutter .leaf-fold { left: 0; }
+.side-left .leaf-gutter .leaf-fold::after { right: 0; box-shadow: -3px 0 6px rgba(33,30,24,.24); }
 .side-right .leaf-gutter .leaf-fold { right: 0; transform: scaleX(-1); }
-.leaf-gutter .leaf-peek { position: absolute; inset: 0 0 0 22px; overflow: hidden; opacity: .5; }
-.side-right .leaf-gutter .leaf-peek { inset: 0 22px 0 0; }
+.side-right .leaf-gutter .leaf-fold::after { right: 0; box-shadow: -3px 0 6px rgba(33,30,24,.24); }
+.leaf-gutter .leaf-peek { position: absolute; inset: 0 0 0 16px; overflow: hidden; opacity: .42; }
+.side-right .leaf-gutter .leaf-peek { inset: 0 16px 0 0; }
 .leaf-gutter .lp-txt { font-family: var(--serif-he); direction: rtl; text-align: justify; font-size: 13px; line-height: 1.7;
   color: #6b6558; filter: blur(1.1px); width: 300px; padding: 4px 6px;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 260px); mask-image: linear-gradient(90deg, transparent, #000 260px); }
-.side-left .leaf-gutter .lp-txt { margin-left: -246px; }   /* only the far edge of the facing page shows past the fold */
-.side-right .leaf-gutter .lp-txt { margin-right: -246px;
+.side-left .leaf-gutter .lp-txt { margin-left: -264px; }   /* only the far edge of the facing page shows past the fold */
+.side-right .leaf-gutter .lp-txt { margin-right: -264px;
   -webkit-mask-image: linear-gradient(270deg, transparent, #000 260px); mask-image: linear-gradient(270deg, transparent, #000 260px); }
 
 /* ---------- the two transitions ----------
    TURN (א↔ב, two sides of one leaf): the page pivots on the fold it touches.
-   SHIFT (ב↔א, two pages facing across the fold): nothing turns — the book slides.
-   Either way the live page settles in from the direction the book travelled. */
-.pflip { position: fixed; z-index: 70; pointer-events: none; perspective: 2000px; }
-.pflip .pf-dim { position: absolute; inset: 0; background: rgba(33,30,24,.12); opacity: 0; animation: pfDim .6s ease both; }
+   SHIFT (ב↔א, two pages facing across the fold): the canvas stays fixed and
+   only the seam crosses to the other edge. */
+.pflip { position: fixed; z-index: 70; pointer-events: none; perspective: 2000px; contain: layout paint style; will-change: transform; }
+.pflip .pf-dim { position: absolute; inset: 0; background: rgba(33,30,24,.08); opacity: 0; animation: pfDim .6s ease both; }
 .pflip .pf-leaf { position: absolute; inset: 0; transform-style: preserve-3d; }
 .pflip.turn-r .pf-leaf { transform-origin: 100% 50%; animation: pfTurnR .6s cubic-bezier(.34,.06,.3,1) both; }
 .pflip.turn-l .pf-leaf { transform-origin: 0% 50%; animation: pfTurnL .6s cubic-bezier(.34,.06,.3,1) both; }
-.pflip.out-left .pf-leaf { animation: pfOutLeft .46s cubic-bezier(.4,0,.25,1) both; }
-.pflip.out-right .pf-leaf { animation: pfOutRight .46s cubic-bezier(.4,0,.25,1) both; }
-.pflip .pf-face { position: absolute; inset: 0; overflow: hidden; background: var(--paper); box-shadow: 0 0 30px -6px rgba(33,30,24,.45); }
+.pflip .pf-face { position: absolute; inset: 0; overflow: hidden; background: var(--paper); box-shadow: 0 0 26px -8px rgba(33,30,24,.42); backface-visibility: hidden; }
+.pflip .pf-face::after { content: ""; position: absolute; top: 0; bottom: 0; width: 18%; pointer-events: none; opacity: .9; }
+.pflip.turn-r .pf-face::after { right: 0; background: linear-gradient(90deg, transparent, rgba(33,30,24,.2)); }
+.pflip.turn-l .pf-face::after { left: 0; background: linear-gradient(270deg, transparent, rgba(33,30,24,.2)); }
 .pflip .pf-inner { position: absolute; left: 0; right: 0; }
+.pflip button { visibility: hidden !important; }
 /* the flying clone must render exactly like the live page — its wrapper carries
    the daf-read/has-spread classes; inline styles pin its width and position */
 @keyframes pfTurnR { from { transform: rotateY(0deg); opacity: 1; } 62% { opacity: 1; } to { transform: rotateY(-96deg); opacity: 0; } }
 @keyframes pfTurnL { from { transform: rotateY(0deg); opacity: 1; } 62% { opacity: 1; } to { transform: rotateY(96deg); opacity: 0; } }
-@keyframes pfOutLeft { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-56%); opacity: 0; } }
-@keyframes pfOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(56%); opacity: 0; } }
 @keyframes pfDim { 30% { opacity: 1; } to { opacity: 0; } }
-/* the book settling under your eye */
-#dafText.bk-from-left > *, #rdBody.bk-from-left > * { animation: bkFromLeft .44s cubic-bezier(.25,.8,.35,1) both; }
-#dafText.bk-from-right > *, #rdBody.bk-from-right > * { animation: bkFromRight .44s cubic-bezier(.25,.8,.35,1) both; }
-@keyframes bkFromLeft { from { transform: translateX(-5%); opacity: .25; } to { transform: none; opacity: 1; } }
-@keyframes bkFromRight { from { transform: translateX(5%); opacity: .25; } to { transform: none; opacity: 1; } }
+.pflip.spine-shift .pf-leaf { animation: spineAcross .42s cubic-bezier(.4,0,.2,1) both; }
+.pflip.spine-shift .pf-face { box-shadow: 0 0 18px -5px rgba(33,30,24,.35); }
+.pflip.spine-shift .pf-face::after { display: none; }
+.pflip.spine-shift .leaf-gutter { display: block; position: static !important; width: 100%; height: 100%; margin: 0; }
+@keyframes spineAcross { from { transform: translateX(0); opacity: .82; } to { transform: translateX(var(--spine-travel)); opacity: 1; } }
+#dafText.spine-in-flight .leaf-gutter, #rdBody.spine-in-flight .leaf-gutter { opacity: 0; }
+#dafText.paper-refresh > .leaf-book, #dafText.paper-refresh > .amud,
+#rdBody.paper-refresh > .leaf-book, #rdBody.paper-refresh > .amud { animation: paperRefresh .2s ease both; }
+@keyframes paperRefresh { from { opacity: .72; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pflip { display: none; } }
 
 /* ---------- classic parsha page (chumash · targum · rashi) ---------- */
@@ -737,8 +814,141 @@ html:not(.is-phone) .side-right .leaf-gutter { border: 1px solid var(--hair-2); 
 html.is-phone .col.side .tg { font-size: calc(18px * var(--daf-scale, 1)); }
 .parsha-page .gem .chap-head:first-child { margin-top: 0; }
 
+/* Torah is aligned by verse, not three unrelated full-parsha streams. Every row
+   finishes before the next reference begins, so the side sources always describe
+   the Chumash beside them. */
+.shiur-disclosure { margin: 10px 0 4px; border: 1px solid var(--hair-2); border-radius: 6px; background: var(--paper); }
+.shiur-disclosure > summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; cursor: pointer; color: var(--accent); font-family: var(--sans); font-size: 13px; font-weight: 650; letter-spacing: .02em; list-style: none; }
+.shiur-disclosure > summary::-webkit-details-marker { display: none; }
+.shiur-disclosure > summary::after { content: "+"; font-size: 19px; font-weight: 400; }
+.shiur-disclosure[open] > summary::after { content: "−"; }
+.shiur-disclosure .rows { margin: 0 12px 8px; border-top: 1px solid var(--hair); }
+
+html:not(.is-phone) .parsha-colhead { display: flex; flex-direction: row; position: sticky; top: var(--bar-h, 65px); z-index: 24; align-items: center; justify-content: center; gap: 22px; direction: ltr; margin: 0 0 10px; padding: 8px 14px; background: color-mix(in srgb, var(--paper) 94%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border: 1px solid var(--hair); border-radius: 0 0 7px 7px; transition: top .25s cubic-bezier(.4,0,.2,1), box-shadow .2s; }
+html:not(.is-phone) .parsha-colhead .daf-flip-row { display: flex; align-items: center; }
+html:not(.is-phone) .parsha-colhead .daf-cols-row { display: none; }
+html:not(.is-phone) .parsha-colhead .daf-flip-lbl { font-family: var(--serif-he); direction: rtl; color: var(--accent); font-weight: 700; font-size: 18px; }
+html.dy-min:not(.is-phone) .parsha-colhead { top: 0; box-shadow: 0 9px 18px -14px rgba(33,30,24,.42); }
+.parsha-colhead .rail-fs { -webkit-appearance: none; appearance: none; width: 44px; height: 44px; display: grid; place-items: center; flex: none; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink-faint); transition: background .13s, color .13s; }
+.parsha-colhead .rail-fs:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.chapter-jump { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-faint); font-family: var(--sans); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.chapter-jump select { min-height: 38px; border: 1px solid var(--hair-2); border-radius: 999px; background: var(--paper); color: var(--ink); padding: 5px 30px 6px 13px; font-family: var(--serif-he); font-size: 16px; }
+
+.torah-page { padding: 16px 18px 18px; }
+.torah-source-head, .torah-verse { display: grid; grid-template-columns: 1fr 1.65fr 1fr; direction: rtl; }
+.torah-source-head { font-family: var(--serif-he); color: var(--ink-faint); font-size: 13px; font-weight: 700; text-align: center; letter-spacing: .035em; border-bottom: 1px solid var(--hair-2); padding: 0 0 7px; }
+html:not(.is-phone) #parshaText .torah-source-head { position: sticky; top: calc(var(--bar-h, 65px) + 62px); z-index: 23; margin: 0 -1px; padding: 7px 1px; background: var(--leaf-paper); box-shadow: 0 8px 14px -14px rgba(33,30,24,.42); }
+html.dy-min:not(.is-phone) #parshaText .torah-source-head { top: 62px; }
+.torah-chapter { margin: 0; scroll-margin-top: calc(var(--bar-h, 65px) + 96px); }
+.torah-chapter > .chap-head { font-size: calc(17px * var(--daf-scale, 1)); margin: 20px 0 10px; padding-top: 3px; }
+.torah-chapter:first-child > .chap-head { margin-top: 10px; }
+.torah-verse { align-items: stretch; border-top: 1px solid var(--hair); }
+.torah-verse:first-of-type { border-top-color: var(--hair-2); }
+.torah-cell { min-width: 0; padding: 12px 13px 14px; direction: rtl; }
+.torah-cell.gemara { border-inline: 1px solid var(--hair); background: rgba(255,255,255,.16); }
+.torah-cell.gemara .gem { font-family: var(--serif-he); direction: rtl; text-align: justify; font-size: calc(18px * var(--daf-scale, 1)); line-height: 1.9; }
+.torah-cell .tg { font-family: var(--serif-he); direction: rtl; text-align: justify; font-size: calc(15px * var(--daf-scale, 1)); line-height: 1.82; color: #3a362d; }
+.torah-cell .comm { font-size: calc(14px * var(--daf-scale, 1)); line-height: 1.7; margin-bottom: 8px; }
+.torah-cell .torah-rashi-flow { margin: 0; text-align: justify; }
+.torah-rashi-flow .rashi-comment { display: inline; }
+/* A classic commentary stream never throws away the remainder of a usable
+   line merely because the next dibbur begins. One em-space is the maximum
+   separation: if the opening will fit it continues there; normal wrapping
+   moves it to the next line when it will not. */
+.torah-rashi-flow .rashi-comment + .rashi-comment::before { content: "\2003"; }
+.torah-rashi-flow .rashi-explain-lead { white-space: nowrap; }
+.torah-cell .vnum { color: var(--accent); font-size: .65em; vertical-align: super; margin: 0 .16em; font-weight: 700; }
+.torah-single { display: block; max-width: 760px; margin: 0 auto; border-top: 0; }
+.torah-single .torah-cell.gemara { border: 0; border-bottom: 1px solid var(--hair); padding-inline: 4px; }
+.torah-he-only .torah-source-head { display: none; }
+
+html.is-phone .parsha-colhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding-bottom: 8px; }
+html.is-phone .parsha-colhead .daf-flip-row { grid-column: 1; grid-row: 1; display: flex; width: auto; justify-content: center; }
+html.is-phone .parsha-colhead .daf-cols-row { grid-column: 1 / -1; grid-row: 2; }
+html.is-phone .parsha-colhead .chapter-jump { grid-column: 2; grid-row: 1; min-height: 38px; }
+html.is-phone .torah-page { padding: 14px 13px 12px; }
+html.is-phone .torah-source-head { display: none; }
+html.is-phone .torah-verse { display: block; border-top: 0; }
+html.is-phone .torah-cell { padding: 10px 2px 14px; border: 0; border-bottom: 1px solid var(--hair); }
+html.is-phone .col-gemara .torah-verse > .col:not(.gemara),
+html.is-phone .col-rashi .torah-verse > .col:not(.rashi),
+html.is-phone .col-tosafos .torah-verse > .col:not(.tosafos) { display: none; }
+html.is-phone .torah-cell.gemara .gem { font-size: calc(20px * var(--daf-scale, 1)); line-height: 1.92; }
+html.is-phone .torah-cell .tg, html.is-phone .torah-cell .comm { font-size: calc(18px * var(--daf-scale, 1)); line-height: 1.78; }
+html.is-phone .torah-chapter > .chap-head { font-size: calc(17px * var(--daf-scale, 1)); margin-top: 16px; }
+
+/* Full-screen Torah is a focused reading surface, not an enlarged comparison
+   table. One source remains continuous at a comfortable measure; the fixed
+   source/chapter rail changes only the text beneath it. */
+.torah-reader .reader-bar { background: var(--paper); }
+.torah-reader .reader-torah-body { max-width: none; padding-top: 0; padding-inline: max(16px, calc((100vw - 800px) / 2)); }
+.torah-reader .reader-torah-body .parsha-colhead { display: flex; top: 0; margin-bottom: 0; border-inline: 0; border-radius: 0; }
+.torah-reader .reader-torah-body .parsha-colhead .daf-flip-row { display: none; }
+.torah-reader .reader-torah-body .parsha-colhead .daf-cols-row { display: grid !important; width: min(100%, 360px); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.torah-reader .reader-torah-body .parsha-colhead .col-tab { -webkit-appearance: none; appearance: none; min-width: 0; min-height: 44px; padding: 5px 9px 4px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--ink-faint); font-family: var(--serif-he); font-size: 19px; font-weight: 700; line-height: 1; }
+.torah-reader .reader-torah-body .parsha-colhead .col-tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+.torah-reader .reader-torah-body .torah-page { width: 100%; max-width: 760px; margin: 0 auto 24px; padding: 14px 4px 18px; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.torah-reader .reader-torah-body .torah-source-head { display: none; }
+.torah-reader .reader-torah-body .torah-verse { display: block; border-top: 0; }
+.torah-reader .reader-torah-body .torah-cell { padding: 11px 2px 15px; border: 0; border-bottom: 1px solid var(--hair); }
+.torah-reader .reader-torah-body.col-gemara .torah-verse > .col:not(.gemara),
+.torah-reader .reader-torah-body.col-rashi .torah-verse > .col:not(.rashi),
+.torah-reader .reader-torah-body.col-tosafos .torah-verse > .col:not(.tosafos) { display: none; }
+.torah-reader .reader-torah-body .torah-cell.gemara .gem { font-size: calc(20px * var(--daf-scale, 1)); line-height: 1.92; }
+.torah-reader .reader-torah-body .torah-cell .tg,
+.torah-reader .reader-torah-body .torah-cell .comm { font-size: calc(18px * var(--daf-scale, 1)); line-height: 1.78; }
+.torah-reader .reader-torah-body .col-empty { min-height: 1.78em; }
+/* Rashi is continuous commentary in the focused reader, not a comparison
+   table. Verse numbers retain orientation, while blank verses consume no row
+   and adjacent comments use the same restrained tab rhythm as a printed page. */
+.torah-reader .reader-torah-body.col-tosafos .torah-chapter { direction: rtl; text-align: justify; }
+.torah-reader .reader-torah-body.col-tosafos .torah-verse,
+.torah-reader .reader-torah-body.col-tosafos .torah-cell.tosafos,
+.torah-reader .reader-torah-body.col-tosafos .torah-rashi-flow { display: inline; border: 0; padding: 0; }
+.torah-reader .reader-torah-body.col-tosafos .torah-rashi-flow::before { content: "\2003"; }
+.torah-reader .reader-torah-body.col-tosafos .col-empty { display: none; min-height: 0; }
+
+@media (max-width: 560px) {
+  html.is-phone .torah-reader .reader-bar { grid-template-columns: 44px minmax(0, 1fr) 88px; }
+  html.is-phone .torah-reader .reader-bar .rd-title { grid-column: 2; grid-row: 1; overflow: hidden; }
+  html.is-phone .torah-reader .reader-bar .rd-right { grid-column: 3; grid-row: 1; justify-self: end; width: auto; flex-direction: row; }
+  html.is-phone .torah-reader .reader-bar .rd-tools { width: auto; }
+  html.is-phone .torah-reader .reader-torah-body { padding-top: 0; padding-left: calc(12px + env(safe-area-inset-left, 0px)); padding-right: calc(12px + env(safe-area-inset-right, 0px)); }
+  .torah-reader .reader-torah-body .parsha-colhead { flex-direction: column; gap: 5px; padding: 6px; }
+  .torah-reader .reader-torah-body .parsha-colhead .chapter-jump { min-height: 38px; }
+}
+@media (min-width: 361px) and (max-width: 560px) {
+  .torah-reader .reader-torah-body .parsha-colhead { flex-direction: row; gap: 7px; }
+  .torah-reader .reader-torah-body .parsha-colhead .daf-cols-row { flex: 1; width: auto; }
+  .torah-reader .reader-torah-body .parsha-colhead .chapter-jump > span { display: none; }
+  .torah-reader .reader-torah-body .parsha-colhead .chapter-jump select { width: 92px; padding-left: 8px; padding-right: 22px; }
+}
+
+@media (max-width: 380px) {
+  html.is-phone .reader-bar { row-gap: 6px; }
+  html.is-phone .reader-bar .rd-right { gap: 6px; }
+  html.is-phone .reader-bar .rd-modes .seg button { padding: 5px 8px; font-size: 12px; }
+  html.is-phone .reader-bar .rd-modes .seg button .seg-he { font-size: 15px; }
+}
+@media (max-width: 280px) {
+  html.is-phone .daf-daynav { grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 6px; }
+  html.is-phone .daf-daynav .daynav { width: 44px; min-width: 44px; padding-inline: 0; }
+  html.is-phone .daf-daynav .daynav .dn-t { display: none; }
+  html.is-phone .daf-toolbar #dafMode { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  html.is-phone .daf-toolbar #dafMode button { min-width: 0; padding: 5px 6px; font-size: 12px; }
+  html.is-phone .daf-toolbar #dafMode button:nth-child(3) { border-left: 0; border-top: 1px solid var(--hair-2); }
+  html.is-phone .daf-toolbar #dafMode button:nth-child(4) { border-top: 1px solid var(--hair-2); }
+  html.is-phone .reader-bar .rd-modes .seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 220px; }
+  html.is-phone .reader-bar .rd-modes .seg button { min-width: 0; overflow-wrap: anywhere; }
+  html.is-phone .reader-bar .rd-modes .seg button:nth-child(3) { border-left: 0; border-top: 1px solid var(--hair-2); }
+  html.is-phone .reader-bar .rd-modes .seg button:nth-child(4) { border-top: 1px solid var(--hair-2); }
+  html.is-phone .daf-colhead .col-tab { padding-inline: 2px; font-size: 17px; letter-spacing: 0; }
+  html.is-phone .torah-reader .reader-torah-body .parsha-colhead .col-tab { padding-inline: 2px; font-size: 17px; letter-spacing: 0; }
+}
+
 /* round/pill keyboard-focus shapes for the new controls */
-.daynav:focus-visible, .daf-endnav .en-btn:focus-visible, .learn-toggle:focus-visible, .adjacent button:focus-visible { border-radius: 999px; }
+.pageflip:focus-visible { border-radius: 50%; }
+.daynav:focus-visible, .learn-toggle:focus-visible, .adjacent button:focus-visible { border-radius: 999px; }
 
 /* solid fallbacks for the new color-mix-free rules are above; nothing here uses color-mix */
 
@@ -752,4 +962,3 @@ html.is-phone .col.side .tg { font-size: calc(18px * var(--daf-scale, 1)); }
     scroll-behavior: auto !important;
   }
 }
-

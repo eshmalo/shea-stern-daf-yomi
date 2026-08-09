@@ -30,11 +30,12 @@ const safeEn = s => esc((s ?? "").toString().replace(/<\/?span[^>]*>/gi, "").rep
 // Hebrew daf text carries Sefaria/Vilna markup too — <big><strong> on Mishnah-opening words + <br>; same escape-then-allowlist
 const safeHe = s => esc(s).replace(/&lt;(\/?(?:big|strong|b|i|em|br))&gt;/gi, "<$1>");
 const DY = window.DafYomi;
+const RM = window.DafReaderModel;
 
 const State = {
-  speaker: null, all: [], content: {}, media: {}, admin: {}, dafIndex: {}, dafCache: {}, commCache: {},
+  speaker: null, all: [], content: {}, media: {}, admin: {}, dafIndex: {}, dafCache: {}, commCache: {}, dafPending: {}, commPending: {},
   byDaf: new Map(), route: { name: "today" }, newIds: new Set(),
-  sponsor: { kind: null }, _dafCol: "gemara",
+  sponsor: { kind: null }, _dafCol: "gemara", _dafMode: "daf", _parCol: "gemara", _parMode: "daf",
 };
 
 /* ---------- utils ---------- */
@@ -273,16 +274,22 @@ function lastInProgress() {
 async function loadDafText(masechta) {
   const key = fileKey(masechta);
   if (State.dafCache[key]) return State.dafCache[key];
+  if (State.dafPending[key]) return State.dafPending[key];
   const info = State.dafIndex[masechta]; if (!info) return null;
-  try { const d = await fetch(`data/daf/${key}.json`).then(r => r.ok ? r.json() : null); if (!d) return null; State.dafCache[key] = d; return d; }
-  catch { return null; }
+  State.dafPending[key] = fetch(`data/daf/${key}.json`).then(r => r.ok ? r.json() : null)
+    .then(d => { if (d) State.dafCache[key] = d; return d; }).catch(() => null)
+    .finally(() => { delete State.dafPending[key]; });
+  return State.dafPending[key];
 }
 /* Rashi + Tosafos for the "Daf" (Tzuras Hadaf) layout — loaded lazily per masechta */
 async function loadDafComm(masechta) {
   const key = fileKey(masechta);
   if (State.commCache[key]) return State.commCache[key];
-  try { const d = await fetch(`data/daf/${key}.comm.json`).then(r => r.ok ? r.json() : {}); State.commCache[key] = d; return d; }
-  catch { return {}; }
+  if (State.commPending[key]) return State.commPending[key];
+  State.commPending[key] = fetch(`data/daf/${key}.comm.json`).then(r => r.ok ? r.json() : {})
+    .then(d => { State.commCache[key] = d || {}; return State.commCache[key]; }).catch(() => ({}))
+    .finally(() => { delete State.commPending[key]; });
+  return State.commPending[key];
 }
 
 /* =====================================================================
@@ -312,8 +319,9 @@ function renderShell() {
     <div class="player hidden" id="player"></div>
   </div>
   <div class="mask" id="mask"></div>
-  <aside class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Site menu"></aside>
+  <aside class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Site menu" inert aria-hidden="true"></aside>
   <div class="toast-wrap" id="toasts" aria-live="polite" aria-atomic="false"></div>
+  <div class="sr-only" id="readStatus" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="reader" id="reader" role="dialog" aria-modal="true" aria-labelledby="rdTitle" hidden aria-hidden="true"></div>`;
 
   $("#burger").onclick = openMenu; $("#mask").onclick = closeMenu;
@@ -329,7 +337,7 @@ function renderShell() {
 function setBarH() { const b = $(".bar"); if (b) document.documentElement.style.setProperty("--bar-h", b.offsetHeight + "px"); }
 function buildMenu() {
   const mh = State.content.masthead || {};
-  $("#menu").innerHTML = `<div class="mtitle">${esc(mh.hebrew || "")}</div><div class="msub">${esc(mh.english || State.speaker?.name || "")} · ${esc(mh.subtitle || "")}</div>
+  $("#menu").innerHTML = `<button class="menu-close" id="menuClose" aria-label="Close menu">✕</button><div class="mtitle">${esc(mh.hebrew || "")}</div><div class="msub">${esc(mh.english || State.speaker?.name || "")} · ${esc(mh.subtitle || "")}</div>
     <nav>
       <button class="mi" data-route="today">Today's Daf</button>
       <button class="mi" data-route="browse">Browse Shas</button>
@@ -345,6 +353,7 @@ function buildMenu() {
       <a class="mi" href="admin/" style="color:var(--ink-faint);font-size:13px">Site admin</a>
     </nav>`;
   $$("#menu .mi[data-route]").forEach(b => b.onclick = () => { closeMenu(); route(b.dataset.route); });
+  $("#menuClose").onclick = closeMenu;
   $("#phoneViewBtn").onclick = togglePhoneView;
 }
 // Phone view: switches the ACTUAL desktop UI to the real phone layout (one column at
@@ -352,10 +361,10 @@ function buildMenu() {
 // classes that the phone CSS keys on — no device mock-up, the whole UI changes.
 function applyViewportClasses() {
   const html = document.documentElement;
-  const m680 = window.matchMedia("(max-width: 680px)").matches;
+  const mCompact = window.matchMedia("(max-width: 960px)").matches;
   const m560 = window.matchMedia("(max-width: 560px)").matches;
   const w1000 = window.matchMedia("(min-width: 1000px)").matches;
-  html.classList.toggle("is-phone", m680 || _forcePhone);
+  html.classList.toggle("is-phone", mCompact || _forcePhone);
   html.classList.toggle("is-narrow", m560 || _forcePhone);
   html.classList.toggle("force-phone", _forcePhone);
   html.classList.toggle("is-wide", w1000 && !_forcePhone);   // wide desktop → roomier reader chrome
@@ -368,18 +377,35 @@ function bumpDafScale(dir) {
   _dafScale = Math.round(Math.min(1.6, Math.max(0.8, _dafScale + dir * 0.1)) * 10) / 10;
   try { localStorage.setItem("dy_dafscale", String(_dafScale)); } catch {}
   applyDafScale();
+  updateTextSizeControls(document);
   requestAnimationFrame(() => sizeDafCarves());   // the gemara reflows at the new scale — refit the carves to it
 }
-const tsizeHtml = () => `<span class="tsize" role="group" aria-label="Text size"><button data-tsize="-1" aria-label="Smaller text">א−</button><button data-tsize="1" aria-label="Larger text">א+</button></span>`;
+const tsizeHtml = () => `<span class="tsize" role="group" aria-label="Text size"><button data-tsize="-1" aria-label="Smaller text"${_dafScale <= .8 ? " disabled" : ""}>א−</button><span class="sr-only tsize-output" aria-live="polite">${Math.round(_dafScale * 100)}%</span><button data-tsize="1" aria-label="Larger text"${_dafScale >= 1.6 ? " disabled" : ""}>א+</button></span>`;
+function updateTextSizeControls(scope) {
+  (scope || document).querySelectorAll("[data-tsize]").forEach(b => { b.disabled = +b.dataset.tsize < 0 ? _dafScale <= .8 : _dafScale >= 1.6; });
+  (scope || document).querySelectorAll(".tsize-output").forEach(n => { n.textContent = `${Math.round(_dafScale * 100)}%`; });
+}
 function togglePhoneView() {
   _forcePhone = !_forcePhone;
   try { localStorage.setItem("dy_force_phone", _forcePhone ? "1" : "0"); } catch {}
   applyViewportClasses(); setBarH();
   const b = $("#phoneViewBtn"); if (b) b.textContent = _forcePhone ? "🖥️ Exit phone view" : "📱 Phone view";
   closeMenu(); window.scrollTo(0, 0);
+  requestAnimationFrame(() => sizeDafCarves());
 }
-function openMenu() { $("#menu").classList.add("open"); $("#mask").classList.add("open"); $("#burger")?.setAttribute("aria-expanded", "true"); $("#app")?.setAttribute("inert", ""); setTimeout(() => $("#menu .mi")?.focus(), 0); }
-function closeMenu() { const wasOpen = $("#menu")?.classList.contains("open"); $("#menu").classList.remove("open"); $("#mask").classList.remove("open"); $("#burger")?.setAttribute("aria-expanded", "false"); $("#app")?.removeAttribute("inert"); if (wasOpen) $("#burger")?.focus(); }
+function openMenu() {
+  const menu = $("#menu"); if (!menu || Reader.open) return;
+  menu.removeAttribute("inert"); menu.setAttribute("aria-hidden", "false"); menu.classList.add("open");
+  $("#mask").classList.add("open"); $("#burger")?.setAttribute("aria-expanded", "true"); $("#app")?.setAttribute("inert", "");
+  setTimeout(() => $("#menuClose")?.focus(), 0);
+}
+function closeMenu() {
+  const menu = $("#menu"), wasOpen = menu?.classList.contains("open");
+  menu?.classList.remove("open"); menu?.setAttribute("inert", ""); menu?.setAttribute("aria-hidden", "true");
+  $("#mask")?.classList.remove("open"); $("#burger")?.setAttribute("aria-expanded", "false");
+  if (!Reader.open) $("#app")?.removeAttribute("inert");
+  if (wasOpen) $("#burger")?.focus();
+}
 
 /* =====================================================================
    ROUTER
@@ -389,16 +415,47 @@ const _embedded = (() => { try { return window.top !== window.self; } catch { re
 let _forcePhone = false; try { _forcePhone = localStorage.getItem("dy_force_phone") === "1"; } catch {}   // desktop "phone view" toggle
 // The address bar always names the page (share a daf by copying the URL — the
 // universal WhatsApp gesture); routeFromHash() below accepts every form we emit.
+const DAF_MODE_KEYS = new Set(["daf", "he", "en", "both"]), DAF_SOURCE_KEYS = new Set(["gemara", "rashi", "tosafos"]);
+function normalizeReadSnapshot(read) {
+  if (!read || typeof read !== "object") return null;
+  const masechta = String(read.masechta || ""), daf = +read.daf, amud = String(read.amud || "");
+  const mm = DY.BYEN[masechta];
+  if (!mm || !Number.isInteger(daf) || daf < mm.firstDaf || daf > mm.lastDaf || !amudKeysFor(masechta, daf).includes(amud)) return null;
+  const mode = DAF_MODE_KEYS.has(read.mode) ? read.mode : "daf";
+  const source = DAF_SOURCE_KEYS.has(read.source) ? read.source : "gemara";
+  const out = { masechta, daf, amud, mode, source };
+  if (Number.isFinite(+read.y) && +read.y >= 0) out.y = +read.y;
+  return out;
+}
+function normalizeTorahSnapshot(read) {
+  if (!read || typeof read !== "object") return null;
+  const mode = read.mode === "he" ? "he" : "daf", source = DAF_SOURCE_KEYS.has(read.source) ? read.source : "gemara";
+  const out = { mode, source };
+  if (Number.isFinite(+read.y) && +read.y >= 0) out.y = +read.y;
+  if (read.anchor && /^\d+-\d+$/.test(String(read.anchor.ref || ""))) {
+    out.anchor = { ref: String(read.anchor.ref), offset: Number.isFinite(+read.anchor.offset) ? +read.anchor.offset : 0 };
+    if (Number.isFinite(+read.anchor.progress)) out.anchor.progress = Math.max(0, Math.min(1, +read.anchor.progress));
+  }
+  return out;
+}
 function hashFor(r) {
   const enc = encodeURIComponent;
   switch (r.name) {
-    case "daf": return "#daf=" + enc(r.id || "");
+    case "daf": {
+      let hash = "#daf=" + enc(r.id || ""), read = normalizeReadSnapshot(r.read);
+      if (read) hash += "&read=" + enc(`${read.masechta}|${read.daf}|${read.amud}`) + "&mode=" + enc(read.mode) + "&source=" + enc(read.source);
+      return hash;
+    }
     case "masechta": return "#masechta=" + enc(r.masechta || "");
     case "seder": return "#seder=" + enc(r.seder || "");
     case "browse": return "#browse";
     case "parsha": return "#chumash";
     case "sefer": return "#sefer=" + enc(r.sefer || "");
-    case "parshaS": return "#parsha=" + enc(r.parsha || "");
+    case "parshaS": {
+      let hash = "#parsha=" + enc(r.parsha || ""), torah = normalizeTorahSnapshot(r.torah);
+      if (torah) hash += "&pmode=" + enc(torah.mode) + "&psource=" + enc(torah.source);
+      return hash;
+    }
     case "holidays": return "#yomtov";
     case "holiday": return "#holiday=" + enc(r.series || "");
     case "topics": return "#shiurim";
@@ -413,6 +470,8 @@ function hashFor(r) {
 }
 const urlFor = r => location.pathname + location.search + hashFor(r);
 function route(name, params = {}, opts = {}) {
+  saveActiveReadingPosition();
+  clearTimeout(_readPersistTimer); _readPersistTimer = 0;
   const next = { name, ...params };
   const same = JSON.stringify(next) === JSON.stringify(State.route);
   if (name === "sponsor" && params.pre) State.sponsor = { ...params.pre, pre: { ...params.pre } };
@@ -424,7 +483,8 @@ function route(name, params = {}, opts = {}) {
   const st = { route: State.route, sponsor: State.sponsor, depth: _navDepth };
   try { replace ? history.replaceState(st, "", urlFor(next)) : history.pushState(st, "", urlFor(next)); } catch {}
   persistRoute();
-  rerender(); window.scrollTo(0, 0); updateBackBtn();
+  rerender({ skipSave: true }); window.scrollTo(0, 0); updateBackBtn();
+  if (name !== "search") requestAnimationFrame(focusPrimaryHeading);
 }
 // Header back: chronological when there is history; on a fresh deep link (depth 0,
 // e.g. a shared #daf= URL) it climbs to the page's natural parent instead of hiding.
@@ -449,7 +509,10 @@ function updateBackBtn() { const b = $("#backBtn"); if (b) b.hidden = _navDepth 
 // Remember the current page so a refresh returns to it (not Today). history.state
 // already survives reloads; sessionStorage is the fallback. Skipped inside the
 // phone-view iframe so it can't clobber the parent tab's saved page.
-function persistRoute() { if (_embedded) return; try { sessionStorage.setItem("dy_route", JSON.stringify({ route: State.route, sponsor: State.sponsor, depth: _navDepth })); } catch {} }
+function persistRoute() {
+  if (_embedded) return;
+  try { sessionStorage.setItem("dy_route", JSON.stringify({ route: State.route, sponsor: State.sponsor, depth: _navDepth, y: window.scrollY || 0, reader: readerHistorySnapshot() })); } catch {}
+}
 const KNOWN_ROUTES = new Set(["today", "browse", "seder", "masechta", "daf", "topics", "parsha", "sefer", "parshaS", "holidays", "holiday", "category", "search", "mystuff", "sponsor", "about", "donate"]);
 // Validate a route restored from history.state / sessionStorage before trusting it — a forged or
 // corrupt deep-link (bad route name, unknown masechta, out-of-range daf) falls back to Today instead.
@@ -471,40 +534,67 @@ function validRoute(r) {
 function routeFromHash() {
   const raw = String(location.hash || "").replace(/^#/, "");
   if (!raw) return null;
-  const i = raw.indexOf("=");
   const bare = { browse: "browse", chumash: "parsha", yomtov: "holidays", shiurim: "topics", search: "search", my: "mystuff", sponsor: "sponsor", donate: "donate", about: "about" };
-  if (i < 0) return bare[raw] ? { name: bare[raw] } : null;
-  let val = ""; try { val = decodeURIComponent(raw.slice(i + 1)); } catch { return null; }
-  const kind = raw.slice(0, i);
-  if (kind === "daf") return { name: "daf", id: val };
+  if (!raw.includes("=")) return bare[raw] ? { name: bare[raw] } : null;
+  let params; try { params = new URLSearchParams(raw); } catch { return null; }
+  const kind = [...params.keys()][0], val = params.get(kind) || "";
+  if (kind === "daf") {
+    const out = { name: "daf", id: val }, bits = String(params.get("read") || "").split("|");
+    if (bits.length >= 2) {
+      const masechta = bits[0], amud = bits[bits.length - 1];
+      const daf = bits.length >= 3 ? +bits[1] : (masechta === "Tamid" && amud === "25b" ? 26 : parseInt(amud, 10));
+      const read = normalizeReadSnapshot({ masechta, daf, amud, mode: params.get("mode"), source: params.get("source") });
+      if (read) out.read = read;
+    }
+    return out;
+  }
   if (kind === "masechta") return { name: "masechta", masechta: val };
   if (kind === "seder") return { name: "seder", seder: val };
   if (kind === "sefer") return { name: "sefer", sefer: val };
-  if (kind === "parsha") return { name: "parshaS", parsha: val };
+  if (kind === "parsha") {
+    const out = { name: "parshaS", parsha: val };
+    const torah = normalizeTorahSnapshot({ mode: params.get("pmode"), source: params.get("psource") });
+    if (params.has("pmode") || params.has("psource")) out.torah = torah;
+    return out;
+  }
   if (kind === "holiday") return { name: "holiday", series: val };
   if (kind === "cat") return { name: "category", cat: val.slice(0, 80) };
   return null;
 }
+function readerSnapshotMatchesDeepLink(snapshot, deep, savedRoute) {
+  const saved = normalizeReaderSnapshot(snapshot);
+  if (!saved || !deep || !savedRoute) return false;
+  if (saved.kind === "torah") return false;  // Torah readers do not rewrite the hash; ordinary route equality is sufficient
+  if (deep.name !== "daf" || savedRoute.name !== "daf" || deep.id !== savedRoute.id) return false;
+  const read = normalizeReadSnapshot(deep.read), expected = saved.read;
+  return !!read && read.masechta === expected.masechta && read.daf === expected.daf && read.amud === expected.amud
+    && read.mode === expected.mode && read.source === expected.source;
+}
 function restoreInitialRoute() {
   const deep = routeFromHash();
-  let st = history.state;
-  if (!_embedded && !(st && st.route && st.route.name)) { try { st = JSON.parse(sessionStorage.getItem("dy_route") || "null"); } catch { st = null; } }
+  let st = history.state, fromSession = false;
+  if (!_embedded && !(st && st.route && st.route.name)) { try { st = JSON.parse(sessionStorage.getItem("dy_route") || "null"); fromSession = !!st; } catch { st = null; } }
   const stValid = !!(st && st.route && validRoute(st.route));
-  if (deep && validRoute(deep) && !(stValid && hashFor(st.route) === hashFor(deep))) {
+  const sameSavedSurface = !!deep && stValid && (hashFor(st.route) === hashFor(deep) || readerSnapshotMatchesDeepLink(st.reader, deep, st.route));
+  if (deep && validRoute(deep) && !sameSavedSurface) {
     route(deep.name, deep, { replace: true });   // the hash stays — the URL is the share link
     return;
   }
   if (stValid) {
+    const savedReader = normalizeReaderSnapshot(st.reader);
     State.route = st.route;
     if (st.sponsor) State.sponsor = st.sponsor;
     _navDepth = typeof st.depth === "number" ? st.depth : 0;
-    try { history.replaceState({ route: State.route, sponsor: State.sponsor, depth: _navDepth }, "", urlFor(State.route)); } catch {}
-    rerender(); window.scrollTo(0, 0); updateBackBtn();
+    _pendingY = typeof st.y === "number" ? st.y : (normalizeReadSnapshot(st.route.read)?.y ?? normalizeTorahSnapshot(st.route.torah)?.y ?? null);
+    try { history.replaceState({ route: State.route, sponsor: State.sponsor, depth: _navDepth, y: _pendingY ?? 0, ...(!fromSession && savedReader ? { reader: savedReader } : {}) }, "", urlFor(State.route)); } catch {}
+    rerender({ skipSave: true }); window.scrollTo(0, 0); updateBackBtn();
+    if (_pendingY != null && State.route.name !== "daf" && State.route.name !== "parshaS") consumePendingY();
+    if (savedReader) requestAnimationFrame(() => restoreReaderFromSnapshot(savedReader, { push: fromSession }));
   } else { route("today", {}, { replace: true }); }
 }
 let _pendingY = null;   // Back-restore scroll target; async views (daf/parsha) re-apply it after their text hydrates
 window.addEventListener("popstate", e => {
-  const st = e.state;
+  const st = e.state, savedReader = normalizeReaderSnapshot(st?.reader);
   if (Reader.open) {   // Back closes the full-screen reader; if the pop went PAST the reader's own entry (multi-entry jump), fall through and apply it
     hideReader();
     if (st && st.route && st.depth === _navDepth && JSON.stringify(st.route) === JSON.stringify(State.route)) return;
@@ -521,16 +611,33 @@ window.addEventListener("popstate", e => {
   persistRoute();
   closeMenu();
   _pendingY = (st && typeof st.y === "number") ? st.y : 0;
-  rerender();
+  rerender({ skipSave: true });
   window.scrollTo(0, _pendingY);   // Back returns to the spot you left, not the top (async views re-apply after hydrate)
   updateBackBtn();
+  if (savedReader) requestAnimationFrame(() => restoreReaderFromSnapshot(savedReader));
+  else if (State.route.name !== "search") requestAnimationFrame(focusPrimaryHeading);
 });
-function rerender() {
+function focusPrimaryHeading() {
+  const h = $("#view [role=heading][aria-level='1'], #view h1");
+  if (!h) return;
+  h.setAttribute("tabindex", "-1");
+  try { h.focus({ preventScroll: true }); } catch { h.focus(); }
+}
+function pageTitle(r) {
+  if (r.name === "daf") { const [m, d] = String(r.id || "").split("|"); return `${m || "Daf Yomi"} · Daf ${d || ""} · Rabbi Shea Stern`; }
+  if (r.name === "parshaS") return `${pDisp(r.parsha)} · Chumash · Rabbi Shea Stern`;
+  if (r.name === "masechta") return `${r.masechta} · Rabbi Shea Stern`;
+  return "Rabbi Shea Stern · Daf Yomi";
+}
+function rerender({ skipSave = false } = {}) {
   const v = $("#view"); if (!v) return;
+  if (!skipSave) saveActiveReadingPosition();
   if (Player.isVideo) Player.hide();                         // an in-page video can't survive a view swap — save its spot and drop the bar
   $$("#view video").forEach(vid => { try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {} });   // flush any in-page video before the view is replaced (no detached audio)
   resetReadMin();                                            // a fresh view starts with full top chrome
   const r = State.route;
+  document.documentElement.classList.toggle("reading-view", r.name === "daf" || r.name === "parshaS");
+  document.title = pageTitle(r);
   const fn = { today: viewToday, browse: viewBrowse, seder: viewSeder, masechta: viewMasechta, daf: viewDaf, topics: viewTopics, parsha: viewParsha, sefer: viewSefer, parshaS: viewParshaShiurim, holidays: viewHolidays, holiday: viewHoliday, category: viewCategory, search: viewSearch, mystuff: viewMyStuff, sponsor: viewSponsor, about: viewAbout, donate: viewDonate }[r.name] || viewToday;
   v.innerHTML = `<div class="view">${fn(r)}</div>`;
   wireView(r);
@@ -722,7 +829,9 @@ function viewDaf(r) {
   if (!r.id || r.id.indexOf("|") < 0) return `<div class="empty-mini">Select a daf to read.</div>`;
   const [masechta, dafS] = r.id.split("|"); const daf = +dafS;
   const m = DY.BYEN[masechta], shiur = shiurFor(masechta, daf);
-  const mode = r.mode || State._dafMode || "daf";
+  const read = normalizeReadSnapshot(r.read), mode = read?.mode || r.mode || State._dafMode || "daf";
+  const readMas = read?.masechta || masechta, readDaf = read?.daf || daf, readAmud = read?.amud || amudKeysFor(readMas, readDaf)[0];
+  State._dafMode = mode; State._dafCol = read?.source || State._dafCol || "gemara";
   const heT = `${m ? m.he : masechta} ${heDaf(daf)}`;
   const lrn = isLearned(masechta, daf);
   const learnCtl = `<div class="daf-progress">
@@ -751,7 +860,7 @@ function viewDaf(r) {
     `<div class="daf-head">
        <div class="daf-daynav">
          <button class="daynav next" data-daynav="1" aria-label="Next daf — whole page" title="Next daf (whole page)"${dafStep(masechta, daf, 1) ? "" : " disabled"}>‹<span class="dn-t" lang="he">${dnLbl(masechta, daf, 1)}</span></button>
-         <div class="daf-head-titles"><div class="he" lang="he">${esc(heT)}</div><div class="en">${esc(masechta)} · Daf ${daf}</div></div>
+         <div class="daf-head-titles"><div class="he" lang="he" role="heading" aria-level="1">${esc(heT)}</div><div class="en">${esc(masechta)} · Daf ${daf}</div></div>
          <button class="daynav prev" data-daynav="-1" aria-label="Previous daf — whole page" title="Previous daf (whole page)"${dafStep(masechta, daf, -1) ? "" : " disabled"}><span class="dn-t" lang="he">${dnLbl(masechta, daf, -1)}</span>›</button>
        </div>
        ${shiur ? `<div class="meta">Given ${dateLine(shiur.recorded || shiur.posted)} · ${fmtDur(shiur.duration)}</div>` : ""}</div>
@@ -762,7 +871,7 @@ function viewDaf(r) {
        <button class="fs-btn" id="dafFsBtn" aria-label="Read full screen" title="Read full screen — the daf fills the screen while the shiur keeps playing">${svgExpand(14)}<span class="fs-lbl">Full screen</span></button>
      </div>
      <div class="daf-read">
-       <div id="dafText" data-mas="${esc(masechta)}" data-daf="${daf}" data-amud="${esc(amudKeysFor(masechta, daf)[0])}" data-mode="${mode}"><div class="daf-loading">Loading the daf…</div></div>
+       <div id="dafText" role="region" aria-label="Daf text" aria-busy="true" aria-keyshortcuts="ArrowLeft ArrowRight" data-mas="${esc(readMas)}" data-daf="${readDaf}" data-amud="${esc(readAmud)}" data-mode="${mode}"><div class="daf-loading">Loading the daf…</div></div>
      </div>
      ${worksheetsHtml(pk)}${learnCtl}${sponsorLine}`;
 }
@@ -770,39 +879,48 @@ function viewDaf(r) {
 // Build the inner HTML for one daf in a given mode — shared by the in-page
 // reading region (#dafText) and the full-screen reader overlay.
 async function dafBodyHtml(masechta, daf, mode, amud) {
-  const data = await loadDafText(masechta);
   const keys = amudKeysFor(masechta, daf);
   const key = keys.indexOf(String(amud)) >= 0 ? String(amud) : keys[0];
+  const textPromise = loadDafText(masechta);
+  const commPromise = mode === "daf" ? loadDafComm(masechta) : Promise.resolve({});
+  const data = await textPromise;
   if (!data) {
     const special = { Shekalim: "Shekalim is learned from the Talmud Yerushalmi, which isn't in the native reader yet.", Kinnim: "Kinnim is a Mishnah-only masechta — it has no Gemara text.", Middos: "Middos is a Mishnah-only masechta — it has no Gemara text." }[masechta];
     const reason = special || ((typeof navigator !== "undefined" && navigator.onLine === false) ? "You're offline — reconnect to load this daf's text." : "Native text for this masechta isn't available yet.");   // don't blame the masechta when it's really a connection drop
-    return `<div class="empty-mini">${esc(reason)}</div>` + dafEndNav(masechta, daf, key);   // keep the flip controls — a text-less masechta must never dead-end the reader
+    return dafColHead(masechta, daf, key, { showSources: false }) + `<div class="empty-mini">${esc(reason)}</div>` + dafEndNav(masechta, daf, key);   // a text-less masechta still has the stable navigation rail
   }
-  if (mode === "daf") { const comm = await loadDafComm(masechta); return renderDafLayout(masechta, daf, key, data, comm) + dafEndNav(masechta, daf, key); }
+  if (mode === "daf") {
+    const facing = amudStep(masechta, daf, key, amudSide(key) === "left" ? -1 : 1);
+    const [comm, facingData] = await Promise.all([
+      commPromise,
+      facing && facing.masechta !== masechta ? loadDafText(facing.masechta) : Promise.resolve(data),
+    ]);
+    return renderDafLayout(masechta, daf, key, data, comm, facingData) + dafEndNav(masechta, daf, key);
+  }
   const seg = data[key];   // one amud at a time in every mode — the flip controls step leaf by leaf
   const html = seg ? `<div class="amud">${flipLabel("amud-label", esc(heAmud(amudLeaf(key), key)), masechta, daf, key)}${renderAmud(seg, mode)}</div>` : "";
-  return (html || `<div class="empty-mini">This amud isn't available.</div>`) + dafEndNav(masechta, daf, key);
+  return dafColHead(masechta, daf, key, { showSources: false }) + (html || `<div class="empty-mini">This amud isn't available.</div>`) + dafEndNav(masechta, daf, key);
 }
-// Catchword-style continuation at the end of the reading region — after several
-// screens of scrolling, the next daf is one tap away (every mode).
+// A quiet catchword closes the paper. Navigation lives only in the stable rail
+// above, so a repeated flip never chases a button to a new page height.
 function dafEndNav(masechta, daf, amud) {
-  const nx = amudStep(masechta, daf, amud, 1), pv = amudStep(masechta, daf, amud, -1);
-  const he = x => x ? `${esc(DY.masechtaHe(x.masechta))} ${esc(heAmud(amudLeaf(x.amud), x.amud))}` : "";
-  return `<div class="daf-endnav">
-    <button class="en-btn" data-gemflip="1"${nx ? "" : " disabled"}><span class="en-cap">Next amud</span><span lang="he">‹ ${he(nx)}</span></button>
-    <button class="en-btn" data-gemflip="-1"${pv ? "" : " disabled"}><span class="en-cap">Previous</span><span lang="he">${he(pv)} ›</span></button>
-  </div>`;
+  return `<div class="daf-endmark" aria-hidden="true"><span>❦</span></div>`;
 }
 async function hydrateDaf() {
-  const box = $("#dafText"); if (!box) return;
+  const box = $("#dafText"); if (!box) return false;
   const gen = (box._hydGen = (box._hydGen || 0) + 1);          // serialize overlapping hydrates
+  box.setAttribute("aria-busy", "true");
   const html = await dafBodyHtml(box.dataset.mas, +box.dataset.daf, box.dataset.mode, box.dataset.amud);
-  if (!box.isConnected || box._hydGen !== gen) return;          // a newer flip superseded this one — drop the stale render
-  box.innerHTML = readAheadNote(box) + html;
-  box._renderedMas = box.dataset.mas; box._renderedDaf = box.dataset.daf; box._renderedAmud = box.dataset.amud;   // what's actually on screen (guards scroll-save during rapid flips)
+  if (!box.isConnected || box._hydGen !== gen) return false;    // a newer flip superseded this one — drop the stale render
+  box.innerHTML = html;
+  box.setAttribute("aria-busy", "false");
+  box._renderedMas = box.dataset.mas; box._renderedDaf = box.dataset.daf; box._renderedAmud = box.dataset.amud; box._renderedMode = box.dataset.mode;   // committed screen identity (guards scroll/state saves during rapid flips)
   const dr = box.closest(".daf-read"); if (dr) dr.classList.toggle("has-spread", box.dataset.mode === "daf");   // wide breakout only for the printed-page layout
   sizeDafCarves(box); applyDafCol(box); attachDafSwipe(box);
+  const hadPendingY = _pendingY != null;
   consumePendingY();
+  if (hadPendingY) requestAnimationFrame(commitDafReadState); else commitDafReadState();
+  return true;
 }
 // The interlocking engine. Every stream (gemara included) lives in a full-width
 // container; the carve floats reserve exactly the regions where ANOTHER stream's
@@ -829,8 +947,10 @@ function sizeDafCarves(scope) {
     };
     const D = { gm: BIG, ra: BIG, to: BIG };   // page-y where each stream's text dies
     const apply = () => {
-      setH(cols.gm, ".cvg.r", Math.min(D.ra, D.gm) - headH);   // off Rashi's flank while Rashi lives
-      setH(cols.gm, ".cvg.l", Math.min(D.to, D.gm) - headH);
+      const sideRight = !!g.closest(".leaf-book.side-right");
+      const right = sideRight ? "to" : "ra", left = sideRight ? "ra" : "to";
+      setH(cols.gm, ".cvg.r", Math.min(D[right], D.gm) - headH);
+      setH(cols.gm, ".cvg.l", Math.min(D[left], D.gm) - headH);
       setH(cols.ra, ".cv", Math.min(D.gm, D.ra) - headH);      // narrow column while the gemara lives
       setH(cols.to, ".cv", Math.min(D.gm, D.to) - headH);
       setH(cols.ra, ".cv2", Math.min(D.to, D.ra) - Math.min(D.gm, D.ra));   // half page while the other side lives on
@@ -857,16 +977,6 @@ function consumePendingY() {
   const y = _pendingY; _pendingY = null;
   requestAnimationFrame(() => { window.scrollTo(0, y); lockReadMin(y); });   // rAF lets layout settle; the lock keeps the phone chrome from flapping
 }
-// The in-place flip reads ahead while the shiur keeps playing — but the page
-// header/buttons above still belong to the ORIGINAL daf. Say so, visibly.
-function readAheadNote(box) {
-  const r = State.route; if (Reader.open || !r || r.name !== "daf") return "";
-  const [pm, pd] = (r.id || "").split("|");
-  if (box.dataset.mas === pm && +box.dataset.daf === +pd) return "";
-  return `<div class="read-ahead">Reading ahead: <span class="he" lang="he">${esc(dafTitleHe(box.dataset.mas, +box.dataset.daf))}</span>
-    <button class="textlink" data-openread="${esc(box.dataset.mas)}|${+box.dataset.daf}">open its full page</button>
-    <button class="textlink" data-backread="${esc(pm)}|${+pd}">back to ${esc(pm)} ${+pd}</button></div>`;
-}
 /* ---------- amudim, as leaves of a real sefer ----------
    A daf is one LEAF. Amud א is its recto and sits on the LEFT page of an open
    spread; amud ב is the verso, on the RIGHT page. So א and ב are two sides of
@@ -878,9 +988,8 @@ function amudKeysFor(masechta, daf) {
   if (masechta === "Tamid" && daf === 26) k.unshift("25b");   // Tamid's opening Mishnah sits on Vilna 25b
   return k;
 }
-const amudLeaf = key => parseInt(String(key), 10);            // the sheet this amud is a side of
-const amudSide = key => /b$/.test(String(key)) ? "right" : "left";
-const sameLeaf = (a, b) => amudLeaf(a) === amudLeaf(b);       // same sheet → the leaf itself turns
+const amudLeaf = RM.amudLeaf;                                  // the sheet this amud is a side of
+const amudSide = RM.amudSide;
 // Step one amud, crossing daf and masechta boundaries in Shas order.
 function amudStep(masechta, daf, amud, dir) {
   const keys = amudKeysFor(masechta, daf), i = keys.indexOf(String(amud)), j = i + dir;
@@ -908,38 +1017,41 @@ const dafTitleHe = (masechta, daf) => `${DY.BYEN[masechta] ? DY.BYEN[masechta].h
 const heAmud = (daf, amud) => `${window.HebCal ? window.HebCal.gematria(daf) : daf}${amud.endsWith("a") ? "·א" : "·ב"}`;
 function commCol(arr) {
   if (!arr || !arr.length) return `<div class="col-empty">—</div>`;
+  const isTransition = raw => /^(?:\[?עד כאן פירוש|פירוש רבינו שמואל הרשב)/.test(String(raw || ""));
+  const openingIndex = arr.findIndex(c => !isTransition(c));
   return arr.map((c, i) => {
-    const m = c.match(/^(.{1,60}?)\s[-–]\s([\s\S]+)$/);   // dibur hamatchil — explanation
-    const cls = i === 0 ? "comm comm0" : "comm";
-    if (!m) return `<p class="${cls}">${esc(c)}</p>`;
-    let dh = esc(m[1]);
-    if (i === 0) {   // as printed: ONLY the first word of the opening dibbur in big square letters — never the whole dibbur
-      const sp = m[1].indexOf(" "), w = sp > 0 ? m[1].slice(0, sp) : m[1];
-      if (w.length <= 14) dh = `<span class="dh0">${esc(w)}</span>${sp > 0 ? " " + esc(m[1].slice(sp + 1)) : ""}`;
+    const raw = String(c || "");
+    if (isTransition(raw)) {
+      const note = raw.replace(/^\[/, "").replace(/\]$/, "");
+      return `<p class="comm-transition" lang="he" dir="rtl" role="note">${esc(note)}</p>`;
     }
-    return `<p class="${cls}"><b>${dh}</b> ${esc(m[2])}</p>`;
+    const m = raw.match(/^([\s\S]*?)\s[-–]\s([\s\S]+)$/); // dibur hamatchil — explanation; real openings are not capped to an arbitrary length
+    const isOpening = i === openingIndex, cls = isOpening ? "comm comm0" : "comm";
+    const firstWord = text => {
+      const p = String(text || "").match(/^(\s*)(\S+)([\s\S]*)$/);
+      return p ? `${esc(p[1])}<span class="dh0">${esc(p[2])}</span>${esc(p[3])}` : esc(text);
+    };
+    if (!m) return `<p class="${cls}" lang="he" dir="rtl">${isOpening ? firstWord(raw) : esc(raw)}</p>`;
+    const dh = isOpening ? firstWord(m[1]) : esc(m[1]); // every page's actual first commentary word gets the traditional square-letter opening
+    return `<p class="${cls}" lang="he" dir="rtl"><b>${dh}</b> ${esc(m[2])}</p>`;
   }).join("");
 }
-// A daf/amud label (נב·א) flanked by the gemara-flip arrows, on both sides of the
-// page number. Rendered INTO the daf so it sits identically in every mode and
-// re-renders with the right boundary state on each flip. Clicks are delegated.
-function flipLabel(cls, innerHtml, mas, daf, amud) {
-  const dis = d => amudStep(mas, daf, amud, d) ? "" : " disabled";
-  return `<div class="${cls} flip-label">`
-    + `<button class="pageflip next" data-gemflip="1" aria-label="Next amud" title="Next amud"${dis(1)}>‹</button>`
-    + `<span class="lbl-t">${innerHtml}</span>`
-    + `<button class="pageflip prev" data-gemflip="-1" aria-label="Previous amud" title="Previous amud"${dis(-1)}>›</button>`
-    + `</div>`;
+// The paper carries only its running head. Operating controls live in the stable
+// rail outside the leaf, so they neither turn nor shift with the physical page.
+function flipLabel(cls, innerHtml, mas, daf, amud, sources) {
+  if (cls === "dafpage-label") return `<div class="${cls} page-running-head">
+    <span class="source-key key-tosafos" lang="he">${sources?.available?.tosafos === false ? "" : esc(sources?.labels?.tosafos || "תוספות")}</span><span class="lbl-t">${innerHtml}</span><span class="source-key key-rashi" lang="he">${sources?.available?.rashi === false ? "" : esc(sources?.labels?.rashi || "רש״י")}</span>
+  </div>`;
+  return `<div class="${cls} page-running-head"><span class="lbl-t">${innerHtml}</span></div>`;
 }
-// The <i> carve spacers give each stream its printed shape. Sides: .cv0 reserves
-// the header band (the text opens WIDE across its half), .cv keeps a narrow
-// column while the gemara runs, .cv2 keeps a half while the OTHER commentary
-// runs on past the gemara. The gemara's own .cvg pair keeps it off each flank
-// only while that flank's text is alive. sizeDafCarves() sets every height from
-// the real text ends, so all three streams always fill the whole page together.
-const CARVES = `<i class="cv0" aria-hidden="true"></i><i class="cv" aria-hidden="true"></i><i class="cv2" aria-hidden="true"></i>`;
+// The <i> carve spacers give each stream its printed shape. .cv keeps each
+// commentary in its margin while Gemara runs; .cv2 keeps a half-page stream
+// while the OTHER commentary continues beyond Gemara. The Gemara .cvg pair
+// keeps it off each flank only while that flank is alive. All three sources
+// begin together at the top, as on the Vilna page.
+const CARVES = `<i class="cv" aria-hidden="true"></i><i class="cv2" aria-hidden="true"></i>`;
 const GCARVES = `<i class="cvg r" aria-hidden="true"></i><i class="cvg l" aria-hidden="true"></i>`;
-function dafPage(daf, amud, seg, c, labelHtml) {
+function dafPage(daf, amud, seg, c, labelHtml, sources) {
   const lines = (seg.he || "").split("\n").filter(Boolean);
   let gem = lines.map(safeHe).join("<br>");
   if (lines.length) {   // the amud's opening word in large square letters, as printed
@@ -949,9 +1061,9 @@ function dafPage(daf, amud, seg, c, labelHtml) {
   return `<div class="dafpage">
     ${labelHtml}
     <div class="dafpage-grid classic">
-      <div class="col side rashi">${CARVES}<div class="col-h" lang="he">רש"י</div>${commCol(c && c.r)}</div>
-      <div class="col gemara">${GCARVES}<div class="col-h" lang="he">גמרא</div><div class="gem">${gem || '<div class="col-empty">—</div>'}</div></div>
-      <div class="col side tosafos">${CARVES}<div class="col-h" lang="he">תוספות</div>${commCol(c && c.t)}</div>
+      <section class="col side rashi" role="region" aria-label="${esc(sources?.labels?.rashi || "רש״י")}" lang="he" dir="rtl">${CARVES}<div class="col-h" lang="he">${esc(sources?.labels?.rashi || "רש״י")}</div>${commCol(c && c.r)}</section>
+      <section class="col gemara" role="region" aria-label="Gemara" lang="he" dir="rtl">${GCARVES}<div class="col-h" lang="he">גמרא</div><div class="gem" lang="he" dir="rtl">${gem || '<div class="col-empty">—</div>'}</div></section>
+      <section class="col side tosafos" role="region" aria-label="${esc(sources?.labels?.tosafos || "תוספות")}" lang="he" dir="rtl">${CARVES}<div class="col-h" lang="he">${esc(sources?.labels?.tosafos || "תוספות")}</div>${commCol(c && c.t)}</section>
     </div></div>`;
 }
 // One amud = one big page, exactly as it sits in the open sefer: amud א on the
@@ -960,74 +1072,99 @@ function dafPage(daf, amud, seg, c, labelHtml) {
 // scroll memory and nothing interactive).
 const folioLabel = (masechta, dafN, amud) =>
   `<span class="lbl-t-mas" lang="he">${esc(DY.masechtaHe(masechta))}</span><span lang="he">${esc(heAmud(dafN, amud))}</span>`;
-function gutterHtml(facing, data) {
+function gutterHtml(facing, facingData) {
   let peek = "";
-  const seg = facing && data && data[facing.amud];   // only when the facing amud is in this masechta's loaded text
+  const seg = facing && facingData && facingData[facing.amud];
   if (seg && seg.he) peek = safeHe(String(seg.he).replace(/\n/g, " ").slice(0, 700));
   return `<div class="leaf-gutter" aria-hidden="true"><div class="leaf-fold"></div><div class="leaf-peek"><div class="lp-txt" lang="he">${peek}</div></div></div>`;
 }
-function renderDafLayout(masechta, daf, key, data, comm) {
+function renderDafLayout(masechta, daf, key, data, comm, facingData) {
   comm = comm || {};
   const seg = data[key];
-  if (!seg) return dafColHead(masechta, daf, key) + `<div class="empty-mini">This amud isn't available.</div>`;
+  if (!seg) return dafColHead(masechta, daf, key, { showSources: false }) + `<div class="empty-mini">This amud isn't available.</div>`;
+  const pageComm = comm[key] || {};
+  const sources = {
+    showSources: true,
+    labels: { tosafos: "תוספות", gemara: "גמרא", rashi: pageComm.rl || "רש״י" },
+    available: { tosafos: !!pageComm.t?.length, gemara: true, rashi: !!pageComm.r?.length },
+  };
   const side = amudSide(key);                                   // א → left page, ב → right page
   const facing = amudStep(masechta, daf, key, side === "left" ? -1 : 1);   // the page across the gutter
-  const page = dafPage(daf, key, seg, comm[key], flipLabel("dafpage-label", folioLabel(masechta, amudLeaf(key), key), masechta, daf, key));
-  return dafColHead(masechta, daf, key) + `<div class="leaf-book side-${side}">${page}${gutterHtml(facing, data)}</div>`;
+  const page = dafPage(daf, key, seg, pageComm, flipLabel("dafpage-label", folioLabel(masechta, amudLeaf(key), key), masechta, daf, key, sources), sources);
+  return dafColHead(masechta, daf, key, sources) + `<div class="leaf-book side-${side}">${page}${gutterHtml(facing, facingData)}</div>`;
 }
 
 /* ---------- the two transitions, straight from the physical sefer ----------
    TURN (א↔ב — the two sides of one leaf): the page you're on lifts and rotates
-   about the gutter it touches — א pivots on its right edge, ב on its left — and
-   the book shifts as your eye crosses from one side of the fold to the other.
+   about the gutter it touches — א pivots on its right edge, ב on its left — over
+   a new page whose reading canvas remains in the exact same place.
    SHIFT (ב↔א — pages facing each other across the fold): nothing turns; the
-   book slides so the facing page comes under your eye. Both animate an actual
-   clone of the actual page. Reduced-motion skips the capture entirely. */
-function capturePage() {
+   text refreshes in place and only the seam travels to the other edge.
+   Reduced-motion skips the decorative capture entirely. */
+function capturePage(kind) {
   const box = Reader.open ? $("#rdBody") : $("#dafText");
   if (!box || !box.querySelector(".dafpage, .amud")) return null;
   try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) return null; } catch {}
-  const r = box.getBoundingClientRect();
-  const top = Math.max(r.top, 0), bottom = Math.min(r.bottom, window.innerHeight || 800);
+  const book = box.querySelector(".leaf-book");
+  // A facing-page shift moves only the seam. The paper itself is a fixed
+  // reading canvas; a same-leaf turn still lifts the outgoing page over it.
+  const target = book ? (kind === "turn" ? book.querySelector(":scope > .dafpage") : book.querySelector(":scope > .leaf-gutter"))
+                      : (kind === "turn" ? box.querySelector(".amud") : null);
+  if (!target) return null;
+  const r = target.getBoundingClientRect();
+  const rail = box.querySelector(".daf-colhead"), railRect = rail?.getBoundingClientRect(), boxRect = box.getBoundingClientRect();
+  // The decorative paper may fly only inside the reading surface. A deep-scroll
+  // capture previously began at viewport y=0 and briefly covered the fixed site
+  // bar / reader bar / operating rail; clipping at the rail's lower edge keeps
+  // every functional control continuously visible throughout the turn.
+  const chromeFloor = railRect?.bottom > 0 ? railRect.bottom : Math.max(0, boxRect.top);
+  const top = Math.max(r.top, chromeFloor), bottom = Math.min(r.bottom, boxRect.bottom, window.innerHeight || 800);
   if (bottom - top < 80) return null;                           // nothing meaningful of the page is on screen
-  const clone = box.cloneNode(true);
+  const clone = target.cloneNode(true);
   clone.removeAttribute("id");
-  clone.style.cssText = "height:auto;overflow:visible;position:static;margin:0;width:100%";
-  return { clone, top, left: r.left, width: r.width, height: bottom - top, shift: (r.top - top) - (box.scrollTop || 0) };
+  clone.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));
+  const spine = kind === "shift" && !!book;
+  clone.style.cssText += spine ? `;height:${r.height}px;overflow:hidden;position:static;margin:0;width:100%`
+                               : ";height:auto;overflow:visible;position:static;margin:0;width:100%";
+  const sideClass = book?.classList.contains("side-right") ? "side-right" : "side-left";
+  const pageWidth = book?.querySelector(":scope > .dafpage")?.getBoundingClientRect().width || 0;
+  return { clone, top, left: r.left, width: r.width, height: bottom - top, shift: r.top - top, sideClass, spine, travel: pageWidth };
 }
-// kind: "turn" (same leaf) or "shift" (across the fold); outSide: which page of the
-// spread we're leaving — that's the edge a turn pivots on and the way the book slides.
+// kind: "turn" (same leaf) or "shift" (across the fold); outSide identifies the
+// edge a turn pivots on or the direction the seam crosses the fixed canvas.
 function playPageFlip(cap, kind, outSide) {
   const box = Reader.open ? $("#rdBody") : $("#dafText");
-  // going to a page on the RIGHT of the one we left means the eye travels right,
-  // so the book slides left, and vice-versa
+  // A right-side amud carries the seam on the left; moving forward from it sends
+  // that seam to the right edge of the stationary page, and vice-versa.
   const bookGoesLeft = outSide === "left";
-  if (box) {                                                     // the live page settles in from the direction the book came
-    const cls = bookGoesLeft ? "bk-from-right" : "bk-from-left";
-    box.classList.remove("bk-from-right", "bk-from-left"); void box.offsetWidth; box.classList.add(cls);
-    setTimeout(() => box.classList.remove(cls), 700);
+  if (box && kind === "shift") {                                // refresh content in place; never translate the reading canvas
+    box.classList.remove("paper-refresh"); void box.offsetWidth; box.classList.add("paper-refresh");
+    clearTimeout(box._settleTimer);
+    box._settleTimer = setTimeout(() => { box.classList.remove("paper-refresh"); box._settleTimer = 0; }, 320);
   }
-  if (!cap) return;
+  if (!cap) return Promise.resolve();
   document.querySelectorAll(".pflip").forEach(n => n.remove());
   const move = kind === "turn" ? (outSide === "left" ? "turn-r" : "turn-l")   // א pivots on its right edge, ב on its left
-                               : (bookGoesLeft ? "out-left" : "out-right");
+                               : "spine-shift";
   const ov = el("div", "pflip " + move);
   ov.setAttribute("aria-hidden", "true"); ov.inert = true;      // a decorative clone — out of the a11y tree and tab order
   ov.style.cssText = `top:${cap.top}px;left:${cap.left}px;width:${cap.width}px;height:${cap.height}px`;
+  if (cap.spine) ov.style.setProperty("--spine-travel", `${bookGoesLeft ? -cap.travel : cap.travel}px`);
   // the wrapper carries the reading-region classes so the clone renders identically; inline styles pin it
-  ov.innerHTML = `${kind === "turn" ? '<div class="pf-dim"></div>' : ""}<div class="pf-leaf"><div class="pf-face"><div class="pf-inner daf-read has-spread" style="top:${cap.shift}px;width:${cap.width}px;left:0;transform:none;position:absolute"></div></div></div>`;
+  ov.innerHTML = `${kind === "turn" ? '<div class="pf-dim"></div>' : ""}<div class="pf-leaf"><div class="pf-face"><div class="pf-inner ${cap.sideClass}" style="top:${cap.shift}px;width:${cap.width}px;left:0;transform:none;position:absolute"></div></div></div>`;
   ov.querySelector(".pf-inner").appendChild(cap.clone);
+  if (cap.spine) box?.classList.add("spine-in-flight");
   document.body.appendChild(ov);
-  let done = false;
-  const cleanup = () => { if (done) return; done = true; ov.remove(); };
-  ov.querySelector(".pf-leaf").addEventListener("animationend", cleanup);
-  setTimeout(cleanup, 900);   // safety — the overlay must never outlive the turn
+  return new Promise(resolve => {
+    let done = false;
+    const cleanup = () => { if (done) return; done = true; ov.remove(); box?.classList.remove("spine-in-flight"); resolve(); };
+    ov.querySelector(".pf-leaf").addEventListener("animationend", cleanup, { once: true });
+    setTimeout(cleanup, 900);   // safety — the overlay must never outlive the turn
+  });
 }
-/* Phone-mode column selector for the Tzuras-Hadaf view: instead of scrolling
-   through stacked גמרא / רש"י / תוספות, show ONE full-width column at a time.
-   Order matches the printed daf: תוספות (left) · גמרא (center) · רש"י (right). */
-// Tzuras-Hadaf columns in spatial (left→right) order: Tosafos (outer-left),
-// Gemara (center), Rashi (inner-right). One shows at a time on phones.
+/* Compact source selector: show one full-width stream at a time. These operating
+   controls deliberately keep one fixed order; the paper's subtle running-head
+   labels—not the buttons—swap to reflect its physical inner/outer margins. */
 const DAF_COLS = [["tosafos", "תוספות"], ["gemara", "גמרא"], ["rashi", 'רש"י']];
 const dafColIndex = k => DAF_COLS.findIndex(c => c[0] === k);
 // Unified column title bar: the current column's name in the center (the title of
@@ -1039,52 +1176,75 @@ const dafColIndex = k => DAF_COLS.findIndex(c => c[0] === k);
 // column just lights it up, so the names stay put exactly where you tapped.
 // The parsha page keeps its own column choice (State._parCol) — "Rashi" there is a
 // different physical column than on the daf, so the two views must not share state.
-const parshaColActive = () => !Reader.open && !!$("#parshaText");
-const colStateKey = () => parshaColActive() ? "_parCol" : "_dafCol";
-function dafColsInner(labels, curCol) {
-  const cur = curCol || State._dafCol || "gemara";
+const isTorahBox = box => !!box && (box.id === "parshaText" || box.dataset.readerKind === "torah");
+const activeTorahBox = () => Reader.open && Reader.kind === "torah" ? $("#rdBody") : $("#parshaText");
+const parshaColActive = () => !!activeTorahBox();
+const activeTorahSource = () => Reader.open && Reader.kind === "torah" ? (Reader.source || "gemara") : (State._parCol || "gemara");
+const activeReadingSource = () => parshaColActive() ? activeTorahSource() : (State._dafCol || "gemara");
+function dafColsInner(labels, curCol, available, ariaLabels) {
+  const cur = curCol || "gemara";
   return DAF_COLS.map(([key, name]) => {
-    const on = key === cur;
-    return `<button data-dcol="${key}" role="tab" aria-selected="${on}" class="col-tab${on ? " on" : ""}">${(labels && labels[key]) || name}</button>`;
+    const on = key === cur, enabled = !available || available[key] !== false;
+    const label = (labels && labels[key]) || name;
+    const aria = (ariaLabels && ariaLabels[key]) || label;
+    return `<button data-dcol="${key}" aria-pressed="${on}" aria-label="${esc(aria)}${enabled ? "" : " — unavailable on this amud"}" class="col-tab${on ? " on" : ""}"${enabled ? "" : ' disabled title="Unavailable on this amud"'}>${esc(label)}</button>`;
   }).join("");
 }
-function dafColHead(masechta, daf, amud) {
+function dafColHead(masechta, daf, amud, sources) {
   const key = amud || amudKeysFor(masechta, daf)[0];
-  const dis = d => amudStep(masechta, daf, key, d) ? "" : " disabled";
+  const dest = d => amudStep(masechta, daf, key, d);
+  const dis = d => dest(d) ? "" : " disabled";
+  const aria = (d, word) => { const x = dest(d); return x ? `${word}: ${x.masechta} ${amudLeaf(x.amud)}${amudSide(x.amud) === "right" ? "b" : "a"}` : word; };
   const dafLbl = `${DY.BYEN[masechta] ? DY.BYEN[masechta].he : masechta} ${heAmud(amudLeaf(key), key)}`;
-  return `<div class="daf-colhead">
+  return `<nav class="daf-colhead" aria-label="Amud navigation${sources?.showSources === false ? "" : " and sources"}">
     <div class="daf-flip-row">
-      <button class="pageflip next" data-gemflip="1" aria-label="Next amud" title="Next amud"${dis(1)}>‹</button>
-      <span class="daf-flip-lbl">${esc(dafLbl)}</span>
-      <button class="pageflip prev" data-gemflip="-1" aria-label="Previous amud" title="Previous amud"${dis(-1)}>›</button>
+      <button class="pageflip next" data-gemflip="1" aria-label="${esc(aria(1, "Next amud"))}" title="Next amud"${dis(1)}>‹</button>
+      <span class="daf-flip-lbl" lang="he">${esc(dafLbl)}</span>
+      <button class="pageflip prev" data-gemflip="-1" aria-label="${esc(aria(-1, "Previous amud"))}" title="Previous amud"${dis(-1)}>›</button>
     </div>
-    <div class="daf-cols-row" role="tablist" aria-label="Daf column — tap a name or swipe">${dafColsInner()}</div>
-  </div>`;
+    ${sources?.showSources === false ? "" : `<div class="daf-cols-row" role="group" aria-label="Daf column — tap a name or swipe">${dafColsInner(sources?.labels, State._dafCol, sources?.available)}</div>`}
+  </nav>`;
 }
 function applyDafCol(box) {        // reflect the chosen column as a class on the container (per-view choice)
   if (!box) return;
-  const col = (box.id === "parshaText" ? State._parCol : State._dafCol) || "gemara";
+  const torah = isTorahBox(box);
+  const desired = box.dataset.readerKind === "torah" ? (Reader.source || "gemara") : (State._parCol || "gemara");
+  let col = (torah ? (box.dataset.mode === "he" ? "gemara" : desired) : State._dafCol) || "gemara";
+  const chosen = box.querySelector(`.col-tab[data-dcol="${col}"]`);
+  if (chosen?.disabled) {                                             // never strand a compact reader on an unavailable commentary stream
+    col = "gemara";
+  }
   ["gemara", "rashi", "tosafos"].forEach(c => box.classList.toggle("col-" + c, c === col));
+  box.querySelectorAll(".col-tab").forEach(t => { const on = t.dataset.dcol === col; t.classList.toggle("on", on); t.setAttribute("aria-pressed", on ? "true" : "false"); });
 }
-function selectDafCol(col) {
-  const key = colStateKey();
-  if (col === State[key]) return;
-  saveColScroll(State[key]);                          // remember where we were in the column we're leaving
-  State[key] = col;
+function selectDafCol(col, pointerIntent) {
+  const torahReader = Reader.open && Reader.kind === "torah", torah = parshaColActive();
+  const old = torah ? activeTorahSource() : (State._dafCol || "gemara");
+  if (col === old) return;
+  const intent = pointerIntent || pagerIntent(), fallbackY = intent.fallbackY, anchor = parshaScrollAnchor(activeTorahBox());
+  saveColScroll(old);                                 // remember where we were in the column we're leaving
+  if (torahReader) { Reader.source = col; Reader._sourceChanged = true; }
+  else if (torah) State._parCol = col;
+  else State._dafCol = col;
   const apply = box => {
     if (!box) return;
     applyDafCol(box);
     const row = box.querySelector(".daf-cols-row");   // names stay fixed — just move the highlight to the selected one
     if (row) row.querySelectorAll(".col-tab").forEach(t => {
       const on = t.dataset.dcol === col;
-      t.classList.toggle("on", on); t.setAttribute("aria-selected", on ? "true" : "false");
+      t.classList.toggle("on", on); t.setAttribute("aria-pressed", on ? "true" : "false");
     });
     restartAnim(box, "col-switched");                 // gentle fade-in of the new column's text
   };
   apply($("#dafText"));
   apply($("#parshaText"));                            // the parsha page shares the column machinery
   if (Reader.open) apply($("#rdBody"));
-  restoreColScroll(col);                              // restore a remembered spot, or stay put on a column's first view
+  restoreColScroll(col, false, fallbackY, anchor, intent.preserveRail, true); // the source changes, never the rail's viewport position
+  requestAnimationFrame(() => {
+    if (Reader.open) { if (Reader.kind === "daf") commitDafReadState(); else commitReaderHistoryState(); }
+    else if (State.route?.name === "daf") commitDafReadState();
+    else if (State.route?.name === "parshaS") commitTorahReadState();
+  });
 }
 function restartAnim(el, cls) { if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 // Per-column scroll memory so switching back and forth keeps your place in each
@@ -1092,12 +1252,126 @@ function restartAnim(el, cls) { if (!el) return; el.classList.remove(cls); void 
 function dafScrollEl() { return Reader.open ? $("#rdBody") : null; }   // null → the window scrolls
 function curDafScroll() { const el = dafScrollEl(); return el ? el.scrollTop : (window.scrollY || 0); }
 function setDafScroll(y) { const el = dafScrollEl(); if (el) el.scrollTop = y; else window.scrollTo(0, y); }
-function colScrollKey(col) {   // keyed per AMUD — each side of the leaf keeps its own place
-  if (Reader.open) return `r:${Reader.masechta}:${Reader.amud || Reader.daf}:${col}`;
-  const pb = $("#parshaText"); if (pb) return `pp:${pb.dataset.sefer}:${pb.dataset.parsha}:${col}`;
-  const b = $("#dafText"); return `p:${b ? b.dataset.mas : ""}:${b ? (b.dataset.amud || b.dataset.daf) : ""}:${col}`;
+function colScrollKey(col) {   // every physical side, display mode, and source owns its position
+  if (Reader.open && Reader.kind === "torah") return `tr:${Reader.sefer}:${Reader.parsha}:${Reader.mode}:${col}`;
+  if (Reader.open) return `r:${Reader.masechta}:${Reader.amud || Reader.daf}:${Reader.mode}:${col}`;
+  const pb = $("#parshaText"); if (pb) return `pp:${pb.dataset.sefer}:${pb.dataset.parsha}:${pb.dataset.mode}:${col}`;
+  const b = $("#dafText"); return `p:${b ? b.dataset.mas : ""}:${b ? (b.dataset.amud || b.dataset.daf) : ""}:${b ? b.dataset.mode : ""}:${col}`;
 }
-function saveColScroll(col) { State._colScroll = State._colScroll || {}; State._colScroll[colScrollKey(col || "gemara")] = curDafScroll(); }   // no column ever picked = the default gemara column — its spot counts too
+function ensureColScroll() {
+  if (State._colScroll) return State._colScroll;
+  try { State._colScroll = JSON.parse(sessionStorage.getItem("dy_reader_positions_v2") || "{}") || {}; }
+  catch { State._colScroll = {}; }
+  return State._colScroll;
+}
+function persistColScroll() {
+  const all = ensureColScroll(), entries = Object.entries(all).sort((a, b) => (+b[1]?.at || 0) - (+a[1]?.at || 0)).slice(0, 160);
+  State._colScroll = Object.fromEntries(entries);
+  try { sessionStorage.setItem("dy_reader_positions_v2", JSON.stringify(State._colScroll)); } catch {}
+}
+function parshaReadingTop(box) {
+  if (!box) return 0;
+  const h = box.querySelector(".parsha-colhead"), r = h?.getBoundingClientRect();
+  return Math.max(0, r && r.bottom > 0 ? r.bottom : 0) + 8;
+}
+function parshaScrollAnchor(box) {
+  if (!box || !box.querySelector(".torah-verse")) return null;
+  const top = parshaReadingTop(box), probe = top + 2, rows = [...box.querySelectorAll(".torah-verse")];
+  const hit = document.elementFromPoint(Math.min(window.innerWidth - 1, window.innerWidth / 2), Math.min(window.innerHeight - 1, probe));
+  const row = hit?.closest(".torah-verse") || rows.find(n => n.getBoundingClientRect().bottom > probe) || rows[rows.length - 1];
+  if (!row) return null;
+  const rect = row.getBoundingClientRect(), offset = rect.top - top;
+  return { ref: row.dataset.ref, offset, progress: rect.height > 0 ? Math.max(0, Math.min(1, -offset / rect.height)) : 0 };
+}
+function visibleTorahVerse(box, ref) {
+  const rows = [...box.querySelectorAll(".torah-verse")], exact = rows.find(n => n.dataset.ref === ref);
+  const visible = n => { const r = n?.getBoundingClientRect(); return !!r && r.width > 0 && r.height > 0; };
+  if (visible(exact)) return exact;
+  const at = Math.max(0, rows.indexOf(exact));
+  for (let distance = 1; distance < rows.length; distance++) {
+    if (visible(rows[at + distance])) return rows[at + distance];
+    if (visible(rows[at - distance])) return rows[at - distance];
+  }
+  return null;
+}
+function saveColScroll(col) {
+  const all = ensureColScroll(), pb = activeTorahBox(), anchor = parshaScrollAnchor(pb);
+  let key = colScrollKey(col || "gemara");
+  if (Reader.open && Reader.kind === "daf" && Reader._renderedM && Reader._renderedD)
+    key = `r:${Reader._renderedM}:${Reader._renderedD}:${Reader._renderedMode || Reader.mode}:${col || "gemara"}`;
+  else {
+    const b = $("#dafText");
+    if (b?._renderedMas && b._renderedAmud)
+      key = `p:${b._renderedMas}:${b._renderedAmud}:${b._renderedMode || b.dataset.mode}:${col || "gemara"}`;
+  }
+  all[key] = { y: curDafScroll(), ...(anchor || {}), at: Date.now() };
+  persistColScroll();
+}
+function committedDafSnapshot() {
+  if (Reader.open && Reader.kind === "daf") {
+    const masechta = Reader._renderedM || Reader.masechta, amud = Reader._renderedD || Reader.amud;
+    const daf = +(Reader._renderedN || Reader.daf), mode = Reader._renderedMode || Reader.mode;
+    return normalizeReadSnapshot({ masechta, daf, amud, mode, source: State._dafCol, y: curDafScroll() });
+  }
+  const box = $("#dafText"); if (!box) return null;
+  return normalizeReadSnapshot({
+    masechta: box._renderedMas || box.dataset.mas,
+    daf: +(box._renderedDaf || box.dataset.daf),
+    amud: box._renderedAmud || box.dataset.amud,
+    mode: box._renderedMode || box.dataset.mode,
+    source: State._dafCol,
+    y: window.scrollY || 0,
+  });
+}
+function readerHistorySnapshot() {
+  if (!Reader.open) return null;
+  if (Reader.kind === "daf") { const read = committedDafSnapshot(); return read ? { kind: "daf", read } : null; }
+  if (Reader.kind === "torah") return {
+    kind: "torah", sefer: Reader.sefer, parsha: Reader.parsha, mode: Reader.mode,
+    inlineMode: Reader.inlineMode || "daf", source: Reader.source || "gemara", sourceChanged: !!Reader._sourceChanged, y: curDafScroll(),
+    anchor: parshaScrollAnchor($("#rdBody")),
+  };
+  return null;
+}
+function commitReaderHistoryState() {
+  if (!Reader.open) return;
+  try { history.replaceState({ ...(history.state || {}), reader: readerHistorySnapshot() }, ""); } catch {}
+  persistRoute();
+}
+function commitDafReadState() {
+  const read = committedDafSnapshot(); if (!read) return;
+  if (Reader.open && Reader.kind === "daf") {
+    try { history.replaceState({ ...(history.state || {}), reader: { kind: "daf", read } }, "", urlFor({ ...State.route, read })); } catch {}
+  } else if (!Reader.open && State.route?.name === "daf") {
+    State.route = { ...State.route, read };
+    try { history.replaceState({ ...(history.state || {}), route: State.route, sponsor: State.sponsor, depth: _navDepth, y: window.scrollY || 0 }, "", urlFor(State.route)); } catch {}
+  }
+  persistRoute();
+}
+function commitTorahReadState() {
+  if (Reader.open) { if (Reader.kind === "torah") commitReaderHistoryState(); return; }
+  const box = $("#parshaText"); if (!box || State.route?.name !== "parshaS") return;
+  const torah = normalizeTorahSnapshot({ mode: box.dataset.mode, source: State._parCol, y: window.scrollY || 0, anchor: parshaScrollAnchor(box) });
+  State.route = { ...State.route, torah };
+  try { history.replaceState({ ...(history.state || {}), route: State.route, sponsor: State.sponsor, depth: _navDepth, y: window.scrollY || 0 }, "", urlFor(State.route)); } catch {}
+  persistRoute();
+}
+function saveActiveReadingPosition() {
+  if (Reader.open) {
+    saveColScroll(Reader.kind === "torah" ? (Reader.source || "gemara") : (State._dafCol || "gemara"));
+    if (Reader.kind === "daf") commitDafReadState(); else commitReaderHistoryState();
+    return;
+  }
+  if ($("#parshaText")) { saveColScroll(State._parCol || "gemara"); commitTorahReadState(); return; }
+  if ($("#dafText")) { saveColScroll(State._dafCol || "gemara"); commitDafReadState(); }
+}
+function commitRestoredReadingState() {
+  if (Reader.open) {
+    if (Reader.kind === "daf") commitDafReadState();
+    else if (Reader.kind === "torah") commitReaderHistoryState();
+  } else if (State.route?.name === "daf") commitDafReadState();
+  else if (State.route?.name === "parshaS") commitTorahReadState();
+}
 // "The top of this daf" for the active scroller: the reader body scrolls to 0;
 // the in-page view scrolls so the daf reading region sits just under the bar.
 function dafTopScroll() {
@@ -1107,30 +1381,78 @@ function dafTopScroll() {
   // "ceiling" sits a bar-height higher; measure accordingly
   const min = document.documentElement.classList.contains("dy-min");
   const barH = min ? 0 : (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--bar-h")) || 0);
-  return Math.max(0, (window.scrollY || 0) + box.getBoundingClientRect().top - barH - 4);
+  return Math.max(0, Math.ceil((window.scrollY || 0) + box.getBoundingClientRect().top - barH));
 }
 // Restore a remembered spot for this daf+column. On a plain column switch we stay
 // put when the column hasn't been seen; on a page flip (toTopIfUnseen) an unseen
 // daf starts at its top instead of inheriting the previous page's scroll.
-function restoreColScroll(col, toTopIfUnseen) {
-  const saved = (State._colScroll || {})[colScrollKey(col || "gemara")];
-  const wasReaderOpen = Reader.open;
+function restoreColScroll(col, toTopIfUnseen, fallbackY, fallbackAnchor, preferFallback, preferSavedSameRef = false) {
+  const saved = ensureColScroll()[colScrollKey(col || "gemara")];
+  const wasReaderOpen = Reader.open, surface = Reader.open ? $("#rdBody") : ($("#parshaText") || $("#dafText"));
+  const identity = () => Reader.open
+    ? `${Reader.kind}|${Reader.masechta || ""}|${Reader.daf || ""}|${Reader.amud || ""}|${Reader.sefer || ""}|${Reader.parsha || ""}|${Reader.mode || ""}`
+    : `${surface?.id || ""}|${surface?.dataset.mas || ""}|${surface?.dataset.daf || ""}|${surface?.dataset.amud || ""}|${surface?.dataset.sefer || ""}|${surface?.dataset.parsha || ""}|${surface?.dataset.mode || ""}`;
+  const expectedIdentity = identity(), restoreGen = surface ? (surface._scrollRestoreGen = (surface._scrollRestoreGen || 0) + 1) : 0;
+  const surfaceIsCurrent = () => Reader.open === wasReaderOpen && !!surface?.isConnected
+    && (Reader.open ? $("#rdBody") : ($("#parshaText") || $("#dafText"))) === surface
+    && surface._scrollRestoreGen === restoreGen && identity() === expectedIdentity;
+  // When the operating rail has not docked yet, its exact viewport position is
+  // the invariant—not the destination amud's remembered scroll. Pin it once
+  // immediately after the DOM swap and once on the next paint; this also covers
+  // keyboard activation, where there is no pointer event to hold the surface.
+  const pinSurface = preferFallback && fallbackY != null && !fallbackAnchor && !activeTorahBox();
+  if (pinSurface) {
+    const target = Math.max(0, fallbackY);
+    setDafScroll(target); lockReadMin(target);
+    commitRestoredReadingState();
+    requestAnimationFrame(() => {
+      if (!surfaceIsCurrent()) return;
+      setDafScroll(target); lockReadMin(target);
+      commitRestoredReadingState();
+    });
+    return;
+  }
   requestAnimationFrame(() => {
-    if (Reader.open !== wasReaderOpen) return;                 // reader opened/closed within the frame — this scroll target is no longer the right surface
+    if (!surfaceIsCurrent()) return;                            // route/mode/reader changed within the frame — this target belongs to the superseded surface
+    // A direct Torah source switch follows the verse the reader can see. A saved
+    // position is used for reopen/mode restoration, but never yanks this switch
+    // away from the current semantic reference.
+    const savedAnchor = saved && saved.ref ? saved : null;
+    const anchor = preferSavedSameRef && savedAnchor?.ref === fallbackAnchor?.ref ? savedAnchor : (fallbackAnchor || savedAnchor);
+    const pb = activeTorahBox();
+    if (pb && anchor?.ref) {
+      const target = visibleTorahVerse(pb, anchor.ref);
+      if (target) {
+        const rect = target.getBoundingClientRect(), same = target.dataset.ref === anchor.ref;
+        const offset = same && Number.isFinite(+anchor.progress) && +anchor.progress > 0
+          ? -Math.min(Math.max(0, Math.min(1, +anchor.progress)) * rect.height, Math.max(0, rect.height - 3))
+          : (same ? (anchor.offset || 0) : 0);
+        const delta = rect.top - parshaReadingTop(pb) - offset;
+        setDafScroll(curDafScroll() + delta); lockReadMin(curDafScroll()); commitRestoredReadingState(); return;
+      }
+    }
     const ceil = dafTopScroll();                               // the sticky-header "ceiling" (column top, header pinned)
     let target = null;
-    if (saved != null) target = Math.max(saved, ceil);        // restore a remembered spot — but never above the ceiling
+    const savedY = typeof saved === "number" ? saved : saved?.y;
+    // When a reader flips before the rail has reached its sticky position, the
+    // operating buttons must remain under the pointer. Restoring the new amud's
+    // top here would pull that rail up to the header and make it look as though
+    // the control jumped. Preserve the surface offset for this one case; once
+    // the rail is docked, normal per-amud memory remains authoritative.
+    if (preferFallback && fallbackY != null) target = Math.max(0, fallbackY);
+    else if (savedY != null) target = Math.max(savedY, ceil);  // restore a remembered spot — but never above the ceiling
     else if (toTopIfUnseen) target = ceil;                    // page-flip into an unseen daf → its top
+    else if (fallbackY != null) target = Math.max(fallbackY, ceil);
     else if (curDafScroll() < ceil) target = ceil;            // column switch, first view → snap down, never above the ceiling
-    if (target != null) { setDafScroll(target); lockReadMin(target); }   // this programmatic scroll must NOT flip the header open/closed
+    if (target != null) { setDafScroll(target); lockReadMin(target); commitRestoredReadingState(); }   // this programmatic scroll must NOT flip the header open/closed
   });
 }
 
-/* ---------- phone: collapse the top chrome while reading the daf ----------
-   Scrolling DOWN hides the app bar + the daf-flip row (leaving just the thin
-   column switcher); scrolling UP — or returning to the top — brings them back.
-   Only on phones, and only on the daf view / reader. */
-let _lastReadY = 0, _minLockUntil = 0;
+/* ---------- collapse the top chrome while reading ----------
+   Scrolling DOWN hides the site bar; scrolling UP — or returning to the top —
+   brings it back. The complete operating rail (amud arrows and source tabs)
+   stays available and stationary; only the surrounding site chrome collapses. */
+let _lastReadY = 0, _minLockUntil = 0, _readPersistTimer = 0;
 function resetReadMin() { document.documentElement.classList.remove("dy-min"); _lastReadY = 0; _minLockUntil = 0; }
 // Pin the collapse state across a programmatic scroll (page flip / column switch) so
 // pagination never slides the app bar open or closed — that toggle is the user's
@@ -1138,8 +1460,8 @@ function resetReadMin() { document.documentElement.classList.remove("dy-min"); _
 function lockReadMin(y) { _minLockUntil = Date.now() + 450; if (typeof y === "number") _lastReadY = y; }
 function onReadScroll() {
   const html = document.documentElement;
-  const onDaf = Reader.open || (State.route && State.route.name === "daf");
-  if (!onDaf || !html.classList.contains("is-phone")) { html.classList.remove("dy-min"); _lastReadY = 0; return; }
+  const onRead = Reader.open || (State.route && (State.route.name === "daf" || State.route.name === "parshaS"));
+  if (!onRead) { html.classList.remove("dy-min"); _lastReadY = 0; return; }
   const y = Reader.open ? ($("#rdBody") ? $("#rdBody").scrollTop : 0) : (window.scrollY || 0);
   const now = Date.now(), min = html.classList.contains("dy-min");
   if (now < _minLockUntil) { _lastReadY = y; return; }       // brief settle window after a toggle — avoids reflow-induced flapping
@@ -1149,55 +1471,112 @@ function onReadScroll() {
   else if (y < _lastReadY - 6) { if (min) { html.classList.remove("dy-min"); changed = true; } }   // moving up → restore
   if (changed) _minLockUntil = now + 350;
   _lastReadY = y;
+  if (State.route?.name === "parshaS" || (Reader.open && Reader.kind === "torah")) syncParshaChapterNav();
+  clearTimeout(_readPersistTimer);
+  _readPersistTimer = setTimeout(saveActiveReadingPosition, 240);
 }
 // Switch columns by swiping the daf: swipe content left → reveal the column to the
 // right, and vice-versa. Clamped to the three columns; only the single-column
 // phone layout is affected (desktop shows all three side-by-side).
 function swipeDafCol(dir) {
-  const ci = dafColIndex(State[colStateKey()] || "gemara");
+  const ci = dafColIndex(activeReadingSource());
   const ni = Math.max(0, Math.min(DAF_COLS.length - 1, ci + dir));
   if (ni !== ci) selectDafCol(DAF_COLS[ni][0]);
 }
 function attachDafSwipe(box) {
   if (!box || box._dafSwipe) return; box._dafSwipe = true;
-  let x0 = 0, y0 = 0, t0 = 0;
-  box.addEventListener("touchstart", e => { const t = e.changedTouches[0]; x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); }, { passive: true });
+  let x0 = 0, y0 = 0, t0 = 0, valid = false;
+  box.addEventListener("touchstart", e => {
+    const t = e.changedTouches[0]; x0 = t.clientX; y0 = t.clientY; t0 = Date.now();
+    valid = x0 > 24 && x0 < (window.innerWidth || 0) - 24;       // preserve native browser edge gestures
+  }, { passive: true });
   box.addEventListener("touchend", e => {
+    if (!valid) return; valid = false;
     if (!document.documentElement.classList.contains("is-phone")) return;     // one column shows only in the phone layout
-    if (!box.querySelector(".dafpage-grid")) return;                  // only in the Tzuras-Hadaf "Daf" layout
+    if (!box.querySelector(".dafpage-grid, .torah-page")) return;     // printed Daf or aligned Torah source page
     const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
     if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.4 || Date.now() - t0 > 700) return;   // deliberate horizontal flick
     swipeDafCol(dx < 0 ? 1 : -1);
   }, { passive: true });
+  box.addEventListener("touchcancel", () => { valid = false; }, { passive: true });
   if (box.id === "rdBody") box.addEventListener("scroll", onReadScroll, { passive: true });   // the reader body scrolls itself
 }
 
 function renderAmud(seg, mode) {
   const he = (seg.he || "").split("\n").filter(Boolean), en = (seg.en || "").split("\n").filter(Boolean);
   if (mode === "he") return `<div class="daf-he" lang="he">${he.map(safeHe).join("<br>")}</div>`;
-  if (mode === "en") return `<div class="daf-en">${en.map(safeEn).join("<br>")}</div>`;
+  if (mode === "en") return `<div class="daf-en" lang="en" dir="ltr">${en.map(safeEn).join("<br>")}</div>`;
   // both: interleave by segment if counts align, else stacked blocks
-  if (he.length === en.length && he.length) return he.map((h, i) => `<div class="seg-pair"><div class="daf-he" lang="he">${safeHe(h)}</div><div class="daf-en">${safeEn(en[i])}</div></div>`).join("");
-  return `<div class="daf-he" lang="he">${he.map(safeHe).join("<br>")}</div><hr class="rule thin"><div class="daf-en">${en.map(safeEn).join("<br>")}</div>`;
+  if (he.length === en.length && he.length) return he.map((h, i) => `<div class="seg-pair"><div class="daf-he" lang="he" dir="rtl">${safeHe(h)}</div><div class="daf-en" lang="en" dir="ltr">${safeEn(en[i])}</div></div>`).join("");
+  return `<div class="daf-he" lang="he" dir="rtl">${he.map(safeHe).join("<br>")}</div><hr class="rule thin"><div class="daf-en" lang="en" dir="ltr">${en.map(safeEn).join("<br>")}</div>`;
 }
 
-/* ---------- two flip controls on the daf page ----------
-   1. Corner arrows (inside the daf) flip ONLY the daf/gemara reading region in
-      place — the top of the page (the shiur you're hearing) stays put.
-   2. Top arrows (in the head) turn the WHOLE page to the previous / next daf —
-      a different day's full lecture page. */
-async function gemaraFlip(dir) {                 // label arrows — daf text only, in place
+/* ---------- two navigation layers ----------
+   1. The fixed rail above the paper flips ONLY the daf/gemara reading region in
+      place — the paper canvas and the shiur above it stay put.
+   2. The lecture-header arrows navigate the WHOLE page to the previous / next
+      daf, including its recording and supporting material. */
+let _gemaraFlipBusy = false, _gemaraFlipQueue = [];
+const pagerKind = source => source?.closest(".daf-colhead") ? "head" : "";
+function pagerIntent(source) {
+  const kind = pagerKind(source);
+  const surface = Reader.open ? $("#rdBody") : ($("#parshaText") || $("#dafText"));
+  const rail = kind === "head" ? source.closest(".daf-colhead") : surface?.querySelector(".daf-colhead");
+  if (!rail) return { kind, fallbackY: curDafScroll(), preserveRail: false };
+  const rectTop = rail.getBoundingClientRect().top;
+  const stickyTop = parseFloat(getComputedStyle(rail).top) || 0;
+  return { kind, fallbackY: curDafScroll(), preserveRail: rectTop > stickyTop + 2 };
+}
+function refocusPager(box, kind, dir) {
+  const scope = kind === "head" ? ".daf-colhead" : "";
+  const next = scope && box?.querySelector(`${scope} [data-gemflip="${dir}"]`);
+  if (next) { try { next.focus({ preventScroll: true }); } catch { next.focus(); } }
+}
+function announceAmud(masechta, amud) {
+  const s = $("#readStatus"), text = `${masechta} ${amudLeaf(amud)}${amudSide(amud) === "right" ? "b" : "a"} loaded. Reading position restored.`;
+  if (s) s.textContent = text;
+  const rs = $("#rdStatus"); if (rs) rs.textContent = text;
+}
+async function gemaraFlip(dir, source, pointerIntent) { // stable rail arrows — daf text only, in place
+  const intent = pointerIntent || pagerIntent(source);
+  if (_gemaraFlipBusy) { if (_gemaraFlipQueue.length < 6) _gemaraFlipQueue.push({ dir, intent }); return; }
+  _gemaraFlipBusy = true;
+  try { await gemaraFlipOnce(dir, intent); }
+  finally {
+    _gemaraFlipBusy = false;
+    const next = _gemaraFlipQueue.shift(); if (next) gemaraFlipOnceQueued(next);
+  }
+}
+async function gemaraFlipOnceQueued(next) {
+  _gemaraFlipBusy = true;
+  try { await gemaraFlipOnce(next.dir, next.intent); }
+  finally {
+    _gemaraFlipBusy = false;
+    const after = _gemaraFlipQueue.shift(); if (after) gemaraFlipOnceQueued(after);
+  }
+}
+async function gemaraFlipOnce(dir, intent) {
   const box = $("#dafText"); if (!box) return;
+  // Re-measure before the async render as a hard fallback for keyboard and
+  // assistive activations, which have no pointer target to carry an intent.
+  const liveIntent = pagerIntent(box.querySelector(".daf-colhead"));
+  const stableIntent = {
+    kind: intent?.kind || "",
+    fallbackY: intent?.fallbackY ?? liveIntent.fallbackY,
+    preserveRail: !!(intent?.preserveRail || liveIntent.preserveRail),
+  };
   const cur = box.dataset.amud || amudKeysFor(box.dataset.mas, +box.dataset.daf)[0];
   const nx = amudStep(box.dataset.mas, +box.dataset.daf, cur, dir); if (!nx) return;
-  const cap = capturePage();                     // an actual clone of the actual page
-  const kind = sameLeaf(cur, nx.amud) ? "turn" : "shift", outSide = amudSide(cur);
+  const transition = RM.transitionFor({ masechta: box.dataset.mas, amud: cur }, nx);
+  const cap = capturePage(transition.kind), focusKind = stableIntent.kind;
   if (!box._renderedDaf || (box._renderedMas === box.dataset.mas && box._renderedDaf === box.dataset.daf && box._renderedAmud === cur))
     saveColScroll(State._dafCol);                // remember our place — but only when what's on screen IS this amud (rapid double-flip guard)
   box.dataset.mas = nx.masechta; box.dataset.daf = nx.daf; box.dataset.amud = nx.amud;
-  await hydrateDaf();                            // re-renders the amud incl. the flanking arrows (fresh boundary state)
-  restoreColScroll(State._dafCol, true);         // the new amud+column: restore its own place, or start at the top if unseen
-  playPageFlip(cap, kind, outSide);
+  const painted = await hydrateDaf();            // re-renders the amud incl. the flanking arrows (fresh boundary state)
+  if (!painted) return;
+  restoreColScroll(State._dafCol, true, stableIntent.fallbackY, null, stableIntent.preserveRail); // keep an undocked rail under the pointer; otherwise restore this amud
+  announceAmud(nx.masechta, nx.amud); refocusPager(box, focusKind, dir);
+  await playPageFlip(cap, transition.kind, transition.outSide);
 }
 function dayNav(dir) {                           // top arrows — whole lecture page
   const [m, d] = (State.route.id || "").split("|");
@@ -1209,82 +1588,276 @@ function dayNav(dir) {                           // top arrows — whole lecture
    The full daf, full-bleed, with a minimal bar. Flips between dapim in place
    and never touches the underlying page — so the shiur (audio or video) keeps
    playing untouched while you read ahead or back. */
-const Reader = { masechta: null, daf: null, amud: null, mode: "daf", open: false };
+const Reader = { kind: null, masechta: null, daf: null, amud: null, sefer: null, parsha: null, source: null, mode: "daf", open: false, _bodyGen: 0 };
 let _readerClosing = false, _readerOpener = null;
 function openReader(masechta, daf, mode, amud) {
   if (Reader.open) return;   // already open — don't stack a second history entry or clobber the opener
+  closeMenu();
+  Reader.kind = "daf"; Reader.sefer = null; Reader.parsha = null;
+  Reader._renderedM = Reader._renderedN = Reader._renderedD = Reader._renderedMode = null;
   Reader.masechta = masechta; Reader.daf = +daf; Reader.amud = amud || amudKeysFor(masechta, +daf)[0];
-  Reader.mode = mode || State._dafMode || "daf"; Reader.open = true;
+  Reader.mode = mode || State._dafMode || "daf"; Reader.open = true; Reader._restoreScroll = true;
+  showReader();
+}
+function openTorahReader(sefer, parsha, mode) {
+  if (Reader.open) return;
+  closeMenu();
+  const inlineMode = mode || State._parMode || "daf";
+  Reader.kind = "torah"; Reader.masechta = null; Reader.daf = null; Reader.amud = null;
+  Reader._renderedM = Reader._renderedN = Reader._renderedD = Reader._renderedMode = null;
+  Reader.sefer = sefer; Reader.parsha = parsha; Reader.inlineMode = inlineMode; Reader.mode = "daf";
+  Reader.source = inlineMode === "he" ? "gemara" : (State._parCol || "gemara"); Reader._sourceChanged = false;
+  Reader._restoreAnchor = parshaScrollAnchor($("#parshaText")); Reader.open = true; Reader._restoreScroll = true;
+  showReader();
+}
+function showReader({ push = true } = {}) {
   const r = $("#reader"); if (!r) return;
   _readerOpener = document.activeElement;
   r.hidden = false; r.setAttribute("aria-hidden", "false");
+  r.classList.toggle("torah-reader", Reader.kind === "torah");
   document.documentElement.classList.add("reader-open");
   renderReader();
-  $("#view")?.setAttribute("inert", ""); $("#app > header")?.setAttribute("inert", "");   // background + top bar inert (trap focus in the overlay); the player (z-index above the reader) stays controllable
+  const player = $("#player"); if (player) r.appendChild(player);   // keep playback inside the modal's focus/accessibility scope
+  $("#app")?.setAttribute("inert", "");
   resetReadMin();                                       // reader opens at the top with full chrome
   setTimeout(() => $("#rdClose")?.focus(), 0);           // move focus into the overlay
-  try { history.pushState({ ...history.state, reader: true }, ""); } catch {}  // Back / Esc closes the reader first
+  if (push) { try { history.pushState({ ...(history.state || {}), reader: readerHistorySnapshot() }, ""); } catch {} }  // Back / Esc closes the reader first
+  persistRoute();
 }
 function closeReader() { if (Reader.open && !_readerClosing) { _readerClosing = true; try { history.back(); } catch { hideReader(); } } }  // routed through popstate so #view is left intact
 function hideReader() {
+  const kind = Reader.kind, torahAnchor = kind === "torah" ? parshaScrollAnchor($("#rdBody")) : null;
+  const torahSource = kind === "torah" ? (Reader.source || "gemara") : null;
+  // Chumash is fully representable in the compact Mikra surface. A reader may
+  // visit another source and then return to Chumash; closing should follow the
+  // final source, not the fact that a source button was used earlier.
+  const torahMode = kind === "torah" && Reader.inlineMode === "he" && torahSource === "gemara" ? "he" : "daf";
+  if (Reader.open) saveColScroll(kind === "torah" ? torahSource : (State._dafCol || "gemara"));
+  Reader._bodyGen++; Reader._flipQueue = []; Reader._flipBusy = false;
+  document.querySelectorAll(".pflip").forEach(n => n.remove());
   Reader.open = false; _readerClosing = false;
-  const r = $("#reader"); if (r) { r.hidden = true; r.setAttribute("aria-hidden", "true"); }
+  const r = $("#reader"), app = $("#app"), player = $("#player");
+  if (player && app) app.appendChild(player);
+  if (r) { r.hidden = true; r.setAttribute("aria-hidden", "true"); }
   document.documentElement.classList.remove("reader-open");
-  $("#view")?.removeAttribute("inert"); $("#app > header")?.removeAttribute("inert");
+  app?.removeAttribute("inert");
   resetReadMin();
   try { _readerOpener && _readerOpener.focus(); } catch {}   // restore focus to whatever opened the reader
-  syncInpageRead(Reader.masechta, Reader.daf, Reader.amud);   // leave the in-page reader where we stopped
+  if (kind === "torah") { if (Reader._sourceChanged) State._parCol = torahSource; syncInpageTorah(Reader.sefer, Reader.parsha, torahMode, torahAnchor); }
+  else syncInpageRead(Reader.masechta, Reader.daf, Reader.amud, Reader.mode);   // leave the in-page reader where we stopped
+  Reader.kind = null; Reader.source = null; Reader._sourceChanged = false; Reader._restoreAnchor = null;
 }
-function syncInpageRead(masechta, daf, amud) {
+function syncInpageRead(masechta, daf, amud, mode) {
   const box = $("#dafText"); if (!box) return;
-  if (box.dataset.mas === masechta && +box.dataset.daf === daf && box.dataset.amud === amud) return;
-  box.dataset.mas = masechta; box.dataset.daf = daf; box.dataset.amud = amud;
+  mode = mode || State._dafMode || "daf"; State._dafMode = mode;
+  $$("#dafMode button").forEach(x => { const on = x.dataset.mode === mode; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
+  if (box.dataset.mas === masechta && +box.dataset.daf === daf && box.dataset.amud === amud && box.dataset.mode === mode) { applyDafCol(box); commitDafReadState(); return; }
+  box.dataset.mas = masechta; box.dataset.daf = daf; box.dataset.amud = amud; box.dataset.mode = mode;
   hydrateDaf();   // re-renders #dafText incl. the flip arrows; no separate UI step needed
 }
-function readerFlip(dir) {
+async function syncInpageTorah(sefer, parsha, mode, anchor) {
+  const box = $("#parshaText"); if (!box || box.dataset.sefer !== sefer || box.dataset.parsha !== parsha) return;
+  mode = mode || State._parMode || "daf"; State._parMode = mode;
+  $$("#parshaMode button").forEach(x => { const on = x.dataset.pmode === mode; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
+  const needsPaint = box.dataset.mode !== mode;
+  box.dataset.mode = mode;
+  if (needsPaint) await hydrateParsha(); else applyDafCol(box);
+  restoreColScroll(State._parCol || "gemara", false, undefined, anchor || null);
+  requestAnimationFrame(commitTorahReadState);
+  // Closing the modal reveals a site header whose sticky offset settles over a
+  // short CSS transition. Re-apply the semantic verse once that chrome is still
+  // so the same words—not merely the same raw scroll number—stay under the eye.
+  if (anchor) setTimeout(() => {
+    if (!Reader.open && box.isConnected) { restoreColScroll(State._parCol || "gemara", false, undefined, anchor); requestAnimationFrame(commitTorahReadState); }
+  }, 320);
+}
+function normalizeReaderSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== "object") return null;
+  if (snapshot.kind === "daf") {
+    const read = normalizeReadSnapshot(snapshot.read);
+    return read ? { kind: "daf", read } : null;
+  }
+  if (snapshot.kind === "torah") {
+    const sefer = String(snapshot.sefer || ""), parsha = String(snapshot.parsha || "");
+    const known = !!CHUMASH_BY_EN[sefer] && PARSHA_LIST.some(p => p.sefer === sefer && p.parsha === parsha);
+    if (!known) return null;
+    const source = DAF_SOURCE_KEYS.has(snapshot.source) ? snapshot.source : "gemara";
+    const y = Number.isFinite(+snapshot.y) && +snapshot.y >= 0 ? +snapshot.y : 0;
+    const anchor = snapshot.anchor && /^\d+-\d+$/.test(String(snapshot.anchor.ref || ""))
+      ? { ref: String(snapshot.anchor.ref), offset: Number.isFinite(+snapshot.anchor.offset) ? +snapshot.anchor.offset : 0,
+          ...(Number.isFinite(+snapshot.anchor.progress) ? { progress: Math.max(0, Math.min(1, +snapshot.anchor.progress)) } : {}) } : null;
+    return { kind: "torah", sefer, parsha, mode: "daf", inlineMode: snapshot.inlineMode === "he" ? "he" : "daf", source,
+      sourceChanged: !!snapshot.sourceChanged, y, anchor };
+  }
+  return null;
+}
+function restoreReaderFromSnapshot(snapshot, { push = false } = {}) {
+  const saved = normalizeReaderSnapshot(snapshot); if (!saved || Reader.open) return false;
+  closeMenu(); Reader._renderedM = Reader._renderedN = Reader._renderedD = Reader._renderedMode = null;
+  if (saved.kind === "daf") {
+    if (State.route?.name !== "daf") return false;
+    const read = saved.read; State._dafCol = read.source;
+    Reader.kind = "daf"; Reader.sefer = null; Reader.parsha = null;
+    Reader.masechta = read.masechta; Reader.daf = read.daf; Reader.amud = read.amud; Reader.mode = read.mode;
+    ensureColScroll()[`r:${read.masechta}:${read.amud}:${read.mode}:${read.source}`] = { y: read.y || 0, at: Date.now() };
+  } else {
+    if (State.route?.name !== "parshaS" || State.route.parsha !== saved.parsha) return false;
+    Reader.kind = "torah"; Reader.masechta = null; Reader.daf = null; Reader.amud = null;
+    Reader.sefer = saved.sefer; Reader.parsha = saved.parsha; Reader.mode = "daf"; Reader.inlineMode = saved.inlineMode;
+    Reader.source = saved.source; Reader._sourceChanged = saved.sourceChanged;
+    Reader._restoreAnchor = saved.anchor;
+    ensureColScroll()[`tr:${saved.sefer}:${saved.parsha}:daf:${saved.source}`] = { y: saved.y, ...(saved.anchor || {}), at: Date.now() };
+  }
+  Reader.open = true; Reader._restoreScroll = true; _pendingY = null;
+  showReader({ push });
+  return true;
+}
+async function readerFlip(dir, source) {
+  if (Reader._flipBusy) { Reader._flipQueue = Reader._flipQueue || []; if (Reader._flipQueue.length < 6) Reader._flipQueue.push({ dir }); return; }
+  Reader._flipBusy = true;
+  try { await readerFlipOnce(dir, source); }
+  finally {
+    Reader._flipBusy = false;
+    const next = Reader._flipQueue?.shift(); if (next && Reader.open) readerFlip(next.dir, next.source);
+  }
+}
+async function readerFlipOnce(dir, source) {
   const cur = Reader.amud || amudKeysFor(Reader.masechta, Reader.daf)[0];
   const nx = amudStep(Reader.masechta, Reader.daf, cur, dir); if (!nx) return;
-  Reader._flipClone = capturePage();                          // plays once the new amud has rendered
-  Reader._flipKind = sameLeaf(cur, nx.amud) ? "turn" : "shift"; Reader._flipSide = amudSide(cur);
+  const transition = RM.transitionFor({ masechta: Reader.masechta, amud: cur }, nx);
+  const cap = capturePage(transition.kind), focusKind = pagerKind(source);
   if (!Reader._renderedD || (Reader._renderedM === Reader.masechta && Reader._renderedD === cur))
     saveColScroll(State._dafCol);                // save a spot only for the amud actually rendered (rapid double-flip guard)
-  Reader.masechta = nx.masechta; Reader.daf = nx.daf; Reader.amud = nx.amud; Reader._restoreScroll = true; renderReader();
+  Reader.masechta = nx.masechta; Reader.daf = nx.daf; Reader.amud = nx.amud; Reader._restoreScroll = true;
+  syncReaderChrome();
+  const painted = await fillReaderBody(nx.masechta, nx.daf, Reader.mode, nx.amud);
+  if (!painted) return;
+  announceAmud(nx.masechta, nx.amud); refocusPager($("#rdBody"), focusKind, dir);
+  await playPageFlip(cap, transition.kind, transition.outSide);
 }
 function renderReader() {
+  if (Reader.kind === "torah") { renderTorahReader(); return; }
+  renderDafReader();
+}
+function renderDafReader() {
   const r = $("#reader"); if (!r) return;
-  const m = Reader.masechta, d = Reader.daf, mode = Reader.mode;
-  const shiur = shiurFor(m, d);
   r.innerHTML = `
     <div class="reader-bar">
       <div class="rd-side rd-left"><button class="rd-ic close" id="rdClose" aria-label="Close full screen">✕</button></div>
-      <div class="rd-title" id="rdTitle"><span class="he" lang="he">${esc(dafTitleHe(m, d))}${esc(/b$/.test(String(Reader.amud || "")) ? " ב" : " א")}</span><span class="en">${esc(m)} · Daf ${d}${/b$/.test(String(Reader.amud || "")) ? "b" : "a"}</span></div>
+      <div class="rd-title" id="rdTitle"><span class="he" lang="he"></span><span class="en"></span></div>
       <div class="rd-side rd-right">
-        ${modeSegHtml("rdMode", mode, "rmode")}
-        ${tsizeHtml()}
-        ${shiur ? `<button class="rd-ic play" id="rdPlay" aria-label="Play this shiur" title="Play this daf's shiur">${svgPlay(13)}</button>` : ""}
+        <div class="rd-modes">${modeSegHtml("rdMode", Reader.mode, "rmode")}</div>
+        <div class="rd-tools">${tsizeHtml()}<button class="rd-ic play" id="rdPlay" aria-label="Play this shiur" title="Play this daf's shiur">${svgPlay(13)}</button></div>
       </div>
     </div>
-    <div class="reader-body" id="rdBody"><div class="daf-loading">Loading the daf…</div></div>`;
+    <div class="sr-only" id="rdStatus" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div class="reader-body" id="rdBody" role="region" aria-label="Daf text" aria-busy="true" aria-keyshortcuts="ArrowLeft ArrowRight"><div class="daf-loading">Loading the daf…</div></div>`;
   $("#rdClose").onclick = closeReader;
-  $$("#rdMode button").forEach(b => b.onclick = () => { Reader.mode = b.dataset.rmode; State._dafMode = Reader.mode; renderReader(); });
+  $$("#rdMode button").forEach(b => b.onclick = () => setReaderMode(b.dataset.rmode));
   $$("#reader [data-tsize]").forEach(b => b.onclick = () => bumpDafScale(+b.dataset.tsize));
-  if (shiur) $("#rdPlay").onclick = () => { playId(shiur.id); toast("Playing — keep reading"); };
-  fillReaderBody(m, d, mode, Reader.amud);
+  const body = $("#rdBody");
+  let bodyControlIntent = null;
+  const rememberControlIntent = e => {
+    const control = e.target.closest("[data-gemflip], [data-dcol]");
+    if (control) { bodyControlIntent = pagerIntent(control); lockReadMin(bodyControlIntent.fallbackY); }
+  };
+  body.onpointerdown = rememberControlIntent;
+  body.onmousedown = e => { if (!bodyControlIntent) rememberControlIntent(e); if (e.target.closest("[data-gemflip], [data-dcol]")) e.preventDefault(); };
+  body.onclick = e => {
+    const g = e.target.closest("[data-gemflip]"); if (g) { readerFlip(+g.dataset.gemflip, g); return; }
+    const c = e.target.closest("[data-dcol]"); if (c) { const intent = bodyControlIntent; bodyControlIntent = null; selectDafCol(c.dataset.dcol, intent); }
+  };
+  syncReaderChrome();
+  fillReaderBody(Reader.masechta, Reader.daf, Reader.mode, Reader.amud);
+}
+function renderTorahReader() {
+  const r = $("#reader"); if (!r) return;
+  r.innerHTML = `
+    <div class="reader-bar torah-reader-bar">
+      <div class="rd-side rd-left"><button class="rd-ic close" id="rdClose" aria-label="Close full screen">✕</button></div>
+      <div class="rd-title" id="rdTitle"><span class="he" lang="he"></span><span class="en"></span></div>
+      <div class="rd-side rd-right">
+        <div class="rd-tools">${tsizeHtml()}</div>
+      </div>
+    </div>
+    <div class="sr-only" id="rdStatus" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div class="reader-body reader-torah-body" id="rdBody" role="region" aria-label="Torah text" aria-busy="true" data-reader-kind="torah" data-sefer="${esc(Reader.sefer)}" data-parsha="${esc(Reader.parsha)}" data-mode="${esc(Reader.mode)}"><div class="daf-loading">Loading the parsha…</div></div>`;
+  $("#rdClose").onclick = closeReader;
+  $$("#reader [data-tsize]").forEach(b => b.onclick = () => bumpDafScale(+b.dataset.tsize));
+  const body = $("#rdBody");
+  let bodyControlIntent = null;
+  const rememberControlIntent = e => {
+    const control = e.target.closest("[data-dcol]");
+    if (control) { bodyControlIntent = pagerIntent(control); lockReadMin(bodyControlIntent.fallbackY); }
+  };
+  body.onpointerdown = rememberControlIntent;
+  body.onmousedown = e => { if (!bodyControlIntent) rememberControlIntent(e); if (e.target.closest("[data-dcol]")) e.preventDefault(); };
+  body.onclick = e => {
+    const c = e.target.closest("[data-dcol]");
+    if (c) { const intent = bodyControlIntent; bodyControlIntent = null; selectDafCol(c.dataset.dcol, intent); }
+  };
+  syncTorahReaderChrome();
+  fillTorahReaderBody(Reader.sefer, Reader.parsha, Reader.mode, Reader._restoreAnchor);
+}
+function syncTorahReaderChrome() {
+  if (!Reader.open || Reader.kind !== "torah") return;
+  const title = $("#rdTitle");
+  if (title) {
+    $(".he", title).textContent = parshaHe(Reader.parsha);
+    $(".en", title).textContent = `Chumash · ${pDisp(Reader.parsha)}`;
+  }
+  updateTextSizeControls($("#reader"));
+}
+async function fillTorahReaderBody(sefer, parsha, mode, anchor) {
+  const gen = ++Reader._bodyGen, body = $("#rdBody");
+  if (body) body.setAttribute("aria-busy", "true");
+  const data = await loadTorah(sefer);
+  const html = data ? parshaBodyHtml(sefer, parsha, mode, data)
+    : `<div class="empty-mini">${(typeof navigator !== "undefined" && navigator.onLine === false) ? "You're offline — reconnect to load the parsha." : "The text of this parsha isn't available yet."}</div>`;
+  if (body && gen === Reader._bodyGen && Reader.open && Reader.kind === "torah" && Reader.sefer === sefer && Reader.parsha === parsha && Reader.mode === mode) {
+    body.innerHTML = html; body.dataset.readerKind = "torah"; body.dataset.sefer = sefer; body.dataset.parsha = parsha; body.dataset.mode = mode;
+    body.setAttribute("aria-busy", "false");
+    applyDafCol(body); attachDafSwipe(body); wireParshaChapterJumps(body);
+    Reader._restoreAnchor = null; Reader._restoreScroll = false;
+    restoreColScroll(Reader.source || "gemara", true, undefined, anchor || null);
+    syncParshaChapterNav();
+    return true;
+  }
+  return false;
+}
+function syncReaderChrome() {
+  if (!Reader.open) return;
+  const leaf = amudLeaf(Reader.amud), suffix = amudSide(Reader.amud) === "right" ? "b" : "a";
+  const title = $("#rdTitle");
+  if (title) {
+    $(".he", title).textContent = `${DY.masechtaHe(Reader.masechta)} ${heDaf(leaf)} ${suffix === "b" ? "ב" : "א"}`;
+    $(".en", title).textContent = `${Reader.masechta} · Daf ${leaf}${suffix}`;
+  }
+  $$("#rdMode button").forEach(b => { const on = b.dataset.rmode === Reader.mode; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+  const shiur = shiurFor(Reader.masechta, Reader.daf), play = $("#rdPlay");
+  if (play) { play.hidden = !shiur; play.onclick = shiur ? () => { playId(shiur.id); toast("Playing — keep reading"); } : null; }
+  updateTextSizeControls($("#reader"));
+}
+async function setReaderMode(mode) {
+  if (!Reader.open || Reader.mode === mode) return;
+  saveColScroll(State._dafCol || "gemara");
+  Reader.mode = mode; State._dafMode = mode; Reader._restoreScroll = true;
+  syncReaderChrome();
+  await fillReaderBody(Reader.masechta, Reader.daf, mode, Reader.amud);
 }
 async function fillReaderBody(m, d, mode, amud) {
+  const gen = ++Reader._bodyGen, body = $("#rdBody");
+  if (body) body.setAttribute("aria-busy", "true");
   const html = await dafBodyHtml(m, d, mode, amud);
-  const body = $("#rdBody");                                       // ignore if the user flipped again while loading
-  if (body && Reader.open && Reader.masechta === m && Reader.daf === d && Reader.amud === amud && Reader.mode === mode) {
-    body.innerHTML = html; Reader._renderedM = m; Reader._renderedD = amud;
+  if (body && gen === Reader._bodyGen && Reader.open && Reader.masechta === m && Reader.daf === d && Reader.amud === amud && Reader.mode === mode) {
+    body.innerHTML = html; Reader._renderedM = m; Reader._renderedN = d; Reader._renderedD = amud; Reader._renderedMode = mode;
+    body.setAttribute("aria-busy", "false");
     sizeDafCarves(body); applyDafCol(body); attachDafSwipe(body);
-    if (Reader._restoreScroll) { Reader._restoreScroll = false; restoreColScroll(State._dafCol, true); }  // flip → restore this daf+column's place, or its top
-    else body.scrollTop = 0;                                         // initial open / mode change → top
-    if (Reader._flipKind) { playPageFlip(Reader._flipClone, Reader._flipKind, Reader._flipSide); Reader._flipClone = null; Reader._flipKind = null; }
-    body.onclick = e => {                                            // delegated so the re-rendered column tabs stay live
-      const g = e.target.closest("[data-gemflip]"); if (g) { readerFlip(+g.dataset.gemflip); return; }   // ‹ נד·א › flips the reader
-      const c = e.target.closest("[data-dcol]"); if (c) selectDafCol(c.dataset.dcol);                     // phone-mode column switch
-    };
+    Reader._restoreScroll = false; restoreColScroll(State._dafCol, true);
+    requestAnimationFrame(commitDafReadState);
+    return true;
   }
+  return false;
 }
 
 function viewSearch() { return `<div class="pagetitle" role="heading" aria-level="1">Search</div><div class="searchbar"><input id="q" type="search" aria-label="Search" placeholder="search a daf (“chullin 100”), masechta, or topic…" autocomplete="off"></div><div id="results"></div>`; }
@@ -1510,81 +2083,121 @@ function viewSefer(r) {
     }).join("")}</div>`;
 }
 
-const PARSHA_MODES = [["daf", '<span class="seg-he" lang="he">עם רש״י ותרגום</span>'], ["he", '<span class="seg-he" lang="he">מקרא</span>']];
+const PARSHA_MODES = [["daf", '<span class="seg-he" lang="he">עם רש״י ואונקלוס</span>'], ["he", '<span class="seg-he" lang="he">מקרא</span>']];
+const parshaModeSegHtml = (id, mode, attr) => `<span class="seg" id="${id}" role="group" aria-label="Torah display mode">${PARSHA_MODES.map(([x, lbl]) => `<button data-${attr}="${x}" class="${x === mode ? "on" : ""}" aria-pressed="${x === mode}">${lbl}</button>`).join("")}</span>`;
 function viewParshaShiurim(r) {
   const list = shiurimForParsha(r.parsha);
   const pk = `parsha:${r.parsha}`;
   const sef = CHUMASH_BY_EN[(PARSHA_LIST.find(p => p.parsha === r.parsha) || {}).sefer];
   const admin = pageMediaHtml(pk) + worksheetsHtml(pk);   // gate the empty-state on what actually rendered
-  const mode = State._parMode || "daf";
+  const read = normalizeTorahSnapshot(r.torah), mode = read?.mode || State._parMode || "daf";
+  State._parMode = mode; State._parCol = read?.source || State._parCol || "gemara";
   const text = sef ? `
     <div class="daf-toolbar">
-      <span class="seg" id="parshaMode" role="group" aria-label="Parsha display mode">${PARSHA_MODES.map(([x, lbl]) => `<button data-pmode="${x}" class="${x === mode ? "on" : ""}" aria-pressed="${x === mode}">${lbl}</button>`).join("")}</span>
+      ${parshaModeSegHtml("parshaMode", mode, "pmode")}
       ${tsizeHtml()}
+      <button class="fs-btn" id="parshaFsBtn" aria-label="Read Torah full screen" title="Read full screen — a focused source at a time">${svgExpand(14)}<span class="fs-lbl">Full screen</span></button>
     </div>
     <div class="daf-read">
-      <div id="parshaText" data-sefer="${esc(sef.en)}" data-parsha="${esc(r.parsha)}" data-mode="${mode}"><div class="daf-loading">Loading the parsha…</div></div>
+      <div id="parshaText" role="region" aria-label="Torah text" aria-busy="true" data-sefer="${esc(sef.en)}" data-parsha="${esc(r.parsha)}" data-mode="${mode}"><div class="daf-loading">Loading the parsha…</div></div>
     </div>` : "";
   return crumbs([["Chumash", "parsha"], [sef ? sef.he : "", "sefer", { sefer: sef ? sef.en : "" }]], esc(parshaHe(r.parsha))) +
     boxHead(esc(parshaHe(r.parsha)), pDisp(r.parsha), false, sef ? ["sefer", { sefer: sef.en }] : ["parsha", {}]) +
-    `<div class="daf-daynav" style="margin:2px 0 10px">
+    `<div class="daf-daynav parsha-daynav">
       ${(n => `<button class="daynav next" data-parnav="1" aria-label="Next parsha"${n ? "" : " disabled"}>‹<span class="dn-t" lang="he">${n ? esc(parshaHe(n.parsha)) : ""}</span></button>`)(parshaStep(r.parsha, 1))}
       ${(p => `<button class="daynav prev" data-parnav="-1" aria-label="Previous parsha"${p ? "" : " disabled"}><span class="dn-t" lang="he">${p ? esc(parshaHe(p.parsha)) : ""}</span>›</button>`)(parshaStep(r.parsha, -1))}
     </div>` +
-    admin +
-    (list.length ? `<div class="section" role="heading" aria-level="2">Shiurim on ${esc(pDisp(r.parsha))}</div><div class="rows">${list.map(l => rowHtml(l, { stripSeries: true })).join("")}</div>`
-                 : admin || text ? "" : `<div class="empty-mini">No shiurim on this parsha yet.</div>`) +
-    text;
+    (list.length ? `<details class="shiur-disclosure"><summary>${list.length} shiur${list.length > 1 ? "im" : ""} on ${esc(pDisp(r.parsha))}</summary><div class="rows">${list.map(l => rowHtml(l, { stripSeries: true })).join("")}</div></details>` : "") +
+    text + admin +
+    (!list.length && !admin && !text ? `<div class="empty-mini">No shiurim on this parsha yet.</div>` : "");
 }
 
 /* ---------- the parsha text, rendered like a printed chumash ----------
    Center: the pesukim with taamim. Right leaf-margin: Targum Onkelos (verse-
    aligned). Left: Rashi in Rashi script. On phones the same one-column-at-a-time
    switcher as the daf (the columns reuse the daf's column classes). */
-const PARSHA_COL_LABELS = { tosafos: 'רש"י', gemara: "חומש", rashi: "תרגום" };
-function parshaColHead(parsha) {
-  return `<div class="daf-colhead">
-    <div class="daf-flip-row"><span class="daf-flip-lbl" lang="he">${esc(parshaHe(parsha))}</span></div>
-    <div class="daf-cols-row" role="tablist" aria-label="Column — tap a name or swipe">${dafColsInner(PARSHA_COL_LABELS, State._parCol)}</div>
+const PARSHA_COL_LABELS = { tosafos: 'רש"י', gemara: "חומש", rashi: "אונקלוס" };
+const PARSHA_COL_ARIA = { tosafos: 'פירוש רש"י', gemara: "חומש", rashi: "תרגום אונקלוס" };
+function parshaColHead(parsha, chapters, mode) {
+  const opts = chapters.map(n => `<option value="${n}">פרק ${heNum(n)}</option>`).join("");
+  return `<div class="daf-colhead parsha-colhead mode-${mode}">
+    <div class="daf-flip-row"><span class="daf-flip-lbl" lang="he">${esc(parshaHe(parsha))}</span><button class="rail-fs" data-parsha-fullscreen aria-label="Read Torah full screen" title="Read full screen">${svgExpand(14)}</button></div>
+    ${mode === "daf" ? `<div class="daf-cols-row" role="group" aria-label="Torah source — tap a name or swipe">${dafColsInner(PARSHA_COL_LABELS, activeTorahSource(), null, PARSHA_COL_ARIA)}</div>` : ""}
+    <label class="chapter-jump"><span>Jump to</span><select data-chapter-jump aria-label="Jump to chapter" lang="he" dir="rtl">${opts}</select></label>
   </div>`;
 }
 const heNum = n => esc(window.HebCal ? window.HebCal.gematria(n) : n);
+function torahRashiHtml(v) {
+  if (!Array.isArray(v.ra) || !v.ra.length) return `<div class="col-empty" role="note" aria-label="No Rashi commentary on this verse"></div>`;
+  const comments = v.ra.map((c, i) => {
+    const raw = String(c), parsed = raw.match(/^(.+?)(?:\.\s+|\s+[–—-]\s+)([\s\S]+)$/);
+    const m = parsed && [...parsed[1]].length <= 80 ? parsed : null;  // beyond this, punctuation is prose—not a credible dibbur hamatchil boundary
+    const num = i === 0 ? `<span class="vnum" lang="he">${heNum(v.v)}</span> ` : "";
+    if (!m) {
+      const first = /^(\S+)([\s\S]*)$/.exec(raw);  // delimiter-less entries still expose a restrained boundary without inventing a long DH
+      return `<span class="rashi-comment">${num}${first ? `<b>${esc(first[1])}</b>${esc(first[2])}` : esc(raw)}</span>`;
+    }
+    const body = /^(\S+)([\s\S]*)$/.exec(m[2]);
+    return `<span class="rashi-comment">${num}<b>${esc(m[1])}</b><span class="rashi-explain-lead">&nbsp;—&nbsp;${esc(body ? body[1] : m[2])}</span>${body ? esc(body[2]) : ""}</span>`;
+  }).join("");
+  return `<div class="comm torah-rashi-flow" lang="he" dir="rtl">${comments}</div>`;
+}
 function parshaBodyHtml(sef, parsha, mode, data) {
   const p = data && data[parsha];
   if (!p || !Array.isArray(p.verses) || !p.verses.length) return `<div class="empty-mini">The text of this parsha isn't available yet.</div>`;
-  let mikra = "", targum = "", rashi = "", chap = 0;
-  for (const v of p.verses) {
-    if (v.c !== chap) {
-      chap = v.c;
-      mikra += `<div class="chap-head" lang="he">פרק ${heNum(chap)}</div>`;
-      targum += `<div class="chap-head" lang="he">פרק ${heNum(chap)}</div>`;
-    }
-    mikra += `<span class="vnum" lang="he">${heNum(v.v)}</span> ${safeHe(v.he)} `;
-    if (v.on) targum += `<span class="vnum" lang="he">${heNum(v.v)}</span> ${safeHe(v.on)} `;
-    if (Array.isArray(v.ra)) for (const c of v.ra) {
-      const m = String(c).match(/^(.{1,42}?)\.\s([\s\S]+)$/);   // this edition's dibbur separator is a period
-      rashi += m ? `<p class="comm"><b>${esc(m[1])}</b> — ${esc(m[2])}</p>` : `<p class="comm">${esc(String(c))}</p>`;
-    }
-  }
-  if (mode === "he") return `<div class="amud"><div class="daf-he" lang="he">${mikra}</div></div>`;
-  return parshaColHead(parsha) + `<div class="dafpage parsha-page">
+  const chapters = [...new Set(p.verses.map(v => +v.c))];
+  const groups = chapters.map(chap => {
+    const verses = p.verses.filter(v => +v.c === chap).map(v => {
+      const ref = `${v.c}-${v.v}`, num = `<span class="vnum" lang="he">${heNum(v.v)}</span>`;
+      if (mode === "he") return `<div class="torah-verse torah-single" data-ref="${ref}"><section class="torah-cell col gemara" role="region" aria-label="Chapter ${v.c}, verse ${v.v}" lang="he" dir="rtl"><div class="gem">${num} ${safeHe(v.he)}</div></section></div>`;
+      return `<div class="torah-verse" data-ref="${ref}">
+        <section class="torah-cell col side rashi" role="region" aria-label="Onkelos, chapter ${v.c}, verse ${v.v}" lang="he" dir="rtl"><div class="tg">${v.on ? `${num} ${safeHe(v.on)}` : '<div class="col-empty">—</div>'}</div></section>
+        <section class="torah-cell col gemara" role="region" aria-label="Chumash, chapter ${v.c}, verse ${v.v}" lang="he" dir="rtl"><div class="gem">${num} ${safeHe(v.he)}</div></section>
+        <section class="torah-cell col side tosafos" role="region" aria-label="Rashi, chapter ${v.c}, verse ${v.v}" lang="he" dir="rtl">${torahRashiHtml(v)}</section>
+      </div>`;
+    }).join("");
+    return `<section class="torah-chapter" data-chapter="${chap}" aria-labelledby="torah-chapter-${chap}"><h2 class="chap-head" id="torah-chapter-${chap}" lang="he">פרק ${heNum(chap)}</h2>${verses}</section>`;
+  }).join("");
+  return parshaColHead(parsha, chapters, mode) + `<div class="dafpage parsha-page torah-page${mode === "he" ? " torah-he-only" : ""}">
     <div class="dafpage-label" lang="he">${esc(parshaHe(parsha))}</div>
-    <div class="dafpage-grid classic">
-      <div class="col side rashi">${CARVES}<div class="col-h" lang="he">תרגום אונקלוס</div><div class="tg">${targum || '<div class="col-empty">—</div>'}</div></div>
-      <div class="col gemara">${GCARVES}<div class="col-h" lang="he">חומש</div><div class="gem">${mikra}</div></div>
-      <div class="col side tosafos">${CARVES}<div class="col-h" lang="he">רש"י</div>${rashi || '<div class="col-empty">—</div>'}</div>
-    </div></div>`;
+    ${mode === "daf" ? '<div class="torah-source-head" aria-hidden="true" lang="he" dir="rtl"><span>תרגום אונקלוס</span><span>חומש</span><span>רש״י</span></div>' : ""}
+    <div class="torah-chapters">${groups}</div></div>`;
 }
 async function hydrateParsha() {
-  const box = $("#parshaText"); if (!box) return;
+  const box = $("#parshaText"); if (!box) return false;
   const gen = (box._hydGen = (box._hydGen || 0) + 1);
+  box.setAttribute("aria-busy", "true");
   const data = await loadTorah(box.dataset.sefer);
-  if (!box.isConnected || box._hydGen !== gen) return;
+  if (!box.isConnected || box._hydGen !== gen) return false;
   box.innerHTML = data ? parshaBodyHtml(box.dataset.sefer, box.dataset.parsha, box.dataset.mode, data)
     : `<div class="empty-mini">${(typeof navigator !== "undefined" && navigator.onLine === false) ? "You're offline — reconnect to load the parsha." : "The text of this parsha isn't available yet."}</div>`;
-  const dr = box.closest(".daf-read"); if (dr) dr.classList.toggle("has-spread", box.dataset.mode === "daf" && !!box.querySelector(".dafpage"));
-  sizeDafCarves(box); applyDafCol(box); attachDafSwipe(box);
+  box.setAttribute("aria-busy", "false");
+  const dr = box.closest(".daf-read"); if (dr) dr.classList.toggle("has-spread", !!box.querySelector(".torah-page"));
+  applyDafCol(box); attachDafSwipe(box); wireParshaChapterJumps(box);
+  const hadPendingY = _pendingY != null;
   consumePendingY();
+  if (hadPendingY) requestAnimationFrame(commitTorahReadState); else commitTorahReadState();
+  return true;
+}
+function wireParshaChapterJumps(box) {
+  box.querySelectorAll("[data-chapter-jump]").forEach(select => select.onchange = () => {
+    const target = box.querySelector(`.torah-chapter[data-chapter="${select.value}"]`); if (!target) return;
+    const top = parshaReadingTop(box);
+    const scroller = box.id === "rdBody" ? box : window;
+    scroller.scrollBy({ top: target.getBoundingClientRect().top - top, behavior: "smooth" });
+  });
+}
+function syncParshaChapterNav() {
+  const box = activeTorahBox(), select = box?.querySelector("[data-chapter-jump]"); if (!box || !select) return;
+  const top = parshaReadingTop(box), chapters = [...box.querySelectorAll(".torah-chapter")];
+  const current = chapters.findLast ? chapters.findLast(n => n.getBoundingClientRect().top <= top + 16) : chapters.filter(n => n.getBoundingClientRect().top <= top + 16).pop();
+  if (current) select.value = current.dataset.chapter;
+  if (Reader.open && Reader.kind === "torah") {
+    const rows = [...box.querySelectorAll(".torah-verse")], probe = top + 48;
+    const verse = rows.find(n => n.getBoundingClientRect().bottom > probe) || rows[rows.length - 1], i = rows.indexOf(verse);
+    const en = $("#rdTitle .en");
+    if (en && verse) en.textContent = `${Reader.sefer} ${String(verse.dataset.ref || "").replace("-", ":")} · ${i + 1}/${rows.length}`;
+  }
 }
 
 function viewHolidays() {
@@ -1822,8 +2435,11 @@ function worksheetsHtml(pk) {
 // Share a daf: the OS share sheet where available (WhatsApp-friendly), else copy the link.
 async function shareDaf(id) {
   const [m, d] = String(id || "").split("|");
-  const url = location.origin + location.pathname + "#daf=" + encodeURIComponent(`${m}|${+d}`);
-  const title = `${m} · Daf ${+d} — Rabbi Shea Stern`;
+  const samePage = State.route?.name === "daf" && State.route.id === `${m}|${+d}`;
+  const routeToShare = samePage ? State.route : { name: "daf", id: `${m}|${+d}` };
+  const url = location.origin + location.pathname + location.search + hashFor(routeToShare);
+  const read = samePage ? normalizeReadSnapshot(State.route.read) : null;
+  const title = `${read?.masechta || m} · Daf ${read ? read.amud : +d} — Rabbi Shea Stern`;
   if (navigator.share) { try { await navigator.share({ title, url }); return; } catch { /* user closed the sheet */ } }
   try { await navigator.clipboard.writeText(url); toast("Link copied — paste it anywhere"); }
   catch { toast(esc(url), 8000); }
@@ -1864,24 +2480,41 @@ function wireView(r) {
   v.querySelectorAll("[data-oplay]").forEach(b => b.onclick = e => { e.stopPropagation(); playOverride(b.dataset.oplay, "audio"); });
   v.querySelectorAll("[data-owatch]").forEach(b => b.onclick = e => { e.stopPropagation(); playOverride(b.dataset.owatch, "video"); });
   v.querySelectorAll("[data-dl]").forEach(b => b.onclick = e => { e.stopPropagation(); downloadFile(b.dataset.dl, b.dataset.dlname); });
-  v.querySelectorAll("button[data-mode]").forEach(b => b.onclick = () => {
+  v.querySelectorAll("button[data-mode]").forEach(b => b.onclick = async () => {
+    const intent = b._pagerIntent || pagerIntent(); b._pagerIntent = null;
     const mode = b.dataset.mode; State._dafMode = mode;
     $$("#dafMode button").forEach(x => { const on = x.dataset.mode === mode; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
-    const box = $("#dafText"); if (box) { box.dataset.mode = mode; hydrateDaf(); } // re-render text only; leaves any playing video intact
+    const box = $("#dafText"); if (box) {
+      saveColScroll(State._dafCol || "gemara"); box.dataset.mode = mode;
+      if (await hydrateDaf()) restoreColScroll(State._dafCol, true, intent.fallbackY, null, intent.preserveRail);
+    } // re-render text only; leaves any playing video intact
   });
   const dr = $(".daf-read");   // these controls are re-rendered inside the text region each flip → delegate
+  let drControlIntent = null;
+  const rememberControlIntent = e => {
+    const control = e.target.closest("[data-gemflip], [data-dcol]");
+    if (control) { drControlIntent = pagerIntent(control); lockReadMin(drControlIntent.fallbackY); }
+  };
+  if (dr) dr.onpointerdown = rememberControlIntent;
+  if (dr) dr.onmousedown = e => { if (!drControlIntent) rememberControlIntent(e); if (e.target.closest("[data-gemflip], [data-dcol]")) e.preventDefault(); };
   if (dr) dr.onclick = e => {
-    const g = e.target.closest("[data-gemflip]"); if (g) { e.preventDefault(); gemaraFlip(+g.dataset.gemflip); return; }
-    const or = e.target.closest("[data-openread]"); if (or) { route("daf", { id: or.dataset.openread }); return; }
-    const br = e.target.closest("[data-backread]"); if (br) { const box = $("#dafText"); if (box) { const [m2, d2] = br.dataset.backread.split("|"); box.dataset.mas = m2; box.dataset.daf = +d2; box.dataset.amud = amudKeysFor(m2, +d2)[0]; hydrateDaf(); } return; }
-    const c = e.target.closest("[data-dcol]"); if (c) selectDafCol(c.dataset.dcol);
+    const g = e.target.closest("[data-gemflip]"); if (g) { e.preventDefault(); const intent = drControlIntent; drControlIntent = null; gemaraFlip(+g.dataset.gemflip, g, intent); return; }
+    const c = e.target.closest("[data-dcol]"); if (c) { const intent = drControlIntent; drControlIntent = null; selectDafCol(c.dataset.dcol, intent); }
+    const fs = e.target.closest("[data-parsha-fullscreen]"); if (fs) { const box = $("#parshaText"); if (box) openTorahReader(box.dataset.sefer, box.dataset.parsha, box.dataset.mode); }
   };
   v.querySelectorAll("[data-daynav]").forEach(b => b.onclick = () => dayNav(+b.dataset.daynav));
   v.querySelectorAll("[data-parnav]").forEach(b => b.onclick = () => { const nx = parshaStep(State.route.parsha, +b.dataset.parnav); if (nx) route("parshaS", { parsha: nx.parsha }); });
-  v.querySelectorAll("[data-pmode]").forEach(b => b.onclick = () => {
+  v.querySelectorAll("[data-pmode]").forEach(b => b.onclick = async () => {
+    const intent = b._pagerIntent || pagerIntent(), anchor = parshaScrollAnchor($("#parshaText")); b._pagerIntent = null;
+    saveColScroll(State._parCol || "gemara");
     State._parMode = b.dataset.pmode;
     $$("#parshaMode button").forEach(x => { const on = x.dataset.pmode === State._parMode; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
-    const box = $("#parshaText"); if (box) { box.dataset.mode = State._parMode; hydrateParsha(); }
+    const box = $("#parshaText"); if (box) { box.dataset.mode = State._parMode; if (await hydrateParsha()) restoreColScroll(State._parCol || "gemara", true, intent.fallbackY, anchor, intent.preserveRail); }
+  });
+  [...v.querySelectorAll("button[data-mode], [data-pmode]")].forEach(b => {
+    const remember = () => { b._pagerIntent = pagerIntent(); lockReadMin(b._pagerIntent.fallbackY); };
+    b.onpointerdown = remember;
+    b.onmousedown = e => { if (!b._pagerIntent) remember(); e.preventDefault(); };
   });
   v.querySelectorAll("[data-tsize]").forEach(b => b.onclick = () => bumpDafScale(+b.dataset.tsize));
   v.querySelectorAll("[data-share]").forEach(b => b.onclick = () => shareDaf(b.dataset.share));
@@ -1897,6 +2530,7 @@ function wireView(r) {
     const jg = $("#jumpGo"); if (jg) jg.onclick = jump;
   }
   if ($("#dafFsBtn")) $("#dafFsBtn").onclick = () => { const box = $("#dafText"); if (box) openReader(box.dataset.mas, +box.dataset.daf, box.dataset.mode, box.dataset.amud); };
+  if ($("#parshaFsBtn")) $("#parshaFsBtn").onclick = () => { const box = $("#parshaText"); if (box) openTorahReader(box.dataset.sefer, box.dataset.parsha, box.dataset.mode); };
   const bx = $("#bkExport"); if (bx) bx.onclick = exportProgress;
   const bi = $("#bkImport"), bf = $("#bkFile");
   if (bi && bf) { bi.onclick = () => bf.click(); bf.onchange = () => { if (bf.files && bf.files[0]) importProgress(bf.files[0]); bf.value = ""; }; }
@@ -2163,29 +2797,58 @@ function setStatus(kind) { State._sk = kind; const d = $("#live"); if (d) d.clas
 function toast(html, ms = 4000) { const w = $("#toasts"); if (!w) return; const n = el("div", "toast", html); w.appendChild(n); setTimeout(() => { n.style.transition = "opacity .4s"; n.style.opacity = "0"; setTimeout(() => n.remove(), 400); }, ms); }
 
 
+function dialogFocusables(root) {
+  return root ? [...root.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    .filter(n => !n.hidden && n.getAttribute("aria-hidden") !== "true" && n.getClientRects().length) : [];
+}
+function trapDialogTab(e, root) {
+  if (e.key !== "Tab") return false;
+  const nodes = dialogFocusables(root); if (!nodes.length) { e.preventDefault(); return true; }
+  const first = nodes[0], last = nodes[nodes.length - 1];
+  if (e.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  return true;
+}
 window.addEventListener("keydown", e => {
   // Arrows must stay native where they already mean something: form fields, a
   // focused video/audio (seek), text selection (Shift), and under the open menu.
   const tag = (e.target && e.target.tagName) || "";
+  const interactive = !!e.target?.closest?.('button, a, input, textarea, select, video, audio, [contenteditable="true"], [role="slider"]');
   const typing = /INPUT|TEXTAREA|SELECT|VIDEO|AUDIO/.test(tag) || (e.target && e.target.isContentEditable);
   const plain = !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey;
   if (Reader.open) {
     if (e.key === "Escape") { e.preventDefault(); closeReader(); }
-    else if (typing || !plain) return;
-    else if (e.key === "ArrowLeft") { e.preventDefault(); readerFlip(1); }      // RTL: ← advances to the next daf
-    else if (e.key === "ArrowRight") { e.preventDefault(); readerFlip(-1); }    // RTL: → goes back to the previous daf
+    else if (trapDialogTab(e, $("#reader"))) return;
+    else if (typing || interactive || !plain) return;
+    else if (Reader.kind === "daf" && e.key === "ArrowLeft") { e.preventDefault(); readerFlip(1); }      // RTL: ← advances to the next daf
+    else if (Reader.kind === "daf" && e.key === "ArrowRight") { e.preventDefault(); readerFlip(-1); }    // RTL: → goes back to the previous daf
+    return;
+  }
+  const menu = $("#menu");
+  if (menu?.classList.contains("open")) {
+    if (e.key === "Escape") { e.preventDefault(); closeMenu(); }
+    else trapDialogTab(e, menu);
     return;
   }
   // the in-page daf turns with the arrow keys too
-  if (State.route && State.route.name === "daf" && !typing && plain && !$("#menu")?.classList.contains("open")) {
+  if (State.route && State.route.name === "daf" && !typing && !interactive && plain) {
     if (e.key === "ArrowLeft") { e.preventDefault(); gemaraFlip(1); return; }
     if (e.key === "ArrowRight") { e.preventDefault(); gemaraFlip(-1); return; }
   }
   if (e.key === "Escape") closeMenu();
 });
-window.addEventListener("resize", () => { applyViewportClasses(); setBarH(); sizeDafCarves(); });
+let _readerResizeRaf = 0;
+window.addEventListener("resize", () => {
+  cancelAnimationFrame(_readerResizeRaf);
+  _readerResizeRaf = requestAnimationFrame(() => {
+    document.querySelectorAll(".pflip").forEach(n => n.remove());
+    applyViewportClasses(); setBarH(); sizeDafCarves();
+  });
+});
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => sizeDafCarves());   // the gemara's height settles once the webfonts land
-try { window.matchMedia("(max-width: 680px)").addEventListener("change", applyViewportClasses); } catch {}
+try { window.matchMedia("(max-width: 960px)").addEventListener("change", applyViewportClasses); } catch {}
 try { window.matchMedia("(max-width: 560px)").addEventListener("change", applyViewportClasses); } catch {}
 window.addEventListener("scroll", onReadScroll, { passive: true });
+window.addEventListener("pagehide", saveActiveReadingPosition);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveActiveReadingPosition(); });
 boot();
