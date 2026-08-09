@@ -37,3 +37,18 @@ also works for a daf that has no shiur yet, and for parsha/yom tov pages
 - If you get signed out, just sign in again with the same password.
 - If something looks stuck, reload the page and try again — and if it still
   misbehaves, tell Elazar what page you were on and what you pressed.
+
+## Change the site's wording
+
+The **Site text** tab edits what people read — the masthead, the donate and
+sponsor wording, the Zelle name/email, prices, and contact details. Type the
+change and press **Save changes**; empty a box to go back to the original
+line, or press **Restore the original wording** to undo everything at once.
+(If the Zelle name or email changes, the QR code updates itself to match.)
+
+## See everything in one place
+
+The **Uploaded** tab lists every recording and worksheet you've put up, page
+by page — open anything, delete anything, or jump to that page's editing
+screen with **Edit**. And **Open the site ↗** always opens the exact page
+you're working on, so you can check how it looks right away.

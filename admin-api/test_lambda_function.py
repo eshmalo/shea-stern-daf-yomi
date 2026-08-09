@@ -349,6 +349,74 @@ class TestMutate(Base):
         self.assertEqual(out["data"]["media"]["pages"], {})
 
 
+class TestContent(Base):
+    def set(self, values, token=None):
+        return call("POST", "/mutate", {"ops": [{"op": "set_content", "values": values}]},
+                    token=token or login())
+
+    def test_set_and_clear(self):
+        token = login()
+        code, out, _ = self.set({"masthead.hebrew": "שיעורי הדף היומי — בית מדרש אור חיים",
+                                 "donate.zelle.email": "newzelle@example.com"}, token)
+        self.assertEqual(code, 200)
+        self.assertEqual(out["data"]["content"]["donate.zelle.email"], "newzelle@example.com")
+        code, out, _ = self.set({"masthead.hebrew": ""}, token)   # empty = revert to the file
+        self.assertNotIn("masthead.hebrew", out["data"]["content"])
+        code, out, _ = call("POST", "/mutate", {"ops": [{"op": "clear_content"}]}, token=token)
+        self.assertEqual(out["data"]["content"], {})
+
+    def test_non_allowlisted_keys_rejected(self):
+        token = login()
+        for key in ["options.mediaBaseUrl", "__proto__", "constructor.prototype.x",
+                    "masthead", "media.pages", "masthead.hebrew.evil", "_README"]:
+            code, _, _ = self.set({key: "x"}, token)
+            self.assertEqual(code, 400, key)
+
+    def test_length_cap(self):
+        code, _, _ = self.set({"masthead.hebrew": "א" * 81})
+        self.assertEqual(code, 400)
+
+    def test_email_must_look_like_email(self):
+        token = login()
+        for bad in ["not-an-email", "a b@c.com", "two@@at.com"]:
+            code, _, _ = self.set({"contact.email": bad}, token)
+            self.assertEqual(code, 400, bad)
+        code, _, _ = self.set({"contact.email": "good@example.com"}, token)
+        self.assertEqual(code, 200)
+
+    def test_control_chars_rejected_but_newlines_ok_in_blurbs(self):
+        token = login()
+        code, _, _ = self.set({"masthead.english": "RabbiStern"}, token)
+        self.assertEqual(code, 400)
+        code, _, _ = self.set({"masthead.english": "Rabbi\nStern"}, token)
+        self.assertEqual(code, 400)          # short fields are single-line
+        code, _, _ = self.set({"donate.blurb": "line one\nline two"}, token)
+        self.assertEqual(code, 200)
+
+    def test_non_string_value_rejected(self):
+        code, _, _ = self.set({"masthead.hebrew": {"$ne": None}})
+        self.assertEqual(code, 400)
+
+    def test_content_survives_other_ops(self):
+        token = login()
+        self.set({"masthead.english": "Rabbi Shea Stern"}, token)
+        key = "site/uploads/worksheet/daf-chullin-100/1754700000-aabbccdd.pdf"
+        lf._s3.objects[key] = b"%PDF"
+        code, out, _ = call("POST", "/mutate", {"ops": [{
+            "op": "add_attachment", "pageKey": "daf:Chullin:100", "title": "x",
+            "key": key, "contentType": "application/pdf", "size": 1}]}, token=token)
+        self.assertEqual(out["data"]["content"]["masthead.english"], "Rabbi Shea Stern")
+
+    def test_legacy_doc_without_content_key(self):
+        token = login()
+        lf._s3.objects[lf.DATA_KEY] = json.dumps({
+            "version": 1, "media": {"pages": {}, "lectures": {}},
+            "attachments": {"pages": {}}}).encode()          # pre-content-feature doc
+        code, out, _ = self.set({"masthead.subtitle": "Monsey"}, token)
+        self.assertEqual(code, 200)
+        self.assertEqual(out["data"]["content"]["masthead.subtitle"], "Monsey")
+
+
 class TestDelete(Base):
     def test_delete_only_admin_uploads(self):
         token = login()

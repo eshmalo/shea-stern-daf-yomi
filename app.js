@@ -85,12 +85,15 @@ async function boot() {
   }
   State.speaker = seed.speaker; State.all = seed.lectures || [];
   [State.content, State.media, State.dafIndex, State.origAudio] = await Promise.all([
-    loadContent().then(async c => { State.content = c; State.admin = await loadAdminData(); return c; }),   // admin data needs options.mediaBaseUrl, so it chains off content
+    loadContent().then(async c => { State.content = c; State.admin = await loadAdminData(); return applyContentOverrides(c, State.admin); }),   // admin data needs options.mediaBaseUrl, so it chains off content
     loadJson(CFG.mediaManifest), loadJson(CFG.dafIndex), loadJson(CFG.origAudio)]);
   buildIndex(); renderShell(); restoreInitialRoute();
   setStatus("checking"); refreshLive(seed.lectures || [], !!cached);
 }
-async function loadContent() { let l = null; try { l = localStorage.getItem(CFG.contentLocalKey); } catch {} if (l) { try { const p = JSON.parse(l); if (p && typeof p === "object" && !Array.isArray(p)) return p; } catch { try { localStorage.removeItem(CFG.contentLocalKey); } catch {} } } return loadJson(CFG.contentUrl); }
+// Site text comes from data/content.json, with the Rov's edits (made in /admin/)
+// layered on top. The old device-local "Editor mode" preview is gone — a stale
+// copy of it used to silently mask real content updates, so we clear it here.
+async function loadContent() { try { localStorage.removeItem(CFG.contentLocalKey); } catch {} return loadJson(CFG.contentUrl); }
 async function loadJson(u) { try { return await fetch(u).then(r => r.ok ? r.json() : {}); } catch { return {}; } }
 
 // Admin-managed media overrides + worksheet attachments (uploaded by the Rov via
@@ -106,6 +109,45 @@ async function loadAdminData() {
     return (d && typeof d === "object" && !Array.isArray(d)) ? d : {};
   } catch { return {}; }
 }
+// Site text the Rov edits in /admin/, as dotted paths into content.json. We walk
+// OUR list — never the remote object's keys — so an unlisted path (__proto__,
+// options.mediaBaseUrl, …) can't be written no matter what the file contains.
+// Keep in sync with CONTENT_FIELDS in admin-api/lambda_function.py.
+const ADMIN_TEXT_FIELDS = [
+  "masthead.hebrew", "masthead.english", "masthead.subtitle",
+  "donate.heading", "donate.blurb", "donate.dedicationNote",
+  "donate.zelle.name", "donate.zelle.email",
+  "contact.email", "contact.phone", "contact.whatsapp",
+  "phone.label", "phone.number", "phone.extension", "phone.note",
+  "sponsor.heading", "sponsor.blurb", "sponsor.contactEmail",
+  "sponsor.amounts.daf", "sponsor.amounts.week", "sponsor.amounts.masechta",
+  "about.heading",
+];
+function applyContentOverrides(base, admin) {
+  const ov = admin && admin.content;
+  if (!base || !ov || typeof ov !== "object" || Array.isArray(ov)) return base;
+  const z0 = (base.donate && base.donate.zelle) || {};
+  const wasName = z0.name || "", wasEmail = z0.email || "";
+  for (const path of ADMIN_TEXT_FIELDS) {
+    const v = ov[path];
+    if (typeof v !== "string" || !v) continue;
+    const parts = path.split(".");
+    let node = base;
+    for (let i = 0; i < parts.length - 1; i++) {
+      const k = parts[i];
+      if (!node[k] || typeof node[k] !== "object" || Array.isArray(node[k])) node[k] = {};
+      node = node[k];
+    }
+    node[parts[parts.length - 1]] = v.slice(0, 1600);
+  }
+  // content.json carries an exact hand-made Zelle QR payload that outranks
+  // name/email. If the Rov changed either, that payload would still point at the
+  // OLD account — drop it so the QR is rebuilt from the new details.
+  const z = (base.donate && base.donate.zelle) || null;
+  if (z && ((z.name || "") !== wasName || (z.email || "") !== wasEmail)) delete z.qrData;
+  return base;
+}
+
 // Admin refs are RELATIVE R2 keys under a small allowlist; anything else is
 // ignored (admin-data.json is remote content — never let it inject arbitrary URLs).
 const ADMIN_KEY_RE = /^(site\/uploads\/(audio|video|worksheet)\/|media\/|archive\/)/;
@@ -291,11 +333,10 @@ function buildMenu() {
       <button class="mi accent" data-route="donate">Donate</button>
       <button class="mi" data-route="about">About</button>
       <button class="mi phoneview-mi" id="phoneViewBtn">${_forcePhone ? "🖥️ Exit phone view" : "📱 Phone view"}</button>
-      <button class="mi" id="editorBtn" style="color:var(--ink-faint);font-size:13px">Editor mode</button>
+      <a class="mi" href="admin/" style="color:var(--ink-faint);font-size:13px">Site admin</a>
     </nav>`;
   $$("#menu .mi[data-route]").forEach(b => b.onclick = () => { closeMenu(); route(b.dataset.route); });
   $("#phoneViewBtn").onclick = togglePhoneView;
-  $("#editorBtn").onclick = openEditor;
 }
 // Phone view: switches the ACTUAL desktop UI to the real phone layout (one column at
 // a time, sticky column switcher, compact chrome) by forcing the is-phone/is-narrow
@@ -355,7 +396,28 @@ function validRoute(r) {
   if (r.name === "holiday") return typeof r.series === "string" && r.series.length > 0 && r.series.length < 80;
   return true;
 }
+// Deep link: #daf=Chullin|100 · #parsha=Re'eh · #holiday=Pesach%2FPassover — opens
+// straight to that page (the admin's "Open the site" button links this way, and it
+// makes any page shareable). Routes still pass validRoute(), and the hash is
+// stripped once used so a later refresh restores the real current page.
+function routeFromHash() {
+  const raw = String(location.hash || "").replace(/^#/, "");
+  const i = raw.indexOf("=");
+  if (i < 0) return null;
+  let val = ""; try { val = decodeURIComponent(raw.slice(i + 1)); } catch { return null; }
+  const kind = raw.slice(0, i);
+  if (kind === "daf") return { name: "daf", id: val };
+  if (kind === "parsha") return { name: "parshaS", parsha: val };
+  if (kind === "holiday") return { name: "holiday", series: val };
+  return null;
+}
 function restoreInitialRoute() {
+  const deep = routeFromHash();
+  if (deep && validRoute(deep)) {
+    try { history.replaceState(null, "", location.pathname + location.search); } catch {}
+    route(deep.name, deep, { replace: true });
+    return;
+  }
   let st = history.state;
   if (!_embedded && !(st && st.route && st.route.name)) { try { st = JSON.parse(sessionStorage.getItem("dy_route") || "null"); } catch { st = null; } }
   if (st && st.route && validRoute(st.route)) {
@@ -1440,30 +1502,6 @@ const Player = {
 function setStatus(kind) { State._sk = kind; const d = $("#live"); if (d) d.className = "live" + (kind === "err" ? " err" : kind === "checking" ? " warn" : ""); }
 function toast(html, ms = 4000) { const w = $("#toasts"); if (!w) return; const n = el("div", "toast", html); w.appendChild(n); setTimeout(() => { n.style.transition = "opacity .4s"; n.style.opacity = "0"; setTimeout(() => n.remove(), 400); }, ms); }
 
-function openEditor() {
-  const c = State.content, mh = c.masthead || {}, d = c.donate || {}, z = d.zelle || {};
-  $("#menu").innerHTML = `<div class="mtitle">Editor</div><div class="msub">edit & download content.json</div><div class="editor">
-    <label>Hebrew title</label><input id="e_he" value="${esc(mh.hebrew || "")}">
-    <label>English name</label><input id="e_en" value="${esc(mh.english || "")}">
-    <label>Subtitle</label><input id="e_sub" value="${esc(mh.subtitle || "")}">
-    <label>Donate blurb</label><textarea id="e_blurb">${esc(d.blurb || "")}</textarea>
-    <label>Zelle name</label><input id="e_zname" value="${esc(z.name || "")}">
-    <label>Zelle email</label><input id="e_zemail" value="${esc(z.email || "")}">
-    <button class="btn solid block" id="e_apply" style="margin-top:14px">Preview</button>
-    <button class="btn block" id="e_dl" style="margin-top:8px">Download content.json</button>
-    <button class="btn block" id="e_reset" style="margin-top:8px">Reset</button></div>`;
-  openMenu();
-  $("#e_apply").onclick = applyEditor;
-  $("#e_dl").onclick = () => { const c2 = gatherEditor(); const b = new Blob([JSON.stringify(c2, null, 2)], { type: "application/json" }); const a = el("a"); a.href = URL.createObjectURL(b); a.download = "content.json"; a.click(); };
-  $("#e_reset").onclick = () => { try { localStorage.removeItem(CFG.contentLocalKey); } catch {} location.reload(); };
-}
-function gatherEditor() {
-  const c = JSON.parse(JSON.stringify(State.content));
-  c.masthead = c.masthead || {}; c.masthead.hebrew = $("#e_he").value; c.masthead.english = $("#e_en").value; c.masthead.subtitle = $("#e_sub").value;
-  c.donate = c.donate || {}; c.donate.blurb = $("#e_blurb").value; c.donate.zelle = c.donate.zelle || {}; c.donate.zelle.name = $("#e_zname").value; c.donate.zelle.email = $("#e_zemail").value;
-  return c;
-}
-function applyEditor() { State.content = gatherEditor(); const ok = setStore(CFG.contentLocalKey, State.content); if (Reader.open) hideReader(); renderShell(); route(State.route.name, State.route); closeMenu(); toast(ok ? "Preview updated" : "Preview updated — storage full, changes won't persist"); }
 
 window.addEventListener("keydown", e => {
   if (Reader.open) {

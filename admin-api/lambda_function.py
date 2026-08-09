@@ -46,6 +46,22 @@ PRESIGN_TTL = 3600
 
 SIZE_CAPS = {"audio": 2 * 1024**3, "video": 6 * 1024**3, "worksheet": 200 * 1024**2}
 
+# The ONLY site-text fields the admin page may change, as dotted paths into
+# data/content.json, with per-field length caps. An allowlist (not a deep merge)
+# is deliberate: unknown keys — including __proto__ and options.mediaBaseUrl,
+# which would repoint every media file — can never be written.
+# Keep in sync with ADMIN_TEXT_FIELDS in app.js.
+CONTENT_FIELDS = {
+    "masthead.hebrew": 80, "masthead.english": 80, "masthead.subtitle": 160,
+    "donate.heading": 80, "donate.blurb": 1200, "donate.dedicationNote": 400,
+    "donate.zelle.name": 80, "donate.zelle.email": 160,
+    "contact.email": 160, "contact.phone": 60, "contact.whatsapp": 60,
+    "phone.label": 80, "phone.number": 40, "phone.extension": 12, "phone.note": 200,
+    "sponsor.heading": 80, "sponsor.blurb": 1200, "sponsor.contactEmail": 160,
+    "sponsor.amounts.daf": 16, "sponsor.amounts.week": 16, "sponsor.amounts.masechta": 16,
+    "about.heading": 80,
+}
+
 # content-type -> file extension, per kind (server picks the extension)
 TYPES = {
     "audio": {"audio/mpeg": "mp3", "audio/mp4": "m4a", "audio/x-m4a": "m4a",
@@ -136,7 +152,7 @@ def check_token(token):
 
 def empty_data():
     return {"version": 1, "updated": "", "media": {"pages": {}, "lectures": {}},
-            "attachments": {"pages": {}}}
+            "attachments": {"pages": {}}, "content": {}}
 
 
 class Unavailable(Exception):
@@ -222,6 +238,22 @@ def slug(v):
     return out[:80] or "page"
 
 
+def valid_content_value(key, v):
+    """One site-text field. Empty string means 'go back to the file's own value'."""
+    cap = CONTENT_FIELDS[key]
+    if not isinstance(v, str):
+        raise Bad(key + " must be text")
+    v = v.strip()
+    if len(v) > cap:
+        raise Bad(f"{key} is too long (limit {cap} characters)")
+    allow_nl = cap >= 400                       # only the long blurbs may wrap lines
+    if any(ord(c) < 32 and not (allow_nl and c == "\n") for c in v):
+        raise Bad(key + " contains an invalid character")
+    if v and key.lower().endswith("email") and (v.count("@") != 1 or " " in v):
+        raise Bad(key + " must be an email address")
+    return v
+
+
 # ---------- ops ----------
 
 def apply_op(d, op):
@@ -283,6 +315,23 @@ def apply_op(d, op):
                 break
         else:
             raise Bad("attachment not found")
+    elif name == "set_content":
+        vals = op.get("values")
+        if not isinstance(vals, dict) or not (1 <= len(vals) <= 40):
+            raise Bad("values must be an object of 1..40 fields")
+        if not isinstance(d.get("content"), dict):
+            d["content"] = {}
+        c = d["content"]
+        for k, v in vals.items():
+            if k not in CONTENT_FIELDS:         # blocks __proto__, options.*, anything unlisted
+                raise Bad("not an editable field: " + str(k)[:60])
+            vv = valid_content_value(k, v)
+            if vv:
+                c[k] = vv
+            else:
+                c.pop(k, None)
+    elif name == "clear_content":
+        d["content"] = {}
     elif name == "move_attachment":
         pk, aid = valid_page_key(op.get("pageKey")), s(op.get("id"), 20)
         step = int(op.get("dir", 0))
