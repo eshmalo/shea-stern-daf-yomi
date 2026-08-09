@@ -374,6 +374,7 @@ let _dafScale = 1;
 try { const s = parseFloat(localStorage.getItem("dy_dafscale")); if (s >= 0.8 && s <= 1.6) _dafScale = s; } catch {}
 function applyDafScale() { document.documentElement.style.setProperty("--daf-scale", String(_dafScale)); }
 function bumpDafScale(dir) {
+  clearPageMotions();                                        // scale changes reflow paper; cancel any geometry snapshot first
   _dafScale = Math.round(Math.min(1.6, Math.max(0.8, _dafScale + dir * 0.1)) * 10) / 10;
   try { localStorage.setItem("dy_dafscale", String(_dafScale)); } catch {}
   applyDafScale();
@@ -386,6 +387,7 @@ function updateTextSizeControls(scope) {
   (scope || document).querySelectorAll(".tsize-output").forEach(n => { n.textContent = `${Math.round(_dafScale * 100)}%`; });
 }
 function togglePhoneView() {
+  clearPageMotions();
   _forcePhone = !_forcePhone;
   try { localStorage.setItem("dy_force_phone", _forcePhone ? "1" : "0"); } catch {}
   applyViewportClasses(); setBarH();
@@ -631,6 +633,8 @@ function pageTitle(r) {
 }
 function rerender({ skipSave = false } = {}) {
   const v = $("#view"); if (!v) return;
+  resetGemaraFlipTransactions();                            // an old cold-load flip cannot own the newly routed reading surface
+  clearPageMotions();                                        // a route/history swap always outranks decorative paper motion
   if (!skipSave) saveActiveReadingPosition();
   if (Player.isVideo) Player.hide();                         // an in-page video can't survive a view swap — save its spot and drop the bar
   $$("#view video").forEach(vid => { try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {} });   // flush any in-page video before the view is replaced (no detached audio)
@@ -906,11 +910,11 @@ async function dafBodyHtml(masechta, daf, mode, amud) {
 function dafEndNav(masechta, daf, amud) {
   return `<div class="daf-endmark" aria-hidden="true"><span>❦</span></div>`;
 }
-async function hydrateDaf() {
+async function hydrateDaf(preparedHtml) {
   const box = $("#dafText"); if (!box) return false;
   const gen = (box._hydGen = (box._hydGen || 0) + 1);          // serialize overlapping hydrates
   box.setAttribute("aria-busy", "true");
-  const html = await dafBodyHtml(box.dataset.mas, +box.dataset.daf, box.dataset.mode, box.dataset.amud);
+  const html = preparedHtml == null ? await dafBodyHtml(box.dataset.mas, +box.dataset.daf, box.dataset.mode, box.dataset.amud) : preparedHtml;
   if (!box.isConnected || box._hydGen !== gen) return false;    // a newer flip superseded this one — drop the stale render
   box.innerHTML = html;
   box.setAttribute("aria-busy", "false");
@@ -1094,72 +1098,183 @@ function renderDafLayout(masechta, daf, key, data, comm, facingData) {
   return dafColHead(masechta, daf, key, sources) + `<div class="leaf-book side-${side}">${page}${gutterHtml(facing, facingData)}</div>`;
 }
 
-/* ---------- the two transitions, straight from the physical sefer ----------
-   TURN (א↔ב — the two sides of one leaf): the page you're on lifts and rotates
-   about the gutter it touches — א pivots on its right edge, ב on its left — over
-   a new page whose reading canvas remains in the exact same place.
-   SHIFT (ב↔א — pages facing each other across the fold): nothing turns; the
-   text refreshes in place and only the seam travels to the other edge.
-   Reduced-motion skips the decorative capture entirely. */
-function capturePage(kind) {
-  const box = Reader.open ? $("#rdBody") : $("#dafText");
-  if (!box || !box.querySelector(".dafpage, .amud")) return null;
-  try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) return null; } catch {}
-  const book = box.querySelector(".leaf-book");
-  // A facing-page shift moves only the seam. The paper itself is a fixed
-  // reading canvas; a same-leaf turn still lifts the outgoing page over it.
-  const target = book ? (kind === "turn" ? book.querySelector(":scope > .dafpage") : book.querySelector(":scope > .leaf-gutter"))
-                      : (kind === "turn" ? box.querySelector(".amud") : null);
-  if (!target) return null;
-  const r = target.getBoundingClientRect();
-  const rail = box.querySelector(".daf-colhead"), railRect = rail?.getBoundingClientRect(), boxRect = box.getBoundingClientRect();
-  // The decorative paper may fly only inside the reading surface. A deep-scroll
-  // capture previously began at viewport y=0 and briefly covered the fixed site
-  // bar / reader bar / operating rail; clipping at the rail's lower edge keeps
-  // every functional control continuously visible throughout the turn.
-  const chromeFloor = railRect?.bottom > 0 ? railRect.bottom : Math.max(0, boxRect.top);
-  const top = Math.max(r.top, chromeFloor), bottom = Math.min(r.bottom, boxRect.bottom, window.innerHeight || 800);
-  if (bottom - top < 80) return null;                           // nothing meaningful of the page is on screen
-  const clone = target.cloneNode(true);
+/* ---------- physical page motion ----------
+   The operating rail is the fixed viewing frame. Only inert paper snapshots may
+   move beneath it:
+
+   TURN (א↔ב, the two faces of one leaf) is a genuine two-sided 180° leaf.
+   Its free edge rises toward the reader, crosses the fold, and the incoming
+   amud settles flat as the back face. The hinge travels to the opposite side so
+   the fixed one-page viewport still follows the physical sefer.
+
+   SHIFT (ב↔א, facing pages across a fold) turns nothing. Two opaque pages
+   ride one track: the outgoing text leaves, the incoming text enters, and their
+   shared spine moves exactly along the boundary between them. No crossfade means
+   dense Hebrew never doubles into a blur.
+
+   Both snapshots retain their own restored vertical offset. Reduced-motion skips
+   the portal entirely and performs the same semantic navigation instantly. */
+const pageMotionFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
+function stripMotionClone(node) {
+  const clone = node.cloneNode(true);
   clone.removeAttribute("id");
   clone.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));
-  const spine = kind === "shift" && !!book;
-  clone.style.cssText += spine ? `;height:${r.height}px;overflow:hidden;position:static;margin:0;width:100%`
-                               : ";height:auto;overflow:visible;position:static;margin:0;width:100%";
-  const sideClass = book?.classList.contains("side-right") ? "side-right" : "side-left";
-  const pageWidth = book?.querySelector(":scope > .dafpage")?.getBoundingClientRect().width || 0;
-  return { clone, top, left: r.left, width: r.width, height: bottom - top, shift: r.top - top, sideClass, spine, travel: pageWidth };
+  clone.style.cssText += ";height:auto;overflow:visible;position:static;margin:0;width:100%;max-width:none;transform:none";
+  return clone;
 }
-// kind: "turn" (same leaf) or "shift" (across the fold); outSide identifies the
-// edge a turn pivots on or the direction the seam crosses the fixed canvas.
-function playPageFlip(cap, kind, outSide) {
-  const box = Reader.open ? $("#rdBody") : $("#dafText");
-  // A right-side amud carries the seam on the left; moving forward from it sends
-  // that seam to the right edge of the stationary page, and vice-versa.
-  const bookGoesLeft = outSide === "left";
-  if (box && kind === "shift") {                                // refresh content in place; never translate the reading canvas
-    box.classList.remove("paper-refresh"); void box.offsetWidth; box.classList.add("paper-refresh");
-    clearTimeout(box._settleTimer);
-    box._settleTimer = setTimeout(() => { box.classList.remove("paper-refresh"); box._settleTimer = 0; }, 320);
+function capturePage(surface) {
+  if (!surface?.isConnected) return null;
+  try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) return null; } catch {}
+  const book = surface.querySelector(":scope > .leaf-book");
+  const page = book?.querySelector(":scope > .dafpage") || surface.querySelector(":scope > .amud");
+  if (!page) return null;
+  const pageRect = page.getBoundingClientRect(), surfaceRect = surface.getBoundingClientRect();
+  const railRect = surface.querySelector(":scope > .daf-colhead")?.getBoundingClientRect();
+  const chromeFloor = railRect?.bottom > 0 ? railRect.bottom : Math.max(0, surfaceRect.top);
+  const stageTop = Math.max(pageRect.top, chromeFloor);
+  // The player paints above the paper portal. Let paper continue behind it so
+  // the wider shoulders never turn into blank strips during motion.
+  const stageBottom = Math.min(pageRect.bottom, surfaceRect.bottom, window.innerHeight || 800);
+  if (pageRect.width < 80 || stageBottom - stageTop < 80) return null;
+  const overlap = book ? (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--leaf-spine-overlap")) || 18) : 0;
+  const gutter = book?.querySelector(":scope > .leaf-gutter"), gutterRect = gutter?.getBoundingClientRect();
+  const sideClass = book?.classList.contains("side-right") || (!book && amudSide(surface.dataset.amud || Reader.amud) === "right") ? "side-right" : "side-left";
+  const columnClass = ["col-gemara", "col-rashi", "col-tosafos"].find(c => surface.classList.contains(c)) || "";
+  return {
+    surface, page: stripMotionClone(page), pageRect, gutter: gutter ? stripMotionClone(gutter) : null, gutterRect,
+    stageTop, stageBottom, stageLeft: pageRect.left - overlap, stageWidth: pageRect.width + overlap * 2,
+    pageWidth: pageRect.width, overlap, sideClass, columnClass,
+    hasSpread: !!surface.closest(".daf-read.has-spread"), inReader: Reader.open && surface.id === "rdBody",
+  };
+}
+function pageMotionInner(frame, stageTop) {
+  const inner = el("div", `pf-inner ${frame.sideClass}${frame.columnClass ? " " + frame.columnClass : ""}`);
+  inner.style.cssText = `top:${frame.pageRect.top - stageTop}px;left:0;width:100%;transform:none;position:absolute`;
+  inner.appendChild(frame.page);
+  return inner;
+}
+function pageMotionSpineFace(frame, role, stageTop) {
+  if (!frame.gutter || !frame.gutterRect) return null;
+  const face = el("div", `pf-spine-face pf-spine-${role} ${frame.sideClass}`);
+  face.style.cssText = `top:${frame.gutterRect.top - stageTop}px;height:${frame.gutterRect.height}px`;
+  frame.gutter.style.cssText += ";display:block;position:static!important;inset:auto!important;width:100%;height:100%;margin:0";
+  face.appendChild(frame.gutter);
+  return face;
+}
+function clearPageMotions() {
+  document.querySelectorAll(".pflip").forEach(n => typeof n._finish === "function" ? n._finish() : n.remove());
+}
+function beginPageFlip(surface, kind, outSide) {
+  const outgoing = capturePage(surface); if (!outgoing) return null;
+  clearPageMotions();
+  const move = kind === "turn" ? (outSide === "left" ? "turn-r" : "turn-l")
+                               : (outSide === "right" ? "shift-right" : "shift-left");
+  const ov = el("div", `pflip ${move}${outgoing.inReader ? " in-reader" : ""}${outgoing.hasSpread ? " has-spread" : ""}`);
+  ov.setAttribute("aria-hidden", "true"); ov.inert = true;
+  ov.style.cssText = `top:${outgoing.stageTop}px;left:${outgoing.stageLeft}px;width:${outgoing.stageWidth}px;height:${outgoing.stageBottom - outgoing.stageTop}px`;
+  ov.style.setProperty("--pf-page-width", `${outgoing.pageWidth}px`);
+  ov.style.setProperty("--pf-page-inset", `${outgoing.overlap}px`);
+  ov.style.setProperty("--pf-spine-start", `${outSide === "left" ? outgoing.pageWidth : 0}px`);
+  ov.style.setProperty("--pf-perspective", `${Math.max(2800, Math.min(4200, outgoing.pageWidth * 3.25))}px`);
+
+  const track = el("div", kind === "turn" ? "pf-turn-track pf-motion-driver" : "pf-shift-track pf-motion-driver");
+  if (kind === "turn") {
+    const lift = el("div", "pf-turn-lift"), leaf = el("div", "pf-turn-leaf"), front = el("div", "pf-face pf-front"), back = el("div", "pf-face pf-back");
+    front.appendChild(pageMotionInner(outgoing, outgoing.stageTop));
+    leaf.append(front, back); lift.appendChild(leaf); track.appendChild(lift); ov._incomingSlot = back;
+    const cast = el("div", "pf-turn-cast"); track.appendChild(cast);
+  } else {
+    const oldSheet = el("div", "pf-sheet pf-outgoing"), newSheet = el("div", "pf-sheet pf-incoming");
+    oldSheet.appendChild(pageMotionInner(outgoing, outgoing.stageTop));
+    track.append(oldSheet, newSheet); ov._incomingSlot = newSheet;
   }
-  if (!cap) return Promise.resolve();
-  document.querySelectorAll(".pflip").forEach(n => n.remove());
-  const move = kind === "turn" ? (outSide === "left" ? "turn-r" : "turn-l")   // א pivots on its right edge, ב on its left
-                               : "spine-shift";
-  const ov = el("div", "pflip " + move);
-  ov.setAttribute("aria-hidden", "true"); ov.inert = true;      // a decorative clone — out of the a11y tree and tab order
-  ov.style.cssText = `top:${cap.top}px;left:${cap.left}px;width:${cap.width}px;height:${cap.height}px`;
-  if (cap.spine) ov.style.setProperty("--spine-travel", `${bookGoesLeft ? -cap.travel : cap.travel}px`);
-  // the wrapper carries the reading-region classes so the clone renders identically; inline styles pin it
-  ov.innerHTML = `${kind === "turn" ? '<div class="pf-dim"></div>' : ""}<div class="pf-leaf"><div class="pf-face"><div class="pf-inner ${cap.sideClass}" style="top:${cap.shift}px;width:${cap.width}px;left:0;transform:none;position:absolute"></div></div></div>`;
-  ov.querySelector(".pf-inner").appendChild(cap.clone);
-  if (cap.spine) box?.classList.add("spine-in-flight");
-  document.body.appendChild(ov);
+  if (outgoing.gutter) {
+    const spine = el("div", "pf-spine"), oldFace = pageMotionSpineFace(outgoing, "old", outgoing.stageTop);
+    if (oldFace) spine.appendChild(oldFace);
+    track.appendChild(spine); ov._spine = spine;
+  }
+  ov.appendChild(track);
+  const tx = {
+    ov, surface, outgoing, kind, outSide, track, stageTop: outgoing.stageTop, stageBottom: outgoing.stageBottom,
+    done: false, resolve: null,
+  };
+  const cleanup = () => {
+    if (tx.done) return;
+    tx.done = true;
+    if (tx.onUserScroll) {
+      window.removeEventListener("wheel", tx.onUserScroll, true);
+      window.removeEventListener("touchmove", tx.onUserScroll, true);
+      document.removeEventListener("keydown", tx.onScrollKey, true);
+    }
+    ov.remove();
+    if (surface._pageMotion === tx) { surface.classList.remove("page-motion-active"); surface._pageMotion = null; }
+    const resolve = tx.resolve; tx.resolve = null; if (resolve) resolve();
+  };
+  tx.cleanup = cleanup; ov._finish = cleanup; surface._pageMotion = tx;
+  // Reader motion belongs to the reader's own stacking context. The fixed
+  // player is a later/higher sibling there, so its chrome remains solid while
+  // the full-width paper continues moving beneath it.
+  const host = outgoing.inReader ? surface.closest("#reader") : document.body;
+  (host || document.body).appendChild(ov);
+  surface.classList.add("page-motion-active");                 // keeps layout, but the portal now owns the visible paper
+  return tx;
+}
+function clipPageMotion(tx, top, bottom) {
+  if (!tx || bottom - top < 80) return false;
+  tx.stageTop = top; tx.stageBottom = bottom;
+  tx.ov.style.top = `${top}px`; tx.ov.style.height = `${bottom - top}px`;
+  const oldInner = tx.ov.querySelector(".pf-front .pf-inner, .pf-outgoing .pf-inner");
+  if (oldInner) oldInner.style.top = `${tx.outgoing.pageRect.top - top}px`;
+  const oldSpine = tx.ov.querySelector(".pf-spine-old");
+  if (oldSpine && tx.outgoing.gutterRect) oldSpine.style.top = `${tx.outgoing.gutterRect.top - top}px`;
+  return true;
+}
+// Capture only after scroll restoration's rAF. This gives each face its own
+// saved vertical position while the stationary old snapshot prevents a flash.
+async function playPageFlip(tx) {
+  if (!tx) return;
+  await pageMotionFrame();
+  if (tx.done || !tx.surface.isConnected || tx.surface._pageMotion !== tx) { tx.cleanup(); return; }
+  // Sticky chrome can change on the restore frame. Clip before that frame is
+  // painted, then wait once more for final paper/carve geometry.
+  const interimRail = tx.surface.querySelector(":scope > .daf-colhead")?.getBoundingClientRect();
+  const interimTop = Math.max(tx.outgoing.stageTop, interimRail?.bottom > 0 ? interimRail.bottom : tx.stageTop);
+  if (!clipPageMotion(tx, interimTop, tx.outgoing.stageBottom)) { tx.cleanup(); return; }
+  await pageMotionFrame();                                     // one paint applies scroll; the next settles sticky/carve geometry and its scroll event
+  if (tx.done || !tx.surface.isConnected || tx.surface._pageMotion !== tx) { tx.cleanup(); return; }
+  const incoming = capturePage(tx.surface);
+  if (!incoming || Math.abs(incoming.pageWidth - tx.outgoing.pageWidth) > 2
+      || Math.abs(incoming.pageRect.left - tx.outgoing.pageRect.left) > 2) { tx.cleanup(); return; }
+  // Scroll restoration can expand/collapse sticky chrome. Re-clip the already
+  // mounted old snapshot to the stricter of both rail ceilings before motion,
+  // preserving its global text position while guaranteeing zero control overlap.
+  const safeTop = Math.max(tx.outgoing.stageTop, incoming.stageTop);
+  const safeBottom = Math.min(tx.outgoing.stageBottom, incoming.stageBottom);
+  if (!clipPageMotion(tx, safeTop, safeBottom)) { tx.cleanup(); return; }
+  tx.ov._incomingSlot.appendChild(pageMotionInner(incoming, safeTop));
+  if (tx.ov._spine) {
+    const newFace = pageMotionSpineFace(incoming, "new", safeTop);
+    if (newFace) tx.ov._spine.appendChild(newFace);
+  }
+  const duration = tx.kind === "turn" ? 700 : 520;
+  _minLockUntil = Math.max(_minLockUntil, Date.now() + duration + 180);
+  void tx.ov.offsetWidth;
   return new Promise(resolve => {
-    let done = false;
-    const cleanup = () => { if (done) return; done = true; ov.remove(); box?.classList.remove("spine-in-flight"); resolve(); };
-    ov.querySelector(".pf-leaf").addEventListener("animationend", cleanup, { once: true });
-    setTimeout(cleanup, 900);   // safety — the overlay must never outlive the turn
+    tx.resolve = resolve;
+    const finish = tx.cleanup;
+    tx.track.addEventListener("animationend", finish, { once: true });
+    tx.track.addEventListener("animationcancel", finish, { once: true });
+    // Scroll events also fire for the destination amud's asynchronous memory
+    // restore, so they cannot distinguish interruption from correct setup. Only
+    // explicit human scroll intent cancels decoration; semantic page arrows stay
+    // queued and every amud remains free to restore a very different saved spot.
+    tx.onUserScroll = () => finish();
+    tx.onScrollKey = e => { if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(e.key)) finish(); };
+    window.addEventListener("wheel", tx.onUserScroll, { passive: true, capture: true });
+    window.addEventListener("touchmove", tx.onUserScroll, { passive: true, capture: true });
+    document.addEventListener("keydown", tx.onScrollKey, true);
+    tx.ov.classList.add("is-running");
+    setTimeout(finish, duration + 260);                        // an interrupted CSS animation can never strand hidden live text
   });
 }
 /* Compact source selector: show one full-width stream at a time. These operating
@@ -1218,6 +1333,7 @@ function applyDafCol(box) {        // reflect the chosen column as a class on th
   box.querySelectorAll(".col-tab").forEach(t => { const on = t.dataset.dcol === col; t.classList.toggle("on", on); t.setAttribute("aria-pressed", on ? "true" : "false"); });
 }
 function selectDafCol(col, pointerIntent) {
+  clearPageMotions();                                        // source text may change immediately; never leave a stale paper portal above it
   const torahReader = Reader.open && Reader.kind === "torah", torah = parshaColActive();
   const old = torah ? activeTorahSource() : (State._dafCol || "gemara");
   if (col === old) return;
@@ -1516,8 +1632,13 @@ function renderAmud(seg, mode) {
       place — the paper canvas and the shiur above it stay put.
    2. The lecture-header arrows navigate the WHOLE page to the previous / next
       daf, including its recording and supporting material. */
-let _gemaraFlipBusy = false, _gemaraFlipQueue = [];
-const pagerKind = source => source?.closest(".daf-colhead") ? "head" : "";
+let _gemaraFlipBusy = false, _gemaraFlipQueue = [], _gemaraFlipEpoch = 0;
+function resetGemaraFlipTransactions() {
+  _gemaraFlipEpoch++;
+  _gemaraFlipQueue = [];
+  _gemaraFlipBusy = false;
+}
+const pagerKind = source => typeof source === "string" ? (source === "head" ? "head" : "") : (source?.closest(".daf-colhead") ? "head" : "");
 function pagerIntent(source) {
   const kind = pagerKind(source);
   const surface = Reader.open ? $("#rdBody") : ($("#parshaText") || $("#dafText"));
@@ -1540,22 +1661,27 @@ function announceAmud(masechta, amud) {
 async function gemaraFlip(dir, source, pointerIntent) { // stable rail arrows — daf text only, in place
   const intent = pointerIntent || pagerIntent(source);
   if (_gemaraFlipBusy) { if (_gemaraFlipQueue.length < 6) _gemaraFlipQueue.push({ dir, intent }); return; }
+  const epoch = _gemaraFlipEpoch;
   _gemaraFlipBusy = true;
-  try { await gemaraFlipOnce(dir, intent); }
+  try { await gemaraFlipOnce(dir, intent, epoch); }
   finally {
+    if (epoch !== _gemaraFlipEpoch) return;
     _gemaraFlipBusy = false;
-    const next = _gemaraFlipQueue.shift(); if (next) gemaraFlipOnceQueued(next);
+    const next = _gemaraFlipQueue.shift(); if (next) gemaraFlipOnceQueued(next, epoch);
   }
 }
-async function gemaraFlipOnceQueued(next) {
+async function gemaraFlipOnceQueued(next, epoch) {
+  if (epoch !== _gemaraFlipEpoch) return;
   _gemaraFlipBusy = true;
-  try { await gemaraFlipOnce(next.dir, next.intent); }
+  try { await gemaraFlipOnce(next.dir, next.intent, epoch); }
   finally {
+    if (epoch !== _gemaraFlipEpoch) return;
     _gemaraFlipBusy = false;
-    const after = _gemaraFlipQueue.shift(); if (after) gemaraFlipOnceQueued(after);
+    const after = _gemaraFlipQueue.shift(); if (after) gemaraFlipOnceQueued(after, epoch);
   }
 }
-async function gemaraFlipOnce(dir, intent) {
+async function gemaraFlipOnce(dir, intent, epoch = _gemaraFlipEpoch) {
+  if (epoch !== _gemaraFlipEpoch) return;
   const box = $("#dafText"); if (!box) return;
   // Re-measure before the async render as a hard fallback for keyboard and
   // assistive activations, which have no pointer target to carry an intent.
@@ -1568,15 +1694,24 @@ async function gemaraFlipOnce(dir, intent) {
   const cur = box.dataset.amud || amudKeysFor(box.dataset.mas, +box.dataset.daf)[0];
   const nx = amudStep(box.dataset.mas, +box.dataset.daf, cur, dir); if (!nx) return;
   const transition = RM.transitionFor({ masechta: box.dataset.mas, amud: cur }, nx);
-  const cap = capturePage(transition.kind), focusKind = stableIntent.kind;
+  const focusKind = stableIntent.kind, expected = `${box.dataset.mas}|${box.dataset.daf}|${cur}|${box.dataset.mode}`;
+  // Prepare while the old page remains fully live. Only once the destination is
+  // ready do we freeze its last visual frame, commit, and begin the motion. A
+  // cold cross-masechta fetch therefore never strands a screenshot on screen.
+  box.setAttribute("aria-busy", "true");
+  const prepared = await dafBodyHtml(nx.masechta, nx.daf, box.dataset.mode, nx.amud);
+  const stillExpected = epoch === _gemaraFlipEpoch && box.isConnected
+    && `${box.dataset.mas}|${box.dataset.daf}|${box.dataset.amud || cur}|${box.dataset.mode}` === expected;
+  if (!stillExpected) { if (box.isConnected) box.setAttribute("aria-busy", "false"); return; }
+  const motion = beginPageFlip(box, transition.kind, transition.outSide);
   if (!box._renderedDaf || (box._renderedMas === box.dataset.mas && box._renderedDaf === box.dataset.daf && box._renderedAmud === cur))
     saveColScroll(State._dafCol);                // remember our place — but only when what's on screen IS this amud (rapid double-flip guard)
   box.dataset.mas = nx.masechta; box.dataset.daf = nx.daf; box.dataset.amud = nx.amud;
-  const painted = await hydrateDaf();            // re-renders the amud incl. the flanking arrows (fresh boundary state)
-  if (!painted) return;
+  const painted = await hydrateDaf(prepared);    // synchronous commit of the prepared amud incl. fresh boundary arrows
+  if (!painted) { motion?.cleanup(); return; }
   restoreColScroll(State._dafCol, true, stableIntent.fallbackY, null, stableIntent.preserveRail); // keep an undocked rail under the pointer; otherwise restore this amud
   announceAmud(nx.masechta, nx.amud); refocusPager(box, focusKind, dir);
-  await playPageFlip(cap, transition.kind, transition.outSide);
+  await playPageFlip(motion);
 }
 function dayNav(dir) {                           // top arrows — whole lecture page
   const [m, d] = (State.route.id || "").split("|");
@@ -1588,7 +1723,8 @@ function dayNav(dir) {                           // top arrows — whole lecture
    The full daf, full-bleed, with a minimal bar. Flips between dapim in place
    and never touches the underlying page — so the shiur (audio or video) keeps
    playing untouched while you read ahead or back. */
-const Reader = { kind: null, masechta: null, daf: null, amud: null, sefer: null, parsha: null, source: null, mode: "daf", open: false, _bodyGen: 0 };
+const Reader = { kind: null, masechta: null, daf: null, amud: null, sefer: null, parsha: null, source: null, mode: "daf", open: false,
+  _bodyGen: 0, _flipEpoch: 0, _flipBusy: false, _flipQueue: [] };
 let _readerClosing = false, _readerOpener = null;
 function openReader(masechta, daf, mode, amud) {
   if (Reader.open) return;   // already open — don't stack a second history entry or clobber the opener
@@ -1612,6 +1748,8 @@ function openTorahReader(sefer, parsha, mode) {
 }
 function showReader({ push = true } = {}) {
   const r = $("#reader"); if (!r) return;
+  resetGemaraFlipTransactions();                            // the inert page underneath cannot keep navigating in the background
+  Reader._flipEpoch++; Reader._flipQueue = []; Reader._flipBusy = false;
   _readerOpener = document.activeElement;
   r.hidden = false; r.setAttribute("aria-hidden", "false");
   r.classList.toggle("torah-reader", Reader.kind === "torah");
@@ -1633,8 +1771,8 @@ function hideReader() {
   // final source, not the fact that a source button was used earlier.
   const torahMode = kind === "torah" && Reader.inlineMode === "he" && torahSource === "gemara" ? "he" : "daf";
   if (Reader.open) saveColScroll(kind === "torah" ? torahSource : (State._dafCol || "gemara"));
-  Reader._bodyGen++; Reader._flipQueue = []; Reader._flipBusy = false;
-  document.querySelectorAll(".pflip").forEach(n => n.remove());
+  Reader._bodyGen++; Reader._flipEpoch++; Reader._flipQueue = []; Reader._flipBusy = false;
+  clearPageMotions();
   Reader.open = false; _readerClosing = false;
   const r = $("#reader"), app = $("#app"), player = $("#player");
   if (player && app) app.appendChild(player);
@@ -1713,27 +1851,37 @@ function restoreReaderFromSnapshot(snapshot, { push = false } = {}) {
   return true;
 }
 async function readerFlip(dir, source) {
-  if (Reader._flipBusy) { Reader._flipQueue = Reader._flipQueue || []; if (Reader._flipQueue.length < 6) Reader._flipQueue.push({ dir }); return; }
+  if (Reader._flipBusy) { Reader._flipQueue = Reader._flipQueue || []; if (Reader._flipQueue.length < 6) Reader._flipQueue.push({ dir, source: pagerKind(source) }); return; }
+  const epoch = Reader._flipEpoch;
   Reader._flipBusy = true;
-  try { await readerFlipOnce(dir, source); }
+  try { await readerFlipOnce(dir, source, epoch); }
   finally {
+    if (epoch !== Reader._flipEpoch) return;
     Reader._flipBusy = false;
-    const next = Reader._flipQueue?.shift(); if (next && Reader.open) readerFlip(next.dir, next.source);
+    const next = Reader._flipQueue?.shift(); if (next && Reader.open && epoch === Reader._flipEpoch) readerFlip(next.dir, next.source);
   }
 }
-async function readerFlipOnce(dir, source) {
+async function readerFlipOnce(dir, source, epoch = Reader._flipEpoch) {
+  if (epoch !== Reader._flipEpoch || !Reader.open || Reader.kind !== "daf") return;
   const cur = Reader.amud || amudKeysFor(Reader.masechta, Reader.daf)[0];
   const nx = amudStep(Reader.masechta, Reader.daf, cur, dir); if (!nx) return;
   const transition = RM.transitionFor({ masechta: Reader.masechta, amud: cur }, nx);
-  const cap = capturePage(transition.kind), focusKind = pagerKind(source);
+  const body = $("#rdBody"), focusKind = pagerKind(source), mode = Reader.mode;
+  const expected = `${Reader.masechta}|${Reader.daf}|${cur}|${mode}`;
+  body?.setAttribute("aria-busy", "true");
+  const prepared = await dafBodyHtml(nx.masechta, nx.daf, mode, nx.amud);
+  const stillExpected = epoch === Reader._flipEpoch && Reader.open && Reader.kind === "daf" && body?.isConnected
+    && `${Reader.masechta}|${Reader.daf}|${Reader.amud || cur}|${Reader.mode}` === expected;
+  if (!stillExpected) { if (body?.isConnected) body.setAttribute("aria-busy", "false"); return; }
+  const motion = beginPageFlip(body, transition.kind, transition.outSide);
   if (!Reader._renderedD || (Reader._renderedM === Reader.masechta && Reader._renderedD === cur))
     saveColScroll(State._dafCol);                // save a spot only for the amud actually rendered (rapid double-flip guard)
   Reader.masechta = nx.masechta; Reader.daf = nx.daf; Reader.amud = nx.amud; Reader._restoreScroll = true;
   syncReaderChrome();
-  const painted = await fillReaderBody(nx.masechta, nx.daf, Reader.mode, nx.amud);
-  if (!painted) return;
+  const painted = await fillReaderBody(nx.masechta, nx.daf, mode, nx.amud, prepared);
+  if (!painted) { motion?.cleanup(); return; }
   announceAmud(nx.masechta, nx.amud); refocusPager($("#rdBody"), focusKind, dir);
-  await playPageFlip(cap, transition.kind, transition.outSide);
+  await playPageFlip(motion);
 }
 function renderReader() {
   if (Reader.kind === "torah") { renderTorahReader(); return; }
@@ -1840,15 +1988,16 @@ function syncReaderChrome() {
 }
 async function setReaderMode(mode) {
   if (!Reader.open || Reader.mode === mode) return;
+  clearPageMotions();
   saveColScroll(State._dafCol || "gemara");
   Reader.mode = mode; State._dafMode = mode; Reader._restoreScroll = true;
   syncReaderChrome();
   await fillReaderBody(Reader.masechta, Reader.daf, mode, Reader.amud);
 }
-async function fillReaderBody(m, d, mode, amud) {
+async function fillReaderBody(m, d, mode, amud, preparedHtml) {
   const gen = ++Reader._bodyGen, body = $("#rdBody");
   if (body) body.setAttribute("aria-busy", "true");
-  const html = await dafBodyHtml(m, d, mode, amud);
+  const html = preparedHtml == null ? await dafBodyHtml(m, d, mode, amud) : preparedHtml;
   if (body && gen === Reader._bodyGen && Reader.open && Reader.masechta === m && Reader.daf === d && Reader.amud === amud && Reader.mode === mode) {
     body.innerHTML = html; Reader._renderedM = m; Reader._renderedN = d; Reader._renderedD = amud; Reader._renderedMode = mode;
     body.setAttribute("aria-busy", "false");
@@ -2481,6 +2630,7 @@ function wireView(r) {
   v.querySelectorAll("[data-owatch]").forEach(b => b.onclick = e => { e.stopPropagation(); playOverride(b.dataset.owatch, "video"); });
   v.querySelectorAll("[data-dl]").forEach(b => b.onclick = e => { e.stopPropagation(); downloadFile(b.dataset.dl, b.dataset.dlname); });
   v.querySelectorAll("button[data-mode]").forEach(b => b.onclick = async () => {
+    clearPageMotions();
     const intent = b._pagerIntent || pagerIntent(); b._pagerIntent = null;
     const mode = b.dataset.mode; State._dafMode = mode;
     $$("#dafMode button").forEach(x => { const on = x.dataset.mode === mode; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
@@ -2841,7 +2991,7 @@ let _readerResizeRaf = 0;
 window.addEventListener("resize", () => {
   cancelAnimationFrame(_readerResizeRaf);
   _readerResizeRaf = requestAnimationFrame(() => {
-    document.querySelectorAll(".pflip").forEach(n => n.remove());
+    clearPageMotions();
     applyViewportClasses(); setBarH(); sizeDafCarves();
   });
 });

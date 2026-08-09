@@ -60,16 +60,31 @@ test("operating controls are outside the paper and never scale", async () => {
   assert.match(css, /side-right[^\n]*\.tosafos \.cv,[\s\S]*?float: left/);
 });
 
-test("the reading canvas stays fixed while only its paper or spine animates", async () => {
+test("the operating frame stays fixed while physical paper snapshots animate", async () => {
   const app = await readFile(path.join(root, "app.js"), "utf8");
   const css = await readFile(path.join(root, "styles.css"), "utf8");
 
-  assert.match(app, /kind === "turn" \? book\.querySelector\(":scope > \.dafpage"\) : book\.querySelector\(":scope > \.leaf-gutter"\)/);
+  assert.match(app, /const page = book\?\.querySelector\(":scope > \.dafpage"\) \|\| surface\.querySelector\(":scope > \.amud"\)/);
+  assert.match(app, /leaf\.append\(front, back\)/);
+  assert.match(app, /track\.append\(oldSheet, newSheet\)/);
+  assert.match(app, /const chromeFloor = railRect\?\.bottom > 0 \? railRect\.bottom/);
+  assert.match(app, /ov\.setAttribute\("aria-hidden", "true"\); ov\.inert = true/);
+  assert.match(app, /window\.addEventListener\("wheel", tx\.onUserScroll/);
+  assert.match(app, /window\.addEventListener\("touchmove", tx\.onUserScroll/);
+  assert.doesNotMatch(app, /addEventListener\("scroll", tx\./);
+  assert.match(app, /const host = outgoing\.inReader \? surface\.closest\("#reader"\) : document\.body/);
+  assert.doesNotMatch(app, /playerFloor/);
+  assert.match(app, /_gemaraFlipEpoch/);
+  assert.match(app, /Reader\._flipEpoch/);
+  assert.match(css, /#dafText\.page-motion-active > :is\(\.leaf-book, \.amud\)/);
+  assert.match(css, /\.pflip\.is-running\.shift-right \.pf-shift-track/);
+  assert.match(css, /\.pflip\.is-running\.shift-left \.pf-shift-track/);
+  assert.match(css, /@keyframes pfTurnLeafR \{ from \{ transform: rotateY\(0deg\); \} to \{ transform: rotateY\(180deg\); \} \}/);
+  assert.match(css, /@keyframes pfTurnLeafL \{ from \{ transform: rotateY\(0deg\); \} to \{ transform: rotateY\(-180deg\); \} \}/);
+  assert.doesNotMatch(css, /paperRefresh|paper-refresh|spineAcross/);
   assert.match(css, /:is\(\.leaf-book, \.pf-inner\) > \.dafpage \{[\s\S]*?width: 100%; min-width: 0/);
   assert.match(css, /\.side-left > \.leaf-gutter \{ left: auto; right: calc\(var\(--leaf-spine-overlap\) \* -1\); \}/);
   assert.match(css, /\.side-right > \.leaf-gutter \{ left: calc\(var\(--leaf-spine-overlap\) \* -1\); right: auto; \}/);
-  assert.match(css, /\.pflip\.spine-shift \.leaf-gutter/);
-  assert.match(app, /const chromeFloor = railRect\?\.bottom > 0 \? railRect\.bottom/);
   assert.doesNotMatch(app, /readAheadNote|data-openread|data-backread/);
 });
 
