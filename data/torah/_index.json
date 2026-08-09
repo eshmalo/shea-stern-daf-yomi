@@ -1,0 +1,32 @@
+{
+  "Bereishit": {
+    "file": "data/torah/Bereishit.json",
+    "parshiyos": 12,
+    "verses": 1533,
+    "kb": 1317
+  },
+  "Shemot": {
+    "file": "data/torah/Shemot.json",
+    "parshiyos": 11,
+    "verses": 1210,
+    "kb": 1219
+  },
+  "Vayikra": {
+    "file": "data/torah/Vayikra.json",
+    "parshiyos": 10,
+    "verses": 859,
+    "kb": 788
+  },
+  "Bamidbar": {
+    "file": "data/torah/Bamidbar.json",
+    "parshiyos": 10,
+    "verses": 1288,
+    "kb": 998
+  },
+  "Devarim": {
+    "file": "data/torah/Devarim.json",
+    "parshiyos": 11,
+    "verses": 956,
+    "kb": 889
+  }
+}

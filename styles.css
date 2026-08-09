@@ -21,6 +21,12 @@
   font-family: "EB Garamond"; font-style: italic; font-weight: 400 700; font-display: swap;
   src: url("assets/fonts/EBGaramond-italic-latin.woff2") format("woff2");
 }
+/* Rashi script — for the Rashi/Tosafos margins of the printed-daf layout (OFL, self-hosted) */
+@font-face {
+  font-family: "Noto Rashi Hebrew"; font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("assets/fonts/NotoRashiHebrew-hebrew.woff2") format("woff2");
+  unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
 
 :root {
   color-scheme: light;
@@ -41,6 +47,7 @@
 
   --serif:    "EB Garamond", "Frank Ruhl Libre", Georgia, "Times New Roman", "Hoefler Text", serif;
   --serif-he: "Frank Ruhl Libre", "Taamey Frank CLM", "Times New Roman", David, serif;
+  --serif-rashi: "Noto Rashi Hebrew", "Frank Ruhl Libre", "Times New Roman", David, serif;
   --sans:     ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --app: 720px;
   --pad: 26px;
@@ -145,21 +152,29 @@ main#view { flex: 1 0 auto; width: 100%; }
 .adjacent a:hover, .adjacent button:hover { border-color: var(--hair-2); background: var(--paper-2); text-decoration: none; color: var(--ink); }
 .adjacent .nm { font-family: var(--serif-he); direction: rtl; font-weight: 600; color: var(--accent); }
 
-/* ---------- list rows ---------- */
+/* ---------- list rows ----------
+   A row is a flex CONTAINER: the body (.row-main) opens the daf's page for daf
+   shiurim (or plays, when there is no page to open), and the circled ▶ / ☆ on
+   the right are real buttons of their own. */
 .rows { margin-top: 4px; }
-.row { -webkit-appearance: none; appearance: none; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--hair); color: var(--ink); font: inherit;
-  display: flex; align-items: center; gap: 14px; padding: 12px 8px 12px 10px; position: relative; transition: background .12s; }
+.row { display: flex; align-items: stretch; border-bottom: 1px solid var(--hair); position: relative; transition: background .12s; }
 .row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--accent); transform: scaleY(0); transform-origin: center; transition: transform .15s; }
 .row:hover { background: color-mix(in srgb, var(--paper-2) 70%, var(--paper)); }
 .row:hover::before { transform: scaleY(1); }
+.row .row-main { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; text-align: left; background: none; border: 0; color: var(--ink); font: inherit; cursor: pointer;
+  display: flex; align-items: center; gap: 14px; padding: 12px 8px 12px 10px; }
 .row .rnum, .drow .rnum { font-family: var(--serif-he); direction: rtl; font-size: 18px; font-weight: 700; color: var(--accent); min-width: 42px; text-align: center; border-right: 1px solid var(--hair); padding-right: 12px; flex: none; align-self: stretch; display: flex; align-items: center; justify-content: center; }
 .row .rnum.sym { font-family: var(--sans); font-size: 12px; color: var(--ink-faint); font-weight: 400; }
 .row .rmain, .drow .rmain { flex: 1; min-width: 0; }
 .row .rmain b, .drow .rmain b { font-weight: 600; font-size: 17.5px; display: block; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; }
 .row .rmeta, .drow .rmeta { display: block; font-family: var(--sans); font-size: 12px; color: var(--ink-faint); margin-top: 2px; letter-spacing: .01em; }
-.row .rgo { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--hair-2); color: var(--accent); font-size: 11px; display: grid; place-items: center; transition: background .14s, color .14s, border-color .14s; }
+.row .row-play { flex: none; align-self: center; width: 40px; height: 40px; margin: 0 6px 0 2px; border-radius: 50%; border: 1px solid var(--hair-2); background: var(--paper); color: var(--accent); font-size: 11px; display: grid; place-items: center; cursor: pointer; transition: background .14s, color .14s, border-color .14s; }
+.row .row-play:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.row .row-fav { flex: none; align-self: center; width: 38px; height: 38px; margin-right: 4px; border-radius: 50%; border: 0; background: none; color: var(--ink-faint); font-size: 16px; display: grid; place-items: center; cursor: pointer; transition: color .14s, background .14s; }
+.row .row-fav:hover { color: var(--accent); background: var(--paper-2); }
+.row .row-fav.on { color: var(--gold); }
+.row .row-play:focus-visible, .row .row-fav:focus-visible { border-radius: 50%; }
 .svg-ic { display: block; }
-.row:hover .rgo { background: var(--accent); border-color: var(--accent); color: #fff; }
 .row.is-new .rmain b::after { content: "new"; font-family: var(--sans); margin-left: 8px; color: #fff; background: var(--accent); font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 1px 5px; border-radius: 3px; vertical-align: 2px; }
 
 /* ---------- Browse: single-column box navigation (Shas · Parsha · Holidays) ----------
@@ -199,8 +214,11 @@ main#view { flex: 1 0 auto; width: 100%; }
 .drow:hover { background: color-mix(in srgb, var(--paper-2) 70%, var(--paper)); }
 .drow:hover::before { transform: scaleY(1); }
 .drow-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; padding: 12px 8px 12px 10px; background: none; border: 0; text-align: left; color: var(--ink); font: inherit; cursor: pointer; }
-.drow.future .rmain b { color: var(--ink-soft); font-weight: 500; }
-.drow.future .rnum { color: var(--ink-faint); font-weight: 400; }
+/* a daf with no recording is still fully readable — keep it inviting, not "disabled" */
+.drow.future .rmain b { color: var(--ink); font-weight: 500; }
+.drow.future .rnum { color: var(--ink-soft); font-weight: 400; }
+.drow .drow-read { flex: none; align-self: center; width: 40px; height: 40px; margin: 0 8px 0 4px; border-radius: 50%; border: 1px solid var(--hair); background: none; color: var(--ink-faint); font-size: 15px; display: grid; place-items: center; }
+.drow:hover .drow-read { color: var(--accent); border-color: var(--hair-2); }
 .drow-chk { flex: none; align-self: center; color: var(--ok); font-weight: 700; font-size: 14px; }
 .drow-play { flex: none; align-self: center; width: 40px; height: 40px; margin: 0 8px 0 4px; border-radius: 50%; border: 1px solid var(--hair-2); background: var(--paper); color: var(--accent); font-size: 13px; display: grid; place-items: center; cursor: pointer; transition: background .14s, color .14s, border-color .14s; }
 .drow-play:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -221,27 +239,39 @@ main#view { flex: 1 0 auto; width: 100%; }
 .sponsor-strip b { color: var(--accent); font-size: 17px; }
 .sponsor-strip .btn { margin-top: 12px; }
 
-.daf-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 24px 0 10px; border-top: 2px solid var(--rule); border-bottom: 1px solid var(--hair); padding: 9px 0 8px; }
+.daf-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 24px 0 10px; border-top: 2px solid var(--rule); border-bottom: 1px solid var(--hair); padding: 9px 0 8px; flex-wrap: wrap; }
 .daf-toolbar .ttl { font-family: var(--sans); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .13em; color: var(--ink-soft); }
 .seg { display: inline-flex; border: 1px solid var(--hair-2); border-radius: 5px; overflow: hidden; }
-.seg button { border: 0; background: var(--paper); color: var(--ink-soft); font-size: 12.5px; padding: 6px 12px; font-family: var(--sans); transition: background .12s, color .12s; }
+.seg button { border: 0; background: var(--paper); color: var(--ink-soft); font-size: 13.5px; min-height: 40px; padding: 8px 13px; font-family: var(--sans); transition: background .12s, color .12s; }
+.seg button .seg-he { font-family: var(--serif-he); font-size: 15px; }
 .seg button + button { border-left: 1px solid var(--hair-2); }
 .seg button.on { background: var(--ink); color: var(--paper); }
 .seg button:not(.on):hover { background: var(--paper-2); color: var(--ink); }
 
-.fs-btn { -webkit-appearance: none; appearance: none; border: 1px solid var(--hair-2); background: var(--paper); color: var(--ink-soft); width: 40px; height: 40px; border-radius: 6px; font-size: 16px; display: grid; place-items: center; transition: background .12s, color .12s, border-color .12s; }
+/* א− / א+ text-size control — the reading region only; chrome stays put */
+.tsize { display: inline-flex; border: 1px solid var(--hair-2); border-radius: 5px; overflow: hidden; }
+.tsize button { border: 0; background: var(--paper); color: var(--ink-soft); font-family: var(--serif-he); font-size: 15px; min-width: 40px; min-height: 40px; padding: 0 10px; transition: background .12s, color .12s; }
+.tsize button + button { border-left: 1px solid var(--hair-2); font-size: 18px; }
+.tsize button:hover { background: var(--paper-2); color: var(--ink); }
+
+.fs-btn { -webkit-appearance: none; appearance: none; border: 1px solid var(--hair-2); background: var(--paper); color: var(--ink-soft); min-height: 40px; padding: 0 13px; border-radius: 6px; font-size: 15px; display: inline-flex; align-items: center; gap: 7px; transition: background .12s, color .12s, border-color .12s; }
+.fs-btn .fs-lbl { font-family: var(--sans); font-size: 12px; letter-spacing: .04em; }
 .fs-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-/* top-section day/lecture nav — turns the WHOLE page to the prev / next daf */
+/* top-section day/lecture nav — turns the WHOLE page to the prev / next daf.
+   The destination daf is NAMED in the pill (catchword-style) so the RTL arrow
+   direction teaches itself instead of confusing. */
 .daf-daynav { display: flex; align-items: center; justify-content: center; gap: 16px; }
 .daf-head-titles { min-width: 0; }
-.daynav { -webkit-appearance: none; appearance: none; flex: none; border: 1px solid var(--hair-2); background: var(--paper); color: var(--accent); width: 40px; height: 40px; border-radius: 50%; font-size: 23px; line-height: 1; display: grid; place-items: center; padding: 0 0 3px; transition: background .13s, color .13s, border-color .13s, opacity .14s, transform .12s; }
-.daynav:hover { background: var(--accent); border-color: var(--accent); color: #fff; transform: scale(1.06); }
-.daynav:active { transform: scale(.95); }
+.daynav { -webkit-appearance: none; appearance: none; flex: none; border: 1px solid var(--hair-2); background: var(--paper); color: var(--accent); min-height: 40px; border-radius: 999px; font-size: 19px; line-height: 1; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px 8px; transition: background .13s, color .13s, border-color .13s, opacity .14s, transform .12s; }
+.daynav .dn-t { font-family: var(--serif-he); direction: rtl; font-size: 17px; font-weight: 600; padding-top: 2px; }
+.daynav:hover { background: var(--accent); border-color: var(--accent); color: #fff; transform: scale(1.04); }
+.daynav:active { transform: scale(.96); }
 .daynav:disabled { opacity: .22; pointer-events: none; }
 /* phone layout (is-narrow = viewport 560px OR forced phone view) */
-html.is-narrow .daynav { width: 36px; height: 36px; font-size: 21px; }
-html.is-narrow .daf-daynav { gap: 10px; }
+html.is-narrow .daynav { min-height: 36px; font-size: 17px; padding: 4px 11px 6px; }
+html.is-narrow .daynav .dn-t { font-size: 15px; }
+html.is-narrow .daf-daynav { gap: 8px; }
 
 
 /* gemara-flip arrows live INSIDE the daf, flanking the נב·א page number on both
@@ -292,8 +322,9 @@ html.is-phone .reader-body { padding: 12px 14px 48px; }
 .amud .amud-label { font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 15px; letter-spacing: .04em; color: var(--accent); margin-bottom: 12px; position: relative; }
 .amud .amud-label::before, .amud .amud-label::after { content: ""; position: absolute; top: 50%; width: 28%; height: 1px; background: var(--hair-2); }
 .amud .amud-label::before { left: 0; } .amud .amud-label::after { right: 0; }
-.daf-he { font-family: var(--serif-he); direction: rtl; text-align: justify; font-size: 20px; line-height: 1.95; }
-.daf-en { direction: ltr; text-align: justify; font-size: 17px; line-height: 1.72; color: #2a2823; }
+/* reading type scales with the א−/א+ control (--daf-scale on <html>, persisted) */
+.daf-he { font-family: var(--serif-he); direction: rtl; text-align: justify; font-size: calc(20px * var(--daf-scale, 1)); line-height: 1.95; }
+.daf-en { direction: ltr; text-align: justify; font-size: calc(17px * var(--daf-scale, 1)); line-height: 1.72; color: #2a2823; }
 .daf-en b, .daf-en strong { font-weight: 700; color: #000; }
 .seg-pair { margin: 0 0 14px; padding-bottom: 14px; border-bottom: 1px solid var(--hair); }
 .seg-pair .daf-he { margin-bottom: 8px; }
@@ -302,12 +333,16 @@ html.is-phone .reader-body { padding: 12px 14px 48px; }
 /* ---------- "Daf" layout — Tzuras Hadaf (Gemara center · Rashi + Tosafos margins) ---------- */
 .dafpage { border: 1px solid var(--hair-2); border-radius: 6px; padding: 16px 16px 10px; margin: 16px 0 24px; background: linear-gradient(#fdfbf4, #fbf8ee); box-shadow: 0 1px 0 var(--hair); }
 .dafpage-label { font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 12px; letter-spacing: .03em; }
+.dafpage-label .lbl-t-mas { color: var(--ink-soft); font-weight: 600; margin-left: 10px; }
 .dafpage-grid { display: grid; grid-template-columns: 1fr 1.75fr 1fr; gap: 18px; direction: rtl; align-items: start; }
 .dafpage-grid .col { direction: rtl; min-width: 0; }
 .col-h { font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-faint); border-bottom: 1px solid var(--hair); padding-bottom: 5px; margin-bottom: 9px; letter-spacing: .03em; }
-.col.gemara .gem { font-family: var(--serif-he); direction: rtl; text-align: justify; font-size: 18.5px; line-height: 1.85; }
-.col.side .comm { font-family: var(--serif-he); direction: rtl; text-align: justify; font-size: 13px; line-height: 1.64; margin: 0 0 9px; color: var(--ink-soft); }
+.col.gemara .gem { font-family: var(--serif-he); direction: rtl; text-align: justify; font-size: calc(18.5px * var(--daf-scale, 1)); line-height: 1.85; }
+/* Rashi & Tosafos are set in Rashi script, as printed; the opening dibbur of each
+   column gets the big square-letter treatment of a real page */
+.col.side .comm { font-family: var(--serif-rashi); direction: rtl; text-align: justify; font-size: calc(14px * var(--daf-scale, 1)); line-height: 1.7; margin: 0 0 9px; color: #3a362d; }
 .col.side .comm b { color: var(--ink); font-weight: 700; }
+.col.side .comm.comm0 b:first-of-type { font-family: var(--serif-he); font-size: 1.85em; line-height: 1.1; font-weight: 700; }
 .col-empty { color: var(--hair-2); text-align: center; font-size: 18px; padding: 10px 0; }
 /* the phone column selector is hidden on wider screens (all 3 columns show) */
 .daf-colhead { display: none; }
@@ -317,8 +352,8 @@ html.is-phone .dafpage-label .pageflip { display: none; }
 html.is-phone .dafpage-grid { grid-template-columns: 1fr; gap: 0; }
 html.is-phone .col-gemara .dafpage-grid .col:not(.gemara), html.is-phone .col-rashi .dafpage-grid .col:not(.rashi), html.is-phone .col-tosafos .dafpage-grid .col:not(.tosafos) { display: none; }
 html.is-phone .dafpage-grid .col.side { border-top: 0; padding-top: 0; margin-top: 0; }
-html.is-phone .col.gemara .gem { font-size: 20px; line-height: 1.9; }
-html.is-phone .col.side .comm { font-size: 17px; line-height: 1.8; }
+html.is-phone .col.gemara .gem { font-size: calc(20px * var(--daf-scale, 1)); line-height: 1.9; }
+html.is-phone .col.side .comm { font-size: calc(18px * var(--daf-scale, 1)); line-height: 1.78; }
 html.is-phone .col-h { display: none; }
 html.is-phone .daf-toolbar { flex-wrap: wrap; gap: 8px; }
 html.is-phone .seg button { padding: 6px 10px; }
@@ -332,7 +367,7 @@ html.is-phone .daf-flip-lbl { font-family: var(--serif-he); direction: rtl; font
 html.is-phone .daf-cols-row { display: flex; align-items: baseline; justify-content: center; gap: 26px; }
 html.is-phone .daf-colhead .col-tab { -webkit-appearance: none; appearance: none; background: none; cursor: pointer;
     font-family: var(--serif-he); font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: .01em;
-    color: var(--ink-faint); padding: 5px 4px 4px; border: 0; border-bottom: 2px solid transparent;
+    color: var(--ink-faint); min-height: 42px; padding: 5px 10px 4px; border: 0; border-bottom: 2px solid transparent;
     transition: color .16s, border-color .16s; }
 html.is-phone .daf-colhead .col-tab:hover { color: var(--accent-2); }
 html.is-phone .daf-colhead .col-tab.on { color: var(--accent); border-bottom-color: var(--accent); }
@@ -346,7 +381,9 @@ html.is-phone .daf-colhead .col-tab.on { color: var(--accent); border-bottom-col
 .sp-opt b { font-size: 16.5px; font-weight: 600; } .sp-opt span { display: block; } .sp-opt > span span { font-family: var(--sans); font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
 .sp-opt .price { font-size: 18px; color: var(--accent); font-weight: 600; flex: none; margin-left: 12px; }
 .sp-form { border: 1px solid var(--hair-2); border-radius: 6px; padding: 18px; background: color-mix(in srgb, var(--paper-2) 40%, var(--paper)); }
-.sp-form input, .sp-form select, #spDate, #spMas { width: 100%; border: 1px solid var(--hair-2); border-radius: 4px; padding: 11px; font-size: 15px; font-family: inherit; margin-bottom: 10px; background: #fffdf8; color: var(--ink); }
+.sp-form input, .sp-form select, #spDate, #spMas { width: 100%; border: 1px solid var(--hair-2); border-radius: 4px; padding: 11px; font-size: 16px; font-family: inherit; margin-bottom: 10px; background: #fffdf8; color: var(--ink); }   /* ≥16px — iOS Safari zooms (and stays zoomed) on smaller inputs */
+.sp-steps { font-family: var(--sans); font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin: 16px 0 6px; }
+.sp-preview { border: 1px dashed var(--hair-2); border-radius: 5px; background: #fffdf8; padding: 12px 14px; font-size: 14.5px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 10px 0; color: var(--ink-soft); }
 .sp-form input:focus, .sp-form select:focus { outline: none; border-color: var(--accent); }
 .field-label { font-family: var(--sans); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; margin: 10px 0 5px; }
 .sp-target { font-size: 15.5px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--hair); }
@@ -406,11 +443,16 @@ html.force-phone #app { box-shadow: 0 0 0 1px rgba(33,30,24,.1), 0 24px 70px -20
   transition: transform .28s cubic-bezier(.4, 0, .2, 1); }
 .player.hidden { transform: translateX(-50%) translateY(130%); }
 .player .scrub { display: flex; align-items: center; }
-.player input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 3px; cursor: pointer; background: linear-gradient(var(--accent),var(--accent)) no-repeat, var(--hair-2); background-size: 0% 100%; }
-.player input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%; background: var(--accent); box-shadow: 0 1px 4px rgba(33,30,24,.3); }
-.player input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border-radius: 50%; background: var(--accent); border: 0; }
-.player .prow { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
-.player .pnow { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; }
+/* the visual track stays a thin 4px rule, but the input's hit area is ~24px tall */
+.player input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 24px; cursor: pointer; background: none; }
+.player input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 3px; background: linear-gradient(var(--accent),var(--accent)) no-repeat, var(--hair-2); background-size: var(--fill, 0%) 100%; }
+.player input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 17px; height: 17px; margin-top: -6.5px; border-radius: 50%; background: var(--accent); box-shadow: 0 1px 4px rgba(33,30,24,.3); }
+.player input[type=range]::-moz-range-track { height: 4px; border-radius: 3px; background: var(--hair-2); }
+.player input[type=range]::-moz-range-progress { height: 4px; border-radius: 3px; background: var(--accent); }
+.player input[type=range]::-moz-range-thumb { width: 17px; height: 17px; border-radius: 50%; background: var(--accent); border: 0; }
+.player .prow { display: flex; align-items: center; gap: 14px; margin-top: 4px; }
+.player .pnow { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; -webkit-appearance: none; appearance: none; background: none; border: 0; font: inherit; color: inherit; text-align: left; padding: 2px 6px 2px 2px; border-radius: 8px; cursor: pointer; transition: background .12s; }
+.player button.pnow:hover { background: var(--paper-2); }
 .player .pnow .ptype { flex: none; color: var(--accent); font-size: 16px; line-height: 1; opacity: .85; }
 .player .pnow .ptxt { min-width: 0; display: flex; flex-direction: column; }
 .player .pnow b { font-weight: 600; font-size: 14.5px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -423,7 +465,7 @@ html.force-phone #app { box-shadow: 0 0 0 1px rgba(33,30,24,.1), 0 24px 70px -20
 .player .ctrls .pp:hover { background: var(--accent-2); color: #fff; }
 .player .ctrls .pill { min-width: 0; min-height: 0; border: 1px solid var(--hair-2); border-radius: 999px; padding: 5px 11px; font-size: 11.5px; color: var(--ink-soft); }
 .player .ctrls .pill:hover { border-color: var(--accent); color: var(--accent); background: none; }
-.player .x { flex: none; border: 0; background: none; color: var(--ink-faint); font-size: 14px; line-height: 1; min-width: 32px; min-height: 36px; border-radius: 8px; transition: color .12s, background .12s; }
+.player .x { flex: none; border: 0; background: none; color: var(--ink-faint); font-size: 14px; line-height: 1; min-width: 40px; min-height: 40px; border-radius: 8px; transition: color .12s, background .12s; }
 .player .x:hover { color: var(--ink); background: var(--paper-2); }
 
 /* ---------- misc ---------- */
@@ -442,6 +484,8 @@ footer a { color: var(--ink-soft); }
 /* keyboard focus rings for inputs that suppress :focus outline for mouse users */
 .searchbar input:focus-visible, .sp-form input:focus-visible, .sp-form select:focus-visible,
 .editor input:focus-visible, .editor textarea:focus-visible, .editor select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* buttons inside overflow:hidden pill groups: paint the ring INSIDE so it isn't clipped away */
+.tsize button:focus-visible, .seg button:focus-visible { outline-offset: -3px; }
 .editor { padding: 18px; } .editor label { display: block; font-family: var(--sans); font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); margin: 14px 0 5px; font-weight: 700; }
 .editor input, .editor textarea, .editor select { width: 100%; border: 1px solid var(--hair-2); border-radius: 4px; padding: 9px; font-family: inherit; font-size: 15px; }
 
@@ -518,7 +562,8 @@ html.is-phone .player .x { min-width: 28px; }
 html.is-phone #app.player-active { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
 html.is-phone .toast-wrap { bottom: calc(106px + env(safe-area-inset-bottom, 0px)); }
 html.is-phone.dy-min .bar { transform: translateY(-100%); }
-html.is-phone.dy-min .daf-colhead { top: 0; box-shadow: 0 8px 16px -12px rgba(33, 30, 24, .45); }
+html.is-phone.dy-min .daf-colhead { top: 0; padding-top: calc(6px + env(safe-area-inset-top, 0px)); box-shadow: 0 8px 16px -12px rgba(33, 30, 24, .45); }
+html.is-phone.dy-min .daf-colhead .daf-flip-row { display: none; }   /* collapsed chrome: just the thin column switcher, as promised */
 
 /* ---------- Worksheets & sources (admin-uploaded PDFs/pictures per page) ---------- */
 .ws-list { margin: 4px 0 14px; }
@@ -535,6 +580,141 @@ html.is-phone.dy-min .daf-colhead { top: 0; box-shadow: 0 8px 16px -12px rgba(33
 .ws-dl { appearance: none; background: var(--paper); border: 1px solid var(--hair-2); border-left: 1px solid var(--hair); border-top: 0; border-bottom: 0; border-right: 0; color: var(--ink-soft); font: inherit; font-size: 16px; padding: 0 14px; cursor: pointer; flex: none; }
 .ws-dl:hover { color: var(--accent); }
 .ws-pagemedia { margin-top: 12px; }
+
+/* =====================================================================
+   UI OVERHAUL — visible navigation, the open-sefer spread, page flips,
+   classic parsha layout, and detail polish. (2026-08)
+   ===================================================================== */
+
+/* ---------- header nav (desktop; phones keep the hamburger) ---------- */
+.bar-nav { display: flex; align-items: center; gap: 2px; }
+.bar-nav button { -webkit-appearance: none; appearance: none; border: 0; background: none; font-family: var(--sans); font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); padding: 10px 9px; border-radius: 6px; cursor: pointer; transition: background .12s, color .12s; }
+.bar-nav button:hover { background: var(--paper-2); color: var(--ink); }
+html.is-phone .bar-nav { display: none; }
+
+/* ---------- landing: the nav band under the hero ---------- */
+.navgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0 6px; }
+.ng { -webkit-appearance: none; appearance: none; font: inherit; color: var(--ink); background: linear-gradient(#fdfbf4, #f6f2e8); border: 1.5px solid #5b564a; border-radius: 6px; box-shadow: 0 2px 0 rgba(33,30,24,.16); padding: 14px 8px 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; transition: transform .12s, box-shadow .12s, border-color .12s, color .12s; }
+.ng:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); box-shadow: 0 5px 14px -6px rgba(33,30,24,.4); }
+.ng:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(33,30,24,.16); }
+.ng .ng-he { font-family: var(--serif-he); direction: rtl; font-size: 22px; font-weight: 700; line-height: 1.2; }
+.ng .ng-en { font-family: var(--sans); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); }
+html.is-narrow .navgrid { grid-template-columns: repeat(2, 1fr); }
+
+/* landing: label the yesterday/tomorrow chips (direction alone was invisible on touch) */
+.adjacent button { flex-direction: column; gap: 1px; padding: 7px 18px 9px; }
+.adjacent .adj-cap { font-family: var(--sans); font-size: 9.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+.adjacent .adj-row { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---------- catchword-style end-of-daf continuation (every mode) ---------- */
+.daf-endnav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 6px 0 8px; padding-top: 14px; border-top: 1px solid var(--hair); }
+.daf-endnav .en-btn { -webkit-appearance: none; appearance: none; font: inherit; background: none; border: 1px solid var(--hair-2); border-radius: 999px; color: var(--accent); font-family: var(--serif-he); font-size: 16px; padding: 7px 16px 9px; min-height: 42px; cursor: pointer; text-align: center; transition: background .13s, color .13s, border-color .13s; }
+.daf-endnav .en-btn .en-cap { display: block; font-family: var(--sans); font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 1px; }
+.daf-endnav .en-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.daf-endnav .en-btn:hover .en-cap { color: #f4d9d0; }
+.daf-endnav .en-btn:disabled { opacity: .25; pointer-events: none; }
+
+/* "reading ahead" notice — the in-place flip walked away from this page's daf */
+.read-ahead { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; background: var(--accent-soft); border: 1px solid #dcbcb6; border-radius: 6px; padding: 8px 12px; margin: 0 0 12px; font-size: 14.5px; color: var(--accent); }
+.read-ahead .he { font-family: var(--serif-he); font-weight: 700; }
+.read-ahead .textlink { color: var(--accent); }
+
+/* ---------- masechta list: orientation tools ---------- */
+.mas-tools { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 12px 0 2px; }
+.mas-tools .jump { display: inline-flex; align-items: center; gap: 7px; font-family: var(--sans); font-size: 12px; color: var(--ink-soft); }
+.mas-tools .jump input { width: 80px; border: 1px solid var(--hair-2); border-radius: 999px; padding: 8px 12px; font: inherit; font-size: 16px; background: #fffdf8; color: var(--ink); text-align: center; }
+.mas-prog { max-width: 460px; margin: 4px auto 0; }
+.drow.is-today { background: #f8ece7; }
+.drow.is-today::before { transform: scaleY(1); }
+.drow-today { flex: none; align-self: center; font-family: var(--sans); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #fff; background: var(--accent); border-radius: 3px; padding: 2px 6px; margin-left: 6px; }
+.navbox .nb-tag { font-family: var(--sans); font-size: 9.5px; font-weight: 700; color: var(--accent); letter-spacing: .09em; text-transform: uppercase; }
+
+/* comfortable crumb targets without changing the small type */
+.crumbs button { padding: 12px 3px; margin: -10px 0; }
+
+/* ---------- the open-sefer spread (wide desktop only; phones unchanged) ---------- */
+.sefer-spread { position: relative; }
+html.is-wide:not(.is-phone) body { overflow-x: hidden; }
+/* the wide breakout applies only while the printed-page layout is showing —
+   plain גמרא/English text keeps its comfortable reading measure */
+html.is-wide:not(.is-phone) .daf-read.has-spread { width: min(94vw, 1280px); position: relative; left: 50%; transform: translateX(-50%); }
+html.is-wide:not(.is-phone) .reader-body { max-width: 1400px; }
+html.is-wide:not(.is-phone) .sefer-spread {
+  display: grid; grid-template-columns: 1fr 1fr; direction: rtl; gap: 0; align-items: start;
+  margin: 20px 0 34px; padding: 24px 30px 28px; border-radius: 8px;
+  background: linear-gradient(#fdfbf4, #faf6ea);
+  border: 1px solid var(--hair-2);
+  box-shadow: 0 1px 0 #fff inset, 0 26px 64px -24px rgba(33,30,24,.5), 0 8px 20px -10px rgba(33,30,24,.28);
+  perspective: 2600px;
+}
+/* the spine — the soft central fold of an open sefer */
+html.is-wide:not(.is-phone) .sefer-spread::before {
+  content: ""; position: absolute; top: 10px; bottom: 12px; left: 50%; width: 76px; transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, rgba(33,30,24,.07) 42%, rgba(33,30,24,.15) 50%, rgba(33,30,24,.07) 58%, transparent);
+  pointer-events: none; z-index: 1;
+}
+/* the stacked page-edges peeking out under the open leaves */
+html.is-wide:not(.is-phone) .sefer-spread::after {
+  content: ""; position: absolute; left: 8px; right: 8px; bottom: -7px; height: 7px; border-radius: 0 0 8px 8px;
+  background: linear-gradient(#eee8d8, #d8d1bd);
+  box-shadow: 0 1px 0 #cfc7b2, 0 3px 0 -1px #e2dbc8, 0 5px 0 -2px #d5cdb8;
+  pointer-events: none;
+}
+html.is-wide:not(.is-phone) .sefer-spread .dafpage { border: 0; box-shadow: none; background: none; margin: 0; padding: 4px 10px 2px; }
+html.is-wide:not(.is-phone) .sefer-spread .dafpage-label .pageflip { display: none; }   /* the spread's edge arrows take over */
+html.is-wide:not(.is-phone) .sefer-spread .col.side .comm { font-size: calc(15px * var(--daf-scale, 1)); }
+html.is-phone .dafpage-label .lbl-t-mas { display: none; }   /* the phone colhead already names the masechta */
+
+/* page-turn zones at the outer edges of the open sefer */
+.spread-edge { display: none; }
+html.is-wide:not(.is-phone) .spread-edge {
+  /* 38px stays inside the spread's 30px gutter + the leaf's 10px padding — never over the text */
+  display: grid; place-items: center; position: absolute; top: 0; bottom: 0; width: 38px; z-index: 2;
+  -webkit-appearance: none; appearance: none; border: 0; background: none; color: var(--accent);
+  font-size: 30px; line-height: 1; padding: 0 0 4px; cursor: pointer; opacity: .5; transition: opacity .15s, background .15s;
+}
+.spread-edge.next { left: 0; border-radius: 8px 0 0 8px; }
+.spread-edge.prev { right: 0; border-radius: 0 8px 8px 0; }
+.spread-edge.next:hover { opacity: 1; background: linear-gradient(90deg, rgba(116,32,44,.08), transparent); }
+.spread-edge.prev:hover { opacity: 1; background: linear-gradient(270deg, rgba(116,32,44,.08), transparent); }
+.spread-edge:disabled { opacity: .1; pointer-events: none; }
+.spread-edge:focus-visible { border-radius: 8px; }
+
+/* ---------- the page turn ----------
+   Overlay anatomy: a static clipped half of the OUTGOING spread on the side
+   that waits to be covered, plus a turning leaf (front = outgoing page, back =
+   incoming page) rotating about the spine. The real incoming spread renders
+   underneath and is revealed as the leaf lifts. */
+.flip-ov { position: absolute; inset: 0; z-index: 6; pointer-events: none; perspective: 2600px; }
+.flip-ov .fo-half { position: absolute; top: 0; bottom: 0; width: 50%; overflow: hidden; }
+.flip-ov .fo-half.right { right: 0; }
+.flip-ov .fo-half.left { left: 0; }
+.flip-ov .fo-inner { position: absolute; top: 0; left: 0; width: 200%; }
+.flip-ov .fo-half.right .fo-inner, .flip-ov .fo-face.is-right .fo-inner { left: -100%; }
+.flip-ov .fo-leaf { position: absolute; top: 0; bottom: 0; width: 50%; transform-style: preserve-3d; z-index: 3; }
+.flip-ov.fwd .fo-leaf { left: 0; transform-origin: 100% 50%; animation: leafFwd .68s cubic-bezier(.32,.08,.24,1) both; }
+.flip-ov.back .fo-leaf { right: 0; transform-origin: 0% 50%; animation: leafBack .68s cubic-bezier(.32,.08,.24,1) both; }
+.flip-ov .fo-face { position: absolute; inset: 0; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: var(--paper); box-shadow: 0 0 26px -8px rgba(33,30,24,.5); }
+.flip-ov .fo-face.back { transform: rotateY(180deg); }
+.flip-ov .fo-dim { position: absolute; inset: 0; background: radial-gradient(52% 105% at 50% 50%, rgba(33,30,24,.16), transparent 72%); opacity: 0; animation: foDim .68s ease both; }
+/* the clones inside the overlay must render exactly like the live spread, minus its outer chrome */
+.flip-ov .sefer-spread { box-shadow: none !important; margin: 0 !important; }
+.flip-ov .sefer-spread::after { display: none; }
+@keyframes leafFwd { from { transform: rotateY(0deg); } to { transform: rotateY(180deg); } }
+@keyframes leafBack { from { transform: rotateY(0deg); } to { transform: rotateY(-180deg); } }
+@keyframes foDim { 40% { opacity: 1; } to { opacity: 0; } }
+
+/* ---------- classic parsha page (chumash · targum · rashi) ---------- */
+.chap-head { font-family: var(--serif-he); direction: rtl; text-align: center; color: var(--accent); font-weight: 700; font-size: calc(15px * var(--daf-scale, 1)); letter-spacing: .05em; margin: 12px 0 8px; }
+.gem .vnum, .tg .vnum { color: var(--accent); font-size: .6em; vertical-align: super; margin: 0 .18em; font-weight: 700; }
+.col.side .tg { font-family: var(--serif-he); direction: rtl; text-align: justify; font-size: calc(15.5px * var(--daf-scale, 1)); line-height: 1.85; color: #3a362d; }
+html.is-phone .col.side .tg { font-size: calc(18px * var(--daf-scale, 1)); }
+.parsha-page .gem .chap-head:first-child { margin-top: 0; }
+
+/* round/pill keyboard-focus shapes for the new controls */
+.daynav:focus-visible, .daf-endnav .en-btn:focus-visible, .learn-toggle:focus-visible, .adjacent button:focus-visible { border-radius: 999px; }
+
+/* solid fallbacks for the new color-mix-free rules are above; nothing here uses color-mix */
 
 /* Respect the OS "reduce motion" setting — collapse animations/transitions to
    near-instant. State changes still apply; only the motion is removed. */
