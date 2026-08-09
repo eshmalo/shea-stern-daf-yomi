@@ -358,7 +358,7 @@ function applyViewportClasses() {
   html.classList.toggle("is-phone", m680 || _forcePhone);
   html.classList.toggle("is-narrow", m560 || _forcePhone);
   html.classList.toggle("force-phone", _forcePhone);
-  html.classList.toggle("is-wide", w1000 && !_forcePhone);   // wide desktop → the daf shows as an open-sefer spread
+  html.classList.toggle("is-wide", w1000 && !_forcePhone);   // wide desktop → roomier reader chrome
 }
 /* ---------- reading text size (א− / א+), persisted ---------- */
 let _dafScale = 1;
@@ -936,63 +936,54 @@ function dafPage(daf, amud, seg, c, labelHtml) {
       <div class="col side tosafos">${CARVES}<div class="col-h" lang="he">תוספות</div>${commCol(c && c.t)}</div>
     </div></div>`;
 }
-// The two amudim render side by side as the open sefer (wide desktop CSS turns
-// .sefer-spread into a two-leaf grid, amud א on the right) with page-turn zones
-// on the outer edges; narrower screens keep the stacked pages unchanged.
+// Each amud renders as one big classic page, stacked in reading order — one page
+// is THE page on every screen (the two-leaf spread was an artifact of print).
 const folioLabel = (masechta, dafN, amud) =>
   `<span class="lbl-t-mas" lang="he">${esc(DY.masechtaHe(masechta))}</span><span lang="he">${esc(heAmud(dafN, amud))}</span>`;
 function renderDafLayout(masechta, daf, data, comm) {
   comm = comm || {};
   let pre = "", html = "";
-  if (masechta === "Tamid" && daf === 26 && data["25b"])   // opening Mishnah sits on Vilna 25b — surface it in daf mode too, BEFORE the spread (the two-leaf grid holds exactly this daf's amudim)
+  if (masechta === "Tamid" && daf === 26 && data["25b"])   // opening Mishnah sits on Vilna 25b — surface it in daf mode too (the he/en path already does)
     pre = dafPage(daf, "25b", data["25b"], comm["25b"], flipLabel("dafpage-label", folioLabel(masechta, 25, "25b"), masechta, daf));
   for (const amud of [daf + "a", daf + "b"]) {
     const seg = data[amud]; if (!seg) continue;
     html += dafPage(daf, amud, seg, comm[amud], flipLabel("dafpage-label", folioLabel(masechta, daf, amud), masechta, daf));   // per-page daf-flip arrows on each amud
   }
   if (!html) return `<div class="empty-mini">This amud isn't available.</div>`;
-  const dis = d => dafStep(masechta, daf, d) ? "" : " disabled";
-  return dafColHead(masechta, daf) + pre + `<div class="sefer-spread">${html}
-    <button class="spread-edge next" data-gemflip="1" aria-label="Turn the page — next daf" title="Next daf"${dis(1)}>‹</button>
-    <button class="spread-edge prev" data-gemflip="-1" aria-label="Turn back — previous daf" title="Previous daf"${dis(-1)}>›</button>
-  </div>`;
+  return dafColHead(masechta, daf) + pre + html;
 }
 
-/* ---------- the page turn (wide-desktop spread only) ----------
-   Before the flip we keep a clone of the outgoing spread; after the new daf
-   renders, the clone plays as a turning leaf over the live spread: front face =
-   the page you're leaving, back face = the page that lands. Reduced-motion
-   collapses the animation to an instant (global CSS rule). */
-function captureSpread() {
+/* ---------- the page turn (single leaf — every size, phones included) ----------
+   Before a flip we clone the reading region; after the new daf renders, the
+   clone's on-screen slice turns like a leaf in a fixed overlay above the live
+   page: forward pivots on the right edge (the direction a Hebrew page turns),
+   back on the left. Reduced-motion skips the capture entirely. */
+function capturePage() {
   const box = Reader.open ? $("#rdBody") : $("#dafText");
-  const sp = box && box.querySelector(".sefer-spread");
-  if (!sp) return null;
-  if (!(document.documentElement.classList.contains("is-wide") && !document.documentElement.classList.contains("is-phone"))) return null;
-  if (getComputedStyle(sp).display !== "grid") return null;
-  return sp.cloneNode(true);
+  if (!box || !box.querySelector(".dafpage")) return null;      // the leaf animation belongs to the printed-page mode
+  try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) return null; } catch {}
+  const r = box.getBoundingClientRect();
+  const top = Math.max(r.top, 0), bottom = Math.min(r.bottom, window.innerHeight || 800);
+  if (bottom - top < 80) return null;                           // nothing meaningful of the page is on screen
+  const clone = box.cloneNode(true);
+  clone.removeAttribute("id");
+  clone.style.cssText = "height:auto;overflow:visible;position:static;margin:0;width:100%";
+  return { clone, top, left: r.left, width: r.width, height: bottom - top, shift: (r.top - top) - (box.scrollTop || 0) };
 }
-function playSpreadFlip(oldClone, dir) {
-  if (!oldClone) return;
-  const box = Reader.open ? $("#rdBody") : $("#dafText");
-  const sp = box && box.querySelector(".sefer-spread");
-  if (!sp || getComputedStyle(sp).display !== "grid") return;
-  sp.querySelectorAll(".flip-ov").forEach(n => n.remove());
-  const newClone = sp.cloneNode(true);
-  [oldClone, newClone].forEach(cl => cl.querySelectorAll(".flip-ov, .spread-edge").forEach(n => n.remove()));
-  const half = (clone, side) => `<div class="fo-half ${side}"><div class="fo-inner">${clone.outerHTML}</div></div>`;
-  const face = (clone, side, back) => `<div class="fo-face${back ? " back" : ""}${side === "right" ? " is-right" : ""}"><div class="fo-inner">${clone.outerHTML}</div></div>`;
-  const ov = el("div", "flip-ov " + (dir > 0 ? "fwd" : "back"));
-  ov.setAttribute("aria-hidden", "true"); ov.inert = true;   // decorative clones — keep them out of the a11y tree and tab order
-  // fwd (next, RTL): the left page turns rightward — old right page waits underneath the landing leaf
-  ov.innerHTML = dir > 0
-    ? half(oldClone, "right") + `<div class="fo-leaf">${face(oldClone, "left", false)}${face(newClone, "right", true)}</div>` + `<div class="fo-dim"></div>`
-    : half(oldClone, "left") + `<div class="fo-leaf">${face(oldClone, "right", false)}${face(newClone, "left", true)}</div>` + `<div class="fo-dim"></div>`;
-  sp.appendChild(ov);
+function playPageFlip(cap, dir) {
+  if (!cap) return;
+  document.querySelectorAll(".pflip").forEach(n => n.remove());
+  const ov = el("div", "pflip " + (dir > 0 ? "fwd" : "back"));
+  ov.setAttribute("aria-hidden", "true"); ov.inert = true;      // a decorative clone — out of the a11y tree and tab order
+  ov.style.cssText = `top:${cap.top}px;left:${cap.left}px;width:${cap.width}px;height:${cap.height}px`;
+  // the wrapper carries the reading-region classes so the clone renders identically; inline styles pin it
+  ov.innerHTML = `<div class="pf-dim"></div><div class="pf-leaf"><div class="pf-face"><div class="pf-inner daf-read has-spread" style="top:${cap.shift}px;width:${cap.width}px;left:0;transform:none;position:absolute"></div></div></div>`;
+  ov.querySelector(".pf-inner").appendChild(cap.clone);
+  document.body.appendChild(ov);
   let done = false;
   const cleanup = () => { if (done) return; done = true; ov.remove(); };
-  const leaf = ov.querySelector(".fo-leaf");
-  if (leaf) leaf.addEventListener("animationend", cleanup);
-  setTimeout(cleanup, 850);   // safety — the overlay must never outlive the turn
+  ov.querySelector(".pf-leaf").addEventListener("animationend", cleanup);
+  setTimeout(cleanup, 800);   // safety — the overlay must never outlive the turn
 }
 /* Phone-mode column selector for the Tzuras-Hadaf view: instead of scrolling
    through stacked גמרא / רש"י / תוספות, show ONE full-width column at a time.
@@ -1159,13 +1150,13 @@ function renderAmud(seg, mode) {
 async function gemaraFlip(dir) {                 // label arrows — daf text only, in place
   const box = $("#dafText"); if (!box) return;
   const nx = dafStep(box.dataset.mas, +box.dataset.daf, dir); if (!nx) return;
-  const oldSpread = captureSpread();             // for the page-turn (spread mode only)
+  const cap = capturePage();                     // for the page-turn animation
   if (!box._renderedDaf || (box._renderedMas === box.dataset.mas && box._renderedDaf === box.dataset.daf))
     saveColScroll(State._dafCol);                // remember our place — but only when what's on screen IS this daf (rapid double-flip guard)
   box.dataset.mas = nx.masechta; box.dataset.daf = nx.daf;
   await hydrateDaf();                            // re-renders the daf incl. the flanking arrows (fresh boundary state)
   restoreColScroll(State._dafCol, true);         // the new daf+column: restore its own place, or start at the top if unseen
-  playSpreadFlip(oldSpread, dir);
+  playPageFlip(cap, dir);
 }
 function dayNav(dir) {                           // top arrows — whole lecture page
   const [m, d] = (State.route.id || "").split("|");
@@ -1210,7 +1201,7 @@ function syncInpageRead(masechta, daf) {
 }
 function readerFlip(dir) {
   const nx = dafStep(Reader.masechta, Reader.daf, dir); if (!nx) return;
-  Reader._flipClone = captureSpread(); Reader._flipDir = dir;   // page-turn plays once the new daf has rendered
+  Reader._flipClone = capturePage(); Reader._flipDir = dir;   // page-turn plays once the new daf has rendered
   if (!Reader._renderedD || (Reader._renderedM === Reader.masechta && Reader._renderedD === Reader.daf))
     saveColScroll(State._dafCol);                // save a spot only for the daf actually rendered (rapid double-flip guard)
   Reader.masechta = nx.masechta; Reader.daf = nx.daf; Reader._restoreScroll = true; renderReader();
@@ -1244,7 +1235,7 @@ async function fillReaderBody(m, d, mode) {
     sizeDafCarves(body); applyDafCol(body); attachDafSwipe(body);
     if (Reader._restoreScroll) { Reader._restoreScroll = false; restoreColScroll(State._dafCol, true); }  // flip → restore this daf+column's place, or its top
     else body.scrollTop = 0;                                         // initial open / mode change → top
-    if (Reader._flipClone) { playSpreadFlip(Reader._flipClone, Reader._flipDir); Reader._flipClone = null; }
+    if (Reader._flipClone) { playPageFlip(Reader._flipClone, Reader._flipDir); Reader._flipClone = null; }
     body.onclick = e => {                                            // delegated so the re-rendered column tabs stay live
       const g = e.target.closest("[data-gemflip]"); if (g) { readerFlip(+g.dataset.gemflip); return; }   // ‹ נד·א › flips the reader
       const c = e.target.closest("[data-dcol]"); if (c) selectDafCol(c.dataset.dcol);                     // phone-mode column switch

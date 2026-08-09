@@ -665,86 +665,34 @@ html.is-narrow .navgrid { grid-template-columns: repeat(2, 1fr); }
 /* comfortable crumb targets without changing the small type */
 .crumbs button { padding: 12px 3px; margin: -10px 0; }
 
-/* ---------- the open-sefer spread (wide desktop only; phones unchanged) ---------- */
-.sefer-spread { position: relative; }
-html.is-wide:not(.is-phone) body { overflow-x: hidden; }
-/* the wide breakout applies only while the printed-page layout is showing —
-   plain גמרא/English text keeps its comfortable reading measure */
-html.is-wide:not(.is-phone) .daf-read.has-spread { width: min(94vw, 1280px); position: relative; left: 50%; transform: translateX(-50%); }
+/* ---------- the big single-page view (every non-phone screen) ----------
+   One page is THE page — the two-leaf spread was an artifact of print. In the
+   printed-page mode the reading region breaks out to nearly the full window on
+   any desktop size; plain גמרא/English text keeps its comfortable measure. */
+html:not(.is-phone) body { overflow-x: hidden; }
+html:not(.is-phone) .daf-read.has-spread { width: min(94vw, 1200px); position: relative; left: 50%; transform: translateX(-50%); }
 html.is-wide:not(.is-phone) .reader-body { max-width: 1400px; }
-html.is-wide:not(.is-phone) .sefer-spread {
-  display: grid; grid-template-columns: 1fr 1fr; direction: rtl; gap: 0; align-items: start;
-  margin: 20px 0 34px; padding: 24px 30px 28px; border-radius: 8px;
-  background: linear-gradient(#fdfbf4, #faf6ea);
-  border: 1px solid var(--hair-2);
-  box-shadow: 0 1px 0 #fff inset, 0 26px 64px -24px rgba(33,30,24,.5), 0 8px 20px -10px rgba(33,30,24,.28);
-  perspective: 2600px;
-}
-/* the spine — the soft central fold of an open sefer */
-html.is-wide:not(.is-phone) .sefer-spread::before {
-  content: ""; position: absolute; top: 10px; bottom: 12px; left: 50%; width: 76px; transform: translateX(-50%);
-  background: linear-gradient(90deg, transparent, rgba(33,30,24,.07) 42%, rgba(33,30,24,.15) 50%, rgba(33,30,24,.07) 58%, transparent);
-  pointer-events: none; z-index: 1;
-}
-/* the stacked page-edges peeking out under the open leaves */
-html.is-wide:not(.is-phone) .sefer-spread::after {
-  content: ""; position: absolute; left: 8px; right: 8px; bottom: -7px; height: 7px; border-radius: 0 0 8px 8px;
-  background: linear-gradient(#eee8d8, #d8d1bd);
-  box-shadow: 0 1px 0 #cfc7b2, 0 3px 0 -1px #e2dbc8, 0 5px 0 -2px #d5cdb8;
-  pointer-events: none;
-}
-html.is-wide:not(.is-phone) .sefer-spread .dafpage { border: 0; box-shadow: none; background: none; margin: 0; padding: 4px 10px 2px; }
-/* the running-head flip arrows stay visible in the spread too — a page turn is
-   always in reach at the top of the leaf (same data-gemflip path = same memory) */
-html.is-wide:not(.is-phone) .sefer-spread .col.side .comm { font-size: calc(15px * var(--daf-scale, 1)); }
-html.is-wide:not(.is-phone) .sefer-spread .dafpage-grid.classic { --dc-head: calc(102px * var(--daf-scale, 1)); }   /* the spread's larger commentary type needs a taller header band */
+html:not(.is-phone) .daf-read.has-spread .col.side .comm { font-size: calc(15px * var(--daf-scale, 1)); }
+html:not(.is-phone) .daf-read.has-spread .dafpage-grid.classic { --dc-head: calc(102px * var(--daf-scale, 1)); }
 html.is-phone .dafpage-label .lbl-t-mas { display: none; }   /* the phone colhead already names the masechta */
 
-/* page-turn zones at the outer edges of the open sefer */
-.spread-edge { display: none; }
-html.is-wide:not(.is-phone) .spread-edge {
-  /* 38px stays inside the spread's 30px gutter + the leaf's 10px padding — never over the text */
-  display: grid; place-items: center; position: absolute; top: 0; bottom: 0; width: 38px; z-index: 2;
-  -webkit-appearance: none; appearance: none; border: 0; background: none; color: var(--accent);
-  font-size: 30px; line-height: 1; padding: 0 0 4px; cursor: pointer; opacity: .5; transition: opacity .15s, background .15s;
-}
-.spread-edge.next { left: 0; border-radius: 8px 0 0 8px; }
-.spread-edge.prev { right: 0; border-radius: 0 8px 8px 0; }
-/* the edge strip is clickable full-height; echo its arrow near the top and the
-   bottom so a page turn is visibly in reach wherever you've scrolled to */
-.spread-edge::before, .spread-edge::after { position: absolute; left: 0; right: 0; text-align: center; }
-.spread-edge.next::before, .spread-edge.next::after { content: "‹"; }
-.spread-edge.prev::before, .spread-edge.prev::after { content: "›"; }
-.spread-edge::before { top: 20px; }
-.spread-edge::after { bottom: 20px; }
-.spread-edge.next:hover { opacity: 1; background: linear-gradient(90deg, rgba(116,32,44,.08), transparent); }
-.spread-edge.prev:hover { opacity: 1; background: linear-gradient(270deg, rgba(116,32,44,.08), transparent); }
-.spread-edge:disabled { opacity: .1; pointer-events: none; }
-.spread-edge:focus-visible { border-radius: 8px; }
-
-/* ---------- the page turn ----------
-   Overlay anatomy: a static clipped half of the OUTGOING spread on the side
-   that waits to be covered, plus a turning leaf (front = outgoing page, back =
-   incoming page) rotating about the spine. The real incoming spread renders
-   underneath and is revealed as the leaf lifts. */
-.flip-ov { position: absolute; inset: 0; z-index: 6; pointer-events: none; perspective: 2600px; }
-.flip-ov .fo-half { position: absolute; top: 0; bottom: 0; width: 50%; overflow: hidden; }
-.flip-ov .fo-half.right { right: 0; }
-.flip-ov .fo-half.left { left: 0; }
-.flip-ov .fo-inner { position: absolute; top: 0; left: 0; width: 200%; }
-.flip-ov .fo-half.right .fo-inner, .flip-ov .fo-face.is-right .fo-inner { left: -100%; }
-.flip-ov .fo-leaf { position: absolute; top: 0; bottom: 0; width: 50%; transform-style: preserve-3d; z-index: 3; }
-.flip-ov.fwd .fo-leaf { left: 0; transform-origin: 100% 50%; animation: leafFwd .68s cubic-bezier(.32,.08,.24,1) both; }
-.flip-ov.back .fo-leaf { right: 0; transform-origin: 0% 50%; animation: leafBack .68s cubic-bezier(.32,.08,.24,1) both; }
-.flip-ov .fo-face { position: absolute; inset: 0; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: var(--paper); box-shadow: 0 0 26px -8px rgba(33,30,24,.5); }
-.flip-ov .fo-face.back { transform: rotateY(180deg); }
-.flip-ov .fo-dim { position: absolute; inset: 0; background: radial-gradient(52% 105% at 50% 50%, rgba(33,30,24,.16), transparent 72%); opacity: 0; animation: foDim .68s ease both; }
-/* the clones inside the overlay must render exactly like the live spread, minus its outer chrome */
-.flip-ov .sefer-spread { box-shadow: none !important; margin: 0 !important; }
-.flip-ov .sefer-spread::after { display: none; }
-@keyframes leafFwd { from { transform: rotateY(0deg); } to { transform: rotateY(180deg); } }
-@keyframes leafBack { from { transform: rotateY(0deg); } to { transform: rotateY(-180deg); } }
-@keyframes foDim { 40% { opacity: 1; } to { opacity: 0; } }
+/* ---------- the page turn (single leaf — every size, phones included) ----------
+   The visible slice of the outgoing page is cloned into a fixed overlay and
+   turned like a leaf: forward pivots on the right edge (the direction a Hebrew
+   page turns), back on the left. The new page is already live beneath it. */
+.pflip { position: fixed; z-index: 70; pointer-events: none; perspective: 2200px; }
+.pflip .pf-dim { position: absolute; inset: 0; background: rgba(33,30,24,.1); opacity: 0; animation: pfDim .55s ease both; }
+.pflip .pf-leaf { position: absolute; inset: 0; transform-style: preserve-3d; }
+.pflip.fwd .pf-leaf { transform-origin: 100% 50%; animation: pfFwd .55s cubic-bezier(.3,.1,.3,1) both; }
+.pflip.back .pf-leaf { transform-origin: 0% 50%; animation: pfBack .55s cubic-bezier(.3,.1,.3,1) both; }
+.pflip .pf-face { position: absolute; inset: 0; overflow: hidden; background: var(--paper); box-shadow: 0 0 30px -6px rgba(33,30,24,.45); }
+.pflip .pf-inner { position: absolute; left: 0; right: 0; }
+/* the flying clone must render exactly like the live page — its wrapper carries
+   the daf-read/has-spread classes; inline styles pin its width and position */
+@keyframes pfFwd { from { transform: rotateY(0deg); opacity: 1; } 70% { opacity: 1; } to { transform: rotateY(88deg); opacity: 0; } }
+@keyframes pfBack { from { transform: rotateY(0deg); opacity: 1; } 70% { opacity: 1; } to { transform: rotateY(-88deg); opacity: 0; } }
+@keyframes pfDim { 30% { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pflip { display: none; } }
 
 /* ---------- classic parsha page (chumash · targum · rashi) ---------- */
 .chap-head { font-family: var(--serif-he); direction: rtl; text-align: center; color: var(--accent); font-weight: 700; font-size: calc(15px * var(--daf-scale, 1)); letter-spacing: .05em; margin: 12px 0 8px; }
