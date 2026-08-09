@@ -42,6 +42,8 @@
   --leaf-edge:#aaa18d;        /* visible, print-like edge   */
   --leaf-rule:#918875;        /* running-head / fold rule   */
   --fold-ink: #746c5c;        /* darkest point of the seam  */
+  --leaf-spine-overlap:18px;  /* fold painted over the bound edge */
+  --leaf-text-inset:20px;     /* always clears the fold + glyph overhang */
   --accent:   #74202c;        /* deep maroon (rubric/links) */
   --accent-2: #8c2c38;        /* lighter maroon for hover   */
   --accent-soft:#f4e9e6;
@@ -750,17 +752,23 @@ html.is-phone .dafpage-label .lbl-t-mas { display: none; }   /* the phone colhea
 /* The reading canvas never changes x-position or width. Only the seam moves
    from edge to edge, half-overlapping the fixed paper like a real binding. */
 html:not(.is-phone) .leaf-book { position: relative; display: flow-root; overflow: visible; }
-html:not(.is-phone) .leaf-book > .dafpage { width: 100%; min-width: 0; }
+/* The fold is deliberately painted over the paper edge. Keep the live type a
+   little farther in on BOTH sides, so changing א↔ב never shifts the canvas and
+   neither inner commentary stream can disappear beneath the opaque seam. The
+   same rule covers the flying clone, preventing a one-frame turn regression. */
+html:not(.is-phone) :is(.leaf-book, .pf-inner) > .dafpage {
+  width: 100%; min-width: 0; padding-inline: var(--leaf-text-inset);
+}
 .leaf-gutter { display: none; }
 html:not(.is-phone) .leaf-gutter {
-  display: block; position: absolute; top: 16px; bottom: 24px; width: 36px; margin: 0; z-index: 3; overflow: hidden;
+  display: block; position: absolute; top: 16px; bottom: 24px; width: calc(var(--leaf-spine-overlap) * 2); margin: 0; z-index: 3; overflow: hidden;
   background: linear-gradient(180deg, var(--leaf-paper), #f8f2e4); border: 1px solid var(--leaf-edge); border-left: 0;
   border-radius: 0 2px 2px 0; box-shadow: 2px 0 5px -4px rgba(33,30,24,.48);
 }
-html:not(.is-phone) .side-left > .leaf-gutter { left: auto; right: -18px; }
-html:not(.is-phone) .side-right > .leaf-gutter { left: -18px; right: auto; }
+html:not(.is-phone) .side-left > .leaf-gutter { left: auto; right: calc(var(--leaf-spine-overlap) * -1); }
+html:not(.is-phone) .side-right > .leaf-gutter { left: calc(var(--leaf-spine-overlap) * -1); right: auto; }
 html:not(.is-phone) .side-right .leaf-gutter { border: 1px solid var(--leaf-edge); border-right: 0; border-radius: 2px 0 0 2px; box-shadow: -2px 0 5px -4px rgba(33,30,24,.48); }
-.leaf-gutter .leaf-fold { position: absolute; top: 0; bottom: 0; width: 18px; z-index: 2;
+.leaf-gutter .leaf-fold { position: absolute; top: 0; bottom: 0; width: var(--leaf-spine-overlap); z-index: 2;
   background: linear-gradient(90deg, rgba(33,30,24,.2), rgba(33,30,24,.065) 54%, transparent); }
 .leaf-gutter .leaf-fold::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: var(--fold-ink); opacity: .8; }
 .side-left .leaf-gutter .leaf-fold { left: 0; }

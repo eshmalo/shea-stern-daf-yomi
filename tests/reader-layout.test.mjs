@@ -65,9 +65,9 @@ test("the reading canvas stays fixed while only its paper or spine animates", as
   const css = await readFile(path.join(root, "styles.css"), "utf8");
 
   assert.match(app, /kind === "turn" \? book\.querySelector\(":scope > \.dafpage"\) : book\.querySelector\(":scope > \.leaf-gutter"\)/);
-  assert.match(css, /\.leaf-book > \.dafpage \{ width: 100%; min-width: 0; \}/);
-  assert.match(css, /\.side-left > \.leaf-gutter \{ left: auto; right: -18px; \}/);
-  assert.match(css, /\.side-right > \.leaf-gutter \{ left: -18px; right: auto; \}/);
+  assert.match(css, /:is\(\.leaf-book, \.pf-inner\) > \.dafpage \{[\s\S]*?width: 100%; min-width: 0/);
+  assert.match(css, /\.side-left > \.leaf-gutter \{ left: auto; right: calc\(var\(--leaf-spine-overlap\) \* -1\); \}/);
+  assert.match(css, /\.side-right > \.leaf-gutter \{ left: calc\(var\(--leaf-spine-overlap\) \* -1\); right: auto; \}/);
   assert.match(css, /\.pflip\.spine-shift \.leaf-gutter/);
   assert.match(app, /const chromeFloor = railRect\?\.bottom > 0 \? railRect\.bottom/);
   assert.doesNotMatch(app, /readAheadNote|data-openread|data-backread/);
@@ -77,6 +77,10 @@ test("the classic leaf has a clear print edge without boxing its text streams", 
   const css = await readFile(path.join(root, "styles.css"), "utf8");
 
   assert.match(css, /--leaf-edge:\s*#aaa18d/);
+  const overlap = Number(css.match(/--leaf-spine-overlap:\s*(\d+)px/)?.[1]);
+  const textInset = Number(css.match(/--leaf-text-inset:\s*(\d+)px/)?.[1]);
+  assert.ok(textInset >= overlap + 2, "live type must retain glyph clearance beyond the opaque fold at both spine edges");
+  assert.match(css, /:is\(\.leaf-book, \.pf-inner\) > \.dafpage \{[\s\S]*?padding-inline: var\(--leaf-text-inset\)/);
   assert.match(css, /\.dafpage \{[\s\S]*?border-radius: 2px/);
   assert.match(css, /\.leaf-gutter \.leaf-fold::after/);
   assert.match(css, /\.dafpage-grid\.classic \.col\.side,[\s\S]*?border: 0/);
