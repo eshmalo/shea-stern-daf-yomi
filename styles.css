@@ -354,16 +354,26 @@ html.is-phone .reader-body { padding: 12px 14px 48px; }
    it (the .cv float, sized by sizeDafCarves() to the gemara's exact height,
    carves the center out of each side); and wherever the gemara ends, the
    commentary text widens back out — the printed page's silhouette. */
-html:not(.is-phone) .dafpage-grid.classic { grid-template-columns: 50% 50%; gap: 0; --dc-head: calc(96px * var(--daf-scale, 1)); }
+html:not(.is-phone) .dafpage-grid.classic { grid-template-columns: 100%; gap: 0; --dc-head: calc(96px * var(--daf-scale, 1)); }
 html:not(.is-phone) .dafpage-grid.classic .col-h { display: none; }   /* the real page has no column labels — the running head carries it */
-html:not(.is-phone) .dafpage-grid.classic .col.side { border: 0; margin: 0; }
-html:not(.is-phone) .dafpage-grid.classic .col.side.rashi { grid-area: 1 / 1 / 2 / 2; padding-left: 16px; }
-html:not(.is-phone) .dafpage-grid.classic .col.side.tosafos { grid-area: 1 / 2 / 2 / 3; padding-right: 16px; }
-html:not(.is-phone) .dafpage-grid.classic .col.gemara { grid-area: 1 / 1 / 2 / 3; justify-self: center; width: 49%; margin-top: var(--dc-head); }
+html:not(.is-phone) .dafpage-grid.classic .col.side { border: 0; margin: 0; grid-area: 1 / 1 / 2 / 2; width: 50%; }
+html:not(.is-phone) .dafpage-grid.classic .col.side.rashi { justify-self: start; padding-left: 16px; }
+html:not(.is-phone) .dafpage-grid.classic .col.side.tosafos { justify-self: end; padding-right: 16px; }
+html:not(.is-phone) .dafpage-grid.classic .col.gemara { grid-area: 1 / 1 / 2 / 2; justify-self: center; width: 49%; margin-top: var(--dc-head); }
 html:not(.is-phone) .dafpage-grid.classic .cv0 { float: left; width: 0; height: var(--dc-head); }
 html:not(.is-phone) .dafpage-grid.classic .cv { float: left; clear: left; width: 52%; height: 0; pointer-events: none; }
 html:not(.is-phone) .dafpage-grid.classic .tosafos .cv0 { float: right; }
 html:not(.is-phone) .dafpage-grid.classic .tosafos .cv { float: right; clear: right; }
+/* below the gemara, the printed page's spill rule (classes set by sizeDafCarves):
+   spill-first claims the page up to the other commentary's column; spill-full,
+   whose carve is extended to the first spiller's true end, takes the full width.
+   The header band stays a half page either way (cv0 becomes the header carve). */
+html:not(.is-phone) .dafpage-grid.classic .col.side.spill-first { width: 76%; }
+html:not(.is-phone) .dafpage-grid.classic .spill-first .cv0 { width: 34%; }
+html:not(.is-phone) .dafpage-grid.classic .spill-first .cv { width: 68.5%; }
+html:not(.is-phone) .dafpage-grid.classic .col.side.spill-full { width: 100%; }
+html:not(.is-phone) .dafpage-grid.classic .spill-full .cv0 { width: 50%; }
+html:not(.is-phone) .dafpage-grid.classic .spill-full .cv { width: 76%; }
 /* the phone column selector is hidden on wider screens (all 3 columns show) */
 .daf-colhead { display: none; }
 /* phone layout (is-phone = viewport 680px OR forced phone view) */

@@ -808,17 +808,33 @@ async function hydrateDaf() {
   sizeDafCarves(box); applyDafCol(box); attachDafSwipe(box);
   consumePendingY();
 }
-// Fit each classic page's carve floats to its gemara block: the carve runs exactly
-// the gemara's height, so the flanking commentary widens back out right where the
-// gemara ends — the printed page's shape. The gemara's height depends only on its
-// own fixed width, so one measure pass suffices (no iteration). Re-run on text
-// scale, resize, and font load; a no-op on phones, where the carves are display:none.
+// Fit each classic page's carve floats to its gemara block, then hand out the
+// space below it by the printed page's rule: past the gemara's end, a commentary
+// with text left spills across the gemara's region UP TO the other commentary's
+// column (.spill-first); past the end of BOTH, the survivor takes the full page
+// width (.spill-full — its carve is extended to the first spiller's true end).
+// The gemara's height depends only on its own fixed width, so the passes are
+// sequential, never iterative. Re-run on text scale, resize, and font load;
+// a no-op on phones, where the carves are display:none.
 function sizeDafCarves(scope) {
   if (document.documentElement.classList.contains("is-phone")) return;
   (scope || document).querySelectorAll(".dafpage-grid.classic").forEach(g => {
-    const gm = g.querySelector(".col.gemara"); if (!gm) return;
+    const gm = g.querySelector(".col.gemara"), ra = g.querySelector(".col.side.rashi"), to = g.querySelector(".col.side.tosafos");
+    if (!gm || !ra || !to) return;
+    ra.classList.remove("spill-first", "spill-full"); to.classList.remove("spill-first", "spill-full");
+    const headH = parseFloat(getComputedStyle(gm).marginTop) || 0;   // the header band (--dc-head, resolved)
     const h = gm.offsetHeight + 14;
     g.querySelectorAll(".cv").forEach(cv => { cv.style.height = h + "px"; });
+    const bottom = headH + h;                                        // the gemara's bottom edge
+    const raMore = ra.offsetHeight > bottom + 4, toMore = to.offsetHeight > bottom + 4;
+    const first = raMore && toMore ? ra : null;                      // both continue → Rashi spills to Tosafos' column first
+    const full = raMore && toMore ? to : raMore ? ra : toMore ? to : null;   // the longest survivor gets the whole page
+    if (first) first.classList.add("spill-first");
+    if (full) {
+      full.classList.add("spill-full");
+      const until = first ? Math.max(first.offsetHeight, bottom) : bottom;   // full width begins where the other text truly ends
+      full.querySelector(".cv").style.height = Math.max(0, until - headH) + "px";
+    }
   });
 }
 // Back-restore scroll for the async views: the popstate scrollTo fires before the
