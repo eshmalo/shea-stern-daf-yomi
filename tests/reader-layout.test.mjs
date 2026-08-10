@@ -50,14 +50,35 @@ test("operating controls are outside the paper and never scale", async () => {
   const app = await readFile(path.join(root, "app.js"), "utf8");
   const css = await readFile(path.join(root, "styles.css"), "utf8");
 
-  assert.match(app, /return `<nav class="daf-colhead"/);
-  assert.doesNotMatch(app, /function flipLabel[\s\S]*?data-gemflip[\s\S]*?function dafPage/);
+  assert.match(app, /return `<nav class="daf-colhead side-\$\{side\}"/);
+  assert.doesNotMatch(app, /function flipLabel|page-running-head|amud-label/);
   assert.match(css, /\.pageflip:hover \{[^}]*background:[^}]*\}/);
   assert.doesNotMatch(css, /\.pageflip:(?:hover|active) \{[^}]*transform:/);
   assert.doesNotMatch(css, /\.daynav:(?:hover|active) \{[^}]*transform:/);
   assert.doesNotMatch(css, /--dc-head:\s*calc\(/);
   assert.match(css, /side-right[^\n]*\.rashi \.cv,[\s\S]*?float: right/);
   assert.match(css, /side-right[^\n]*\.tosafos \.cv,[\s\S]*?float: left/);
+});
+
+test("one persistent folio header replaces every duplicate Daf title", async () => {
+  const app = await readFile(path.join(root, "app.js"), "utf8");
+  const css = await readFile(path.join(root, "styles.css"), "utf8");
+
+  assert.match(app, /function commitDafBodyHtml\(box, html\)/);
+  assert.match(app, /if \(node !== currentRail\) node\.remove\(\)/);
+  assert.match(app, /patchDafColHead\(currentRail, nextRail\)/);
+  assert.match(app, /function repairPagerFocus\(box, activatedDir\)/);
+  assert.match(app, /pagerIntent\(control, true\)/);
+  assert.match(app, /repairPagerFocus\(box, repairDir\)/);
+  assert.match(app, /repairPagerFocus\(body, repairDir\)/);
+  assert.doesNotMatch(app, /refocusPager/);
+  assert.match(app, /<div class="reader-bar daf-reader-bar">/);
+  assert.match(app, /<div class="rd-title sr-only" id="rdTitle">/);
+  assert.match(css, /\.daf-colhead \+ \.leaf-book > \.dafpage \{ margin-top: 0; border-top: 0/);
+  assert.match(css, /\.reader-body\.daf-reader-body \{ padding-top: 0/);
+  assert.match(css, /@keyframes folioTitleIn/);
+  assert.match(css, /@keyframes folioTitleOut/);
+  assert.doesNotMatch(app, /<div class="dafpage-label page-running-head/);
 });
 
 test("the operating frame stays fixed while physical paper snapshots animate", async () => {
@@ -76,6 +97,8 @@ test("the operating frame stays fixed while physical paper snapshots animate", a
   assert.doesNotMatch(app, /playerFloor/);
   assert.match(app, /_gemaraFlipEpoch/);
   assert.match(app, /Reader\._flipEpoch/);
+  assert.match(app, /playPageFlip\(motion, \(\) => settlePagerIntent\(box, stableIntent, arrived\)\)/);
+  assert.match(app, /playPageFlip\(motion, \(\) => settlePagerIntent\(body, stableIntent, arrived\)\)/);
   assert.match(css, /#dafText\.page-motion-active > :is\(\.leaf-book, \.amud\)/);
   assert.match(css, /\.pflip\.is-running\.shift-right \.pf-shift-track/);
   assert.match(css, /\.pflip\.is-running\.shift-left \.pf-shift-track/);
@@ -128,7 +151,8 @@ test("reading state is linkable and unrelated links outrank saved readers", asyn
   assert.match(app, /Reader\.source = inlineMode === "he" \? "gemara" : \(State\._parCol \|\| "gemara"\)/);
   assert.match(app, /if \(Reader\._sourceChanged\) State\._parCol = torahSource/);
   assert.match(app, /Reader\.inlineMode === "he" && torahSource === "gemara" \? "he" : "daf"/);
-  assert.match(app, /setDafScroll\(target\); lockReadMin\(target\); commitRestoredReadingState\(\)/);
+  assert.match(app, /enforceDockedPager\(surface, railIntent\)/);
+  assert.match(app, /paperOffset/);
 });
 
 test("long Torah comments preserve progress and stale scroll frames are rejected", async () => {

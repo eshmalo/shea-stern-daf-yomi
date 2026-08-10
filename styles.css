@@ -323,8 +323,10 @@ html.reader-open { overflow: hidden; }
 .reader-bar .rd-title { justify-self: center; text-align: center; line-height: 1.12; min-width: 0; padding: 0 8px; }
 .reader-bar .rd-title .he { font-family: var(--serif-he); direction: rtl; font-size: 24px; font-weight: 700; display: block; letter-spacing: .02em; }
 .reader-bar .rd-title .en { font-family: var(--sans); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-top: 2px; }
+.daf-reader-bar .rd-title.sr-only { padding: 0; }
 .reader-bar .rd-seg { flex: none; }
 .reader-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 16px calc(24px + env(safe-area-inset-right, 0px)) 48px calc(24px + env(safe-area-inset-left, 0px)); max-width: 1040px; margin: 0 auto; width: 100%; }
+.reader-body.daf-reader-body { padding-top: 0; }
 /* full-screen daf uses the width; single-column reading text stays a comfortable measure, centered */
 .reader-body .amud { max-width: 760px; margin-left: auto; margin-right: auto; }
 .reader-body .dafpage { max-width: 100%; }
@@ -336,6 +338,7 @@ html.is-phone .reader-bar .rd-right { grid-column: 1 / -1; justify-self: stretch
 html.is-phone .reader-bar .rd-modes, html.is-phone .reader-bar .rd-tools { justify-content: center; width: 100%; }
 html.is-phone .reader-bar .rd-title .he { font-size: 18px; }
 html.is-phone .reader-body { padding: 12px calc(14px + env(safe-area-inset-right, 0px)) 48px calc(14px + env(safe-area-inset-left, 0px)); }
+html.is-phone .reader-body.daf-reader-body { padding-top: 0; }
 
 /* Tablet readers keep the readable one-source page, but their toolbar has room
    for a single calm row. Decoupling the chrome from the 960px text breakpoint
@@ -345,6 +348,11 @@ html.is-phone .reader-body { padding: 12px calc(14px + env(safe-area-inset-right
   html.is-phone .reader-bar .rd-title { grid-column: 2; }
   html.is-phone .reader-bar .rd-right { grid-column: 3; justify-self: end; width: auto; flex-direction: row; justify-content: flex-end; gap: 8px; }
   html.is-phone .reader-bar .rd-modes, html.is-phone .reader-bar .rd-tools { width: auto; }
+}
+@media (max-width: 699px) {
+  html.is-phone .daf-reader-bar { grid-template-columns: 44px minmax(0, 1fr); align-items: start; }
+  html.is-phone .daf-reader-bar .rd-left { grid-column: 1; grid-row: 1; }
+  html.is-phone .daf-reader-bar .rd-right { grid-column: 2; grid-row: 1; justify-self: stretch; width: 100%; flex-direction: column; gap: 7px; }
 }
 /* Just above the one-source breakpoint the desktop grid is already one row,
    but the full labels still need the tablet measure. Keep that row at the same
@@ -380,22 +388,13 @@ html.is-phone .reader-body { padding: 12px calc(14px + env(safe-area-inset-right
     0 1px 0 rgba(55,48,36,.14),
     0 9px 24px -22px rgba(33,30,24,.55);
 }
-/* the leaf's running head — masechta and daf spread across the top, as printed */
 .dafpage-label {
   font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 19px; font-weight: 700; color: var(--accent);
   margin-bottom: 15px; letter-spacing: .12em; border-bottom: 1px solid var(--leaf-rule); padding: 0 3px 9px;
   box-shadow: 0 3px 0 -2px rgba(145,136,117,.32);
 }
-.dafpage-label .lbl-t-mas { color: var(--ink); font-weight: 700; margin-left: 14px; }
-.dafpage-label.page-running-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; direction: ltr; }
-.page-running-head .lbl-t { grid-column: 2; direction: rtl; white-space: nowrap; }
-.page-running-head .source-key { font-family: var(--serif-he); direction: rtl; color: #625c4f; font-size: 11px; font-weight: 600; letter-spacing: .045em; opacity: .92; }
-.page-running-head .key-tosafos { grid-column: 1; text-align: left; }
-.page-running-head .key-rashi { grid-column: 3; text-align: right; }
-:is(.leaf-book, .pf-inner).side-right .page-running-head .key-rashi { grid-column: 1; grid-row: 1; text-align: left; }
-:is(.leaf-book, .pf-inner).side-right .page-running-head .key-tosafos { grid-column: 3; grid-row: 1; text-align: right; }
-html.is-phone .page-running-head .source-key { display: none; }
-html.is-phone .dafpage-label.page-running-head { display: flex; justify-content: center; }
+.daf-colhead + .leaf-book > .dafpage { margin-top: 0; border-top: 0; border-radius: 0 0 2px 2px; }
+.daf-colhead + .amud { margin-top: 0; padding-top: 18px; border-top: 1px solid var(--leaf-rule); }
 .dafpage-grid { display: grid; grid-template-columns: 1fr 1.75fr 1fr; gap: 18px; direction: rtl; align-items: start; }
 .dafpage-grid .col { direction: rtl; min-width: 0; }
 .col-h { font-family: var(--serif-he); direction: rtl; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-faint); border-bottom: 1px solid var(--hair); padding-bottom: 5px; margin-bottom: 9px; letter-spacing: .03em; }
@@ -438,19 +437,31 @@ html:not(.is-phone) .dafpage-grid.classic .cvg.r { float: right; width: 26.5%; }
 html:not(.is-phone) .dafpage-grid.classic .cvg.l { float: left; width: 26.5%; }
 html:not(.is-phone) .dafpage-grid.classic .cv, html:not(.is-phone) .dafpage-grid.classic .cv2,
 html:not(.is-phone) .dafpage-grid.classic .cvg { pointer-events: none; }
-/* One operating rail is stable above the paper at every width. The leaf may
-   change sides; these controls never travel with it or chase a variable label. */
-.daf-colhead { display: flex; flex-direction: column; align-items: center; gap: 5px; direction: ltr;
-  position: sticky; top: var(--bar-h, 65px); z-index: 24; margin: 0 0 12px; padding: 7px 8px;
-  background: color-mix(in srgb, var(--paper) 94%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--hair); transition: top .25s cubic-bezier(.4,0,.2,1), box-shadow .2s; }
-.daf-flip-row { width: min(100%, 360px); display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 10px; direction: ltr; }
+/* The sole folio header is both the printed page's top edge and its frozen
+   operating frame. It stays outside the leaf animation, but sits flush against
+   the paper so there is no detached ribbon or duplicate running head. */
+.daf-colhead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 360px) minmax(0, 1fr); align-items: center; direction: ltr;
+  position: sticky; top: var(--bar-h, 65px); z-index: 24; min-height: 53px; margin: 0; padding: 4px 8px 3px;
+  background: var(--leaf-paper); border: 1px solid var(--leaf-edge); border-bottom-color: var(--leaf-rule); border-radius: 2px 2px 0 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); transition: top .25s cubic-bezier(.4,0,.2,1), box-shadow .2s; }
+.daf-flip-row { grid-column: 2; grid-row: 1; width: 100%; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 10px; direction: ltr; }
 .daf-flip-row .next { grid-column: 1; }
 .daf-flip-row .prev { grid-column: 3; }
-.daf-flip-lbl { grid-column: 2; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-family: var(--serif-he); direction: rtl; font-size: 19px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
+.daf-flip-lbl { grid-column: 2; grid-row: 1; position: relative; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-family: var(--serif-he); direction: rtl; font-size: 19px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
+.folio-current { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folio-source { position: relative; min-width: 0; overflow: hidden; padding: 0 12px; font-family: var(--serif-he); direction: rtl; color: #625c4f; font-size: 11px; font-weight: 600; letter-spacing: .045em; opacity: .82; }
+.folio-source-left { grid-column: 1; text-align: left; }
+.folio-source-right { grid-column: 3; text-align: right; }
+.folio-swap-old { position: absolute; inset: 0; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+.folio-source > .folio-swap-old { inset-inline: 12px; }
+.folio-swap-ready .folio-current { opacity: 0; }
+.folio-swapping .folio-current { animation: folioTitleIn var(--folio-swap-ms, 520ms) linear both; }
+.folio-swapping .folio-swap-old { animation: folioTitleOut var(--folio-swap-ms, 520ms) linear both; }
+@keyframes folioTitleIn { 0%, 43% { opacity: 0; } 57%, 100% { opacity: 1; } }
+@keyframes folioTitleOut { 0%, 43% { opacity: 1; } 57%, 100% { opacity: 0; } }
 .daf-cols-row { display: none; }
 .reader-body .daf-colhead { top: 0; }
-html.dy-min .daf-colhead { top: 0; box-shadow: 0 8px 16px -12px rgba(33,30,24,.45); }
+html.dy-min .daf-colhead { top: 0; box-shadow: 0 9px 18px -14px rgba(33,30,24,.5); }
 /* compact reading layout (is-phone = viewport 960px OR forced phone view) */
 html.is-phone .dafpage { padding: 14px 13px 10px; }
 html.is-phone .dafpage-grid { grid-template-columns: 1fr; gap: 0; }
@@ -458,20 +469,20 @@ html.is-phone .col-gemara .dafpage-grid .col:not(.gemara), html.is-phone .col-ra
 html.is-phone .dafpage-grid .col.side { border-top: 0; padding-top: 0; margin-top: 0; }
 html.is-phone .dafpage-grid .cv, html.is-phone .dafpage-grid .cv2,
 html.is-phone .dafpage-grid .cvg { display: none; }   /* the carve floats are a desktop-shape device only */
-html.is-phone .dafpage-label { font-size: 17px; letter-spacing: .06em; }
 html.is-phone .col.gemara .gem { font-size: calc(20px * var(--daf-scale, 1)); line-height: 1.9; }
 html.is-phone .col.side .comm { font-size: calc(18px * var(--daf-scale, 1)); line-height: 1.78; }
 html.is-phone .col-h { display: none; }
 html.is-phone .daf-toolbar { flex-wrap: wrap; gap: 8px; }
 html.is-phone .seg button { padding: 6px 10px; }
-html.is-phone .daf-colhead { display: flex; flex-direction: column; align-items: center; gap: 6px; direction: ltr;
+html.is-phone .daf-colhead { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 3px; direction: ltr;
     position: -webkit-sticky; position: sticky; top: var(--bar-h, 54px); z-index: 20;
-    margin: 0 0 14px; padding: 9px 6px; background: var(--paper); border-bottom: 1px solid var(--hair);
+    margin: 0; padding: 4px 6px 3px; background: var(--leaf-paper); border: 1px solid var(--leaf-edge); border-bottom-color: var(--leaf-rule);
     transition: top .25s cubic-bezier(.4, 0, .2, 1), box-shadow .25s ease; }
 html.is-phone .reader-body .daf-colhead { top: 0; }
-html.is-phone .daf-flip-row { display: grid; align-items: center; gap: 10px; }
+html.is-phone .daf-flip-row { grid-column: 1; grid-row: 1; display: grid; align-items: center; gap: 10px; }
 html.is-phone .daf-flip-lbl { font-family: var(--serif-he); direction: rtl; font-size: 21px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
-html.is-phone .daf-cols-row { width: min(100%, 360px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: baseline; gap: 0; }
+html.is-phone .folio-source { display: none; }
+html.is-phone .daf-cols-row { grid-column: 1; grid-row: 2; width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: baseline; gap: 0; border-top: 1px solid var(--hair); }
 html.is-phone .daf-colhead .col-tab { -webkit-appearance: none; appearance: none; background: none; cursor: pointer;
     width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--serif-he); font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: .01em;
     color: var(--ink-faint); min-height: 44px; padding: 5px 10px 4px; border: 0; border-bottom: 2px solid transparent;
@@ -653,7 +664,7 @@ html.is-narrow .daf-progress { flex-direction: column; gap: 7px; }
 /* ===== phone: compact chrome + collapse-on-scroll (maximize reading space) ===== */
 /* compact reading layout (is-phone = viewport 960px OR forced phone view) */
 html.is-phone .bar { padding-top: calc(5px + env(safe-area-inset-top, 0px)); padding-bottom: 5px; gap: 6px; }
-html.is-phone .daf-colhead { gap: 3px; padding: 6px 6px 7px; margin: 0 0 12px; }
+html.is-phone .daf-colhead { gap: 3px; padding: 4px 6px 3px; margin: 0; }
 html.is-phone .daf-flip-lbl { font-size: 19px; }
 html.is-phone .daf-colhead .col-tab { font-size: 19px; }
 html.is-phone .daf-cols-row { gap: 0; }
@@ -672,7 +683,7 @@ html.is-phone .player .x { min-width: 28px; }
 html.is-phone #app.player-active { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
 html.is-phone .toast-wrap { bottom: calc(106px + env(safe-area-inset-bottom, 0px)); }
 html.dy-min .bar { transform: translateY(-100%); }
-html.is-phone.dy-min .daf-colhead { top: 0; padding-top: calc(6px + env(safe-area-inset-top, 0px)); box-shadow: 0 8px 16px -12px rgba(33, 30, 24, .45); }
+html.is-phone.dy-min .daf-colhead { top: 0; padding-top: calc(4px + env(safe-area-inset-top, 0px)); box-shadow: 0 8px 16px -12px rgba(33, 30, 24, .45); }
 
 /* ---------- Worksheets & sources (admin-uploaded PDFs/pictures per page) ---------- */
 .ws-list { margin: 4px 0 14px; }
@@ -743,7 +754,6 @@ html:not(.is-phone) .daf-read.has-spread { width: min(94vw, 1200px); position: r
 html.is-wide:not(.is-phone) .reader-body { max-width: 1400px; }
 html:not(.is-phone) .daf-read.has-spread .col.side .comm { font-size: calc(15px * var(--daf-scale, 1)); }
 html:not(.is-phone) .daf-read.has-spread .dafpage-grid.classic { --dc-head: 0px; }
-html.is-phone .dafpage-label .lbl-t-mas { display: none; }   /* the phone colhead already names the masechta */
 
 /* ---------- the gutter: the fold, and the page facing it ----------
    Amud א sits on the LEFT page of the open sefer (fold on its right); amud ב on
@@ -761,7 +771,7 @@ html:not(.is-phone) :is(.leaf-book, .pf-inner) > .dafpage {
 }
 .leaf-gutter { display: none; }
 html:not(.is-phone) .leaf-gutter {
-  display: block; position: absolute; top: 16px; bottom: 24px; width: calc(var(--leaf-spine-overlap) * 2); margin: 0; z-index: 3; overflow: hidden;
+  display: block; position: absolute; top: 0; bottom: 24px; width: calc(var(--leaf-spine-overlap) * 2); margin: 0; z-index: 3; overflow: hidden;
   background: linear-gradient(180deg, var(--leaf-paper), #f8f2e4); border: 1px solid var(--leaf-edge); border-left: 0;
   border-radius: 0 2px 2px 0; box-shadow: 2px 0 5px -4px rgba(33,30,24,.48);
 }

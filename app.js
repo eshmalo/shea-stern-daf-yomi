@@ -902,7 +902,7 @@ async function dafBodyHtml(masechta, daf, mode, amud) {
     return renderDafLayout(masechta, daf, key, data, comm, facingData) + dafEndNav(masechta, daf, key);
   }
   const seg = data[key];   // one amud at a time in every mode — the flip controls step leaf by leaf
-  const html = seg ? `<div class="amud">${flipLabel("amud-label", esc(heAmud(amudLeaf(key), key)), masechta, daf, key)}${renderAmud(seg, mode)}</div>` : "";
+  const html = seg ? `<div class="amud">${renderAmud(seg, mode)}</div>` : "";
   return dafColHead(masechta, daf, key, { showSources: false }) + (html || `<div class="empty-mini">This amud isn't available.</div>`) + dafEndNav(masechta, daf, key);
 }
 // A quiet catchword closes the paper. Navigation lives only in the stable rail
@@ -910,13 +910,56 @@ async function dafBodyHtml(masechta, daf, mode, amud) {
 function dafEndNav(masechta, daf, amud) {
   return `<div class="daf-endmark" aria-hidden="true"><span>❦</span></div>`;
 }
+function syncControlState(current, next) {
+  if (!current || !next) return;
+  current.className = next.className;
+  current.textContent = next.textContent;
+  current.disabled = next.disabled;
+  ["aria-label", "aria-pressed", "title"].forEach(name => {
+    const value = next.getAttribute(name);
+    if (value == null) current.removeAttribute(name); else current.setAttribute(name, value);
+  });
+}
+function patchDafColHead(current, next) {
+  if (!current || !next) return;
+  current.className = next.className;
+  current.setAttribute("aria-label", next.getAttribute("aria-label") || "Amud navigation");
+  ["1", "-1"].forEach(dir => syncControlState(current.querySelector(`[data-gemflip="${dir}"]`), next.querySelector(`[data-gemflip="${dir}"]`)));
+  [".daf-flip-lbl", ".folio-source-left", ".folio-source-right"].forEach(selector => {
+    const a = current.querySelector(selector), b = next.querySelector(selector);
+    if (!a || !b) return;
+    const value = b.querySelector(".folio-current")?.textContent || "";
+    const live = a.querySelector(".folio-current"); if (live) live.textContent = value;
+    const aria = b.getAttribute("aria-label");
+    if (aria == null) a.removeAttribute("aria-label"); else a.setAttribute("aria-label", aria);
+  });
+  const currentSources = current.querySelector(":scope > .daf-cols-row"), nextSources = next.querySelector(":scope > .daf-cols-row");
+  if (currentSources && nextSources) {
+    currentSources.setAttribute("aria-label", nextSources.getAttribute("aria-label") || "Daf column");
+    DAF_COLS.forEach(([key]) => syncControlState(currentSources.querySelector(`[data-dcol="${key}"]`), nextSources.querySelector(`[data-dcol="${key}"]`)));
+  } else if (!currentSources && nextSources) current.appendChild(nextSources);
+  else if (currentSources && !nextSources) currentSources.remove();
+}
+// Keep the pager itself mounted while replacing the paper beneath it. This is
+// more than visual stability: the activated button retains its DOM identity,
+// focus, hit box, and keyboard relationship throughout every page transaction.
+function commitDafBodyHtml(box, html) {
+  const template = document.createElement("template"); template.innerHTML = html;
+  const nextRail = [...template.content.children].find(node => node.matches(".daf-colhead")) || null;
+  const currentRail = box.querySelector(":scope > .daf-colhead");
+  if (!currentRail || !nextRail) { box.replaceChildren(template.content); return; }
+  patchDafColHead(currentRail, nextRail);
+  nextRail.remove();
+  [...box.childNodes].forEach(node => { if (node !== currentRail) node.remove(); });
+  box.append(template.content);
+}
 async function hydrateDaf(preparedHtml) {
   const box = $("#dafText"); if (!box) return false;
   const gen = (box._hydGen = (box._hydGen || 0) + 1);          // serialize overlapping hydrates
   box.setAttribute("aria-busy", "true");
   const html = preparedHtml == null ? await dafBodyHtml(box.dataset.mas, +box.dataset.daf, box.dataset.mode, box.dataset.amud) : preparedHtml;
   if (!box.isConnected || box._hydGen !== gen) return false;    // a newer flip superseded this one — drop the stale render
-  box.innerHTML = html;
+  commitDafBodyHtml(box, html);
   box.setAttribute("aria-busy", "false");
   box._renderedMas = box.dataset.mas; box._renderedDaf = box.dataset.daf; box._renderedAmud = box.dataset.amud; box._renderedMode = box.dataset.mode;   // committed screen identity (guards scroll/state saves during rapid flips)
   const dr = box.closest(".daf-read"); if (dr) dr.classList.toggle("has-spread", box.dataset.mode === "daf");   // wide breakout only for the printed-page layout
@@ -1040,14 +1083,8 @@ function commCol(arr) {
     return `<p class="${cls}" lang="he" dir="rtl"><b>${dh}</b> ${esc(m[2])}</p>`;
   }).join("");
 }
-// The paper carries only its running head. Operating controls live in the stable
-// rail outside the leaf, so they neither turn nor shift with the physical page.
-function flipLabel(cls, innerHtml, mas, daf, amud, sources) {
-  if (cls === "dafpage-label") return `<div class="${cls} page-running-head">
-    <span class="source-key key-tosafos" lang="he">${sources?.available?.tosafos === false ? "" : esc(sources?.labels?.tosafos || "תוספות")}</span><span class="lbl-t">${innerHtml}</span><span class="source-key key-rashi" lang="he">${sources?.available?.rashi === false ? "" : esc(sources?.labels?.rashi || "רש״י")}</span>
-  </div>`;
-  return `<div class="${cls} page-running-head"><span class="lbl-t">${innerHtml}</span></div>`;
-}
+// The operating folio header is the paper's sole running head. It stays outside
+// the physical leaf so its title and buttons never turn, shift, or get cloned.
 // The <i> carve spacers give each stream its printed shape. .cv keeps each
 // commentary in its margin while Gemara runs; .cv2 keeps a half-page stream
 // while the OTHER commentary continues beyond Gemara. The Gemara .cvg pair
@@ -1055,7 +1092,7 @@ function flipLabel(cls, innerHtml, mas, daf, amud, sources) {
 // begin together at the top, as on the Vilna page.
 const CARVES = `<i class="cv" aria-hidden="true"></i><i class="cv2" aria-hidden="true"></i>`;
 const GCARVES = `<i class="cvg r" aria-hidden="true"></i><i class="cvg l" aria-hidden="true"></i>`;
-function dafPage(daf, amud, seg, c, labelHtml, sources) {
+function dafPage(daf, amud, seg, c, sources) {
   const lines = (seg.he || "").split("\n").filter(Boolean);
   let gem = lines.map(safeHe).join("<br>");
   if (lines.length) {   // the amud's opening word in large square letters, as printed
@@ -1063,7 +1100,6 @@ function dafPage(daf, amud, seg, c, labelHtml, sources) {
     if (w.length <= 14) gem = `<span class="gm0">${safeHe(w)}</span>${sp > 0 ? " " + safeHe(first.slice(sp + 1)) : ""}` + (lines.length > 1 ? "<br>" + lines.slice(1).map(safeHe).join("<br>") : "");
   }
   return `<div class="dafpage">
-    ${labelHtml}
     <div class="dafpage-grid classic">
       <section class="col side rashi" role="region" aria-label="${esc(sources?.labels?.rashi || "רש״י")}" lang="he" dir="rtl">${CARVES}<div class="col-h" lang="he">${esc(sources?.labels?.rashi || "רש״י")}</div>${commCol(c && c.r)}</section>
       <section class="col gemara" role="region" aria-label="Gemara" lang="he" dir="rtl">${GCARVES}<div class="col-h" lang="he">גמרא</div><div class="gem" lang="he" dir="rtl">${gem || '<div class="col-empty">—</div>'}</div></section>
@@ -1074,8 +1110,6 @@ function dafPage(daf, amud, seg, c, labelHtml, sources) {
 // left of the gutter, amud ב on its right. The gutter shows the fold and a faded
 // sliver of the page facing it across the seam — decorative only (it carries no
 // scroll memory and nothing interactive).
-const folioLabel = (masechta, dafN, amud) =>
-  `<span class="lbl-t-mas" lang="he">${esc(DY.masechtaHe(masechta))}</span><span lang="he">${esc(heAmud(dafN, amud))}</span>`;
 function gutterHtml(facing, facingData) {
   let peek = "";
   const seg = facing && facingData && facingData[facing.amud];
@@ -1094,7 +1128,7 @@ function renderDafLayout(masechta, daf, key, data, comm, facingData) {
   };
   const side = amudSide(key);                                   // א → left page, ב → right page
   const facing = amudStep(masechta, daf, key, side === "left" ? -1 : 1);   // the page across the gutter
-  const page = dafPage(daf, key, seg, pageComm, flipLabel("dafpage-label", folioLabel(masechta, amudLeaf(key), key), masechta, daf, key, sources), sources);
+  const page = dafPage(daf, key, seg, pageComm, sources);
   return dafColHead(masechta, daf, key, sources) + `<div class="leaf-book side-${side}">${page}${gutterHtml(facing, facingData)}</div>`;
 }
 
@@ -1161,6 +1195,28 @@ function pageMotionSpineFace(frame, role, stageTop) {
   face.appendChild(frame.gutter);
   return face;
 }
+function captureFolioHeaderState(surface) {
+  const rail = surface?.querySelector(":scope > .daf-colhead");
+  const read = selector => rail?.querySelector(`${selector} .folio-current`)?.textContent || "";
+  return rail ? { title: read(".daf-flip-lbl"), left: read(".folio-source-left"), right: read(".folio-source-right") } : null;
+}
+function prepareFolioHeaderSwap(tx, duration) {
+  const old = tx?.outgoingHeader, rail = tx?.surface?.querySelector(":scope > .daf-colhead");
+  if (!old || !rail) return;
+  const slots = [[".daf-flip-lbl", old.title], [".folio-source-left", old.left], [".folio-source-right", old.right]];
+  slots.forEach(([selector, value]) => {
+    const slot = rail.querySelector(selector); if (!slot) return;
+    const ghost = el("span", "folio-swap-old"); ghost.textContent = value; ghost.setAttribute("aria-hidden", "true");
+    slot.appendChild(ghost);
+  });
+  rail.style.setProperty("--folio-swap-ms", `${duration}ms`);
+  rail.classList.add("folio-swap-ready");
+  tx.startHeaderSwap = () => { rail.classList.remove("folio-swap-ready"); rail.classList.add("folio-swapping"); };
+  tx.headerCleanup = () => {
+    rail.querySelectorAll(".folio-swap-old").forEach(node => node.remove());
+    rail.classList.remove("folio-swap-ready", "folio-swapping"); rail.style.removeProperty("--folio-swap-ms");
+  };
+}
 function clearPageMotions() {
   document.querySelectorAll(".pflip").forEach(n => typeof n._finish === "function" ? n._finish() : n.remove());
 }
@@ -1196,7 +1252,7 @@ function beginPageFlip(surface, kind, outSide) {
   ov.appendChild(track);
   const tx = {
     ov, surface, outgoing, kind, outSide, track, stageTop: outgoing.stageTop, stageBottom: outgoing.stageBottom,
-    done: false, resolve: null,
+    outgoingHeader: captureFolioHeaderState(surface), done: false, resolve: null,
   };
   const cleanup = () => {
     if (tx.done) return;
@@ -1206,6 +1262,7 @@ function beginPageFlip(surface, kind, outSide) {
       window.removeEventListener("touchmove", tx.onUserScroll, true);
       document.removeEventListener("keydown", tx.onScrollKey, true);
     }
+    if (tx.headerCleanup) { tx.headerCleanup(); tx.headerCleanup = null; }
     ov.remove();
     if (surface._pageMotion === tx) { surface.classList.remove("page-motion-active"); surface._pageMotion = null; }
     const resolve = tx.resolve; tx.resolve = null; if (resolve) resolve();
@@ -1231,8 +1288,16 @@ function clipPageMotion(tx, top, bottom) {
 }
 // Capture only after scroll restoration's rAF. This gives each face its own
 // saved vertical position while the stationary old snapshot prevents a flash.
-async function playPageFlip(tx) {
-  if (!tx) return;
+async function playPageFlip(tx, beforeStart) {
+  // Reduced motion has no visual transaction, but the destination still needs
+  // the same deterministic rail settlement as the animated path.
+  if (!tx) { if (beforeStart) await beforeStart(); return; }
+  const duration = tx.kind === "turn" ? 700 : 520;
+  prepareFolioHeaderSwap(tx, duration);                         // old title stays painted while the incoming paper settles
+  // Restore the destination and freeze the operating frame before sampling its
+  // paper. This prevents a docked pager from jumping for the first few motion
+  // frames when the new amud has a very different remembered scroll position.
+  if (beforeStart) await beforeStart();
   await pageMotionFrame();
   if (tx.done || !tx.surface.isConnected || tx.surface._pageMotion !== tx) { tx.cleanup(); return; }
   // Sticky chrome can change on the restore frame. Clip before that frame is
@@ -1256,7 +1321,6 @@ async function playPageFlip(tx) {
     const newFace = pageMotionSpineFace(incoming, "new", safeTop);
     if (newFace) tx.ov._spine.appendChild(newFace);
   }
-  const duration = tx.kind === "turn" ? 700 : 520;
   _minLockUntil = Math.max(_minLockUntil, Date.now() + duration + 180);
   void tx.ov.offsetWidth;
   return new Promise(resolve => {
@@ -1268,12 +1332,12 @@ async function playPageFlip(tx) {
     // restore, so they cannot distinguish interruption from correct setup. Only
     // explicit human scroll intent cancels decoration; semantic page arrows stay
     // queued and every amud remains free to restore a very different saved spot.
-    tx.onUserScroll = () => finish();
-    tx.onScrollKey = e => { if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(e.key)) finish(); };
+    tx.onUserScroll = () => { tx.userInterrupted = true; finish(); };
+    tx.onScrollKey = e => { if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(e.key)) { tx.userInterrupted = true; finish(); } };
     window.addEventListener("wheel", tx.onUserScroll, { passive: true, capture: true });
     window.addEventListener("touchmove", tx.onUserScroll, { passive: true, capture: true });
     document.addEventListener("keydown", tx.onScrollKey, true);
-    tx.ov.classList.add("is-running");
+    tx.startHeaderSwap?.(); tx.ov.classList.add("is-running");
     setTimeout(finish, duration + 260);                        // an interrupted CSS animation can never strand hidden live text
   });
 }
@@ -1311,12 +1375,18 @@ function dafColHead(masechta, daf, amud, sources) {
   const dis = d => dest(d) ? "" : " disabled";
   const aria = (d, word) => { const x = dest(d); return x ? `${word}: ${x.masechta} ${amudLeaf(x.amud)}${amudSide(x.amud) === "right" ? "b" : "a"}` : word; };
   const dafLbl = `${DY.BYEN[masechta] ? DY.BYEN[masechta].he : masechta} ${heAmud(amudLeaf(key), key)}`;
-  return `<nav class="daf-colhead" aria-label="Amud navigation${sources?.showSources === false ? "" : " and sources"}">
+  const side = amudSide(key);
+  const sourceLabel = name => sources?.showSources === false || sources?.available?.[name] === false ? "" : (sources?.labels?.[name] || (name === "rashi" ? "רש״י" : "תוספות"));
+  const leftSource = side === "left" ? sourceLabel("tosafos") : sourceLabel("rashi");
+  const rightSource = side === "left" ? sourceLabel("rashi") : sourceLabel("tosafos");
+  return `<nav class="daf-colhead side-${side}" aria-label="Amud navigation">
+    <span class="folio-source folio-source-left" lang="he" aria-hidden="true"><span class="folio-current">${esc(leftSource)}</span></span>
     <div class="daf-flip-row">
       <button class="pageflip next" data-gemflip="1" aria-label="${esc(aria(1, "Next amud"))}" title="Next amud"${dis(1)}>‹</button>
-      <span class="daf-flip-lbl" lang="he">${esc(dafLbl)}</span>
+      <span class="daf-flip-lbl" lang="he" role="heading" aria-level="2" aria-label="${esc(dafLbl)}"><span class="folio-current">${esc(dafLbl)}</span></span>
       <button class="pageflip prev" data-gemflip="-1" aria-label="${esc(aria(-1, "Previous amud"))}" title="Previous amud"${dis(-1)}>›</button>
     </div>
+    <span class="folio-source folio-source-right" lang="he" aria-hidden="true"><span class="folio-current">${esc(rightSource)}</span></span>
     ${sources?.showSources === false ? "" : `<div class="daf-cols-row" role="group" aria-label="Daf column — tap a name or swipe">${dafColsInner(sources?.labels, State._dafCol, sources?.available)}</div>`}
   </nav>`;
 }
@@ -1339,6 +1409,7 @@ function selectDafCol(col, pointerIntent) {
   if (col === old) return;
   const intent = pointerIntent || pagerIntent(), fallbackY = intent.fallbackY, anchor = parshaScrollAnchor(activeTorahBox());
   saveColScroll(old);                                 // remember where we were in the column we're leaving
+  holdPagerIntent(intent);
   if (torahReader) { Reader.source = col; Reader._sourceChanged = true; }
   else if (torah) State._parCol = col;
   else State._dafCol = col;
@@ -1355,7 +1426,9 @@ function selectDafCol(col, pointerIntent) {
   apply($("#dafText"));
   apply($("#parshaText"));                            // the parsha page shares the column machinery
   if (Reader.open) apply($("#rdBody"));
-  restoreColScroll(col, false, fallbackY, anchor, intent.preserveRail, true); // the source changes, never the rail's viewport position
+  restoreColScroll(col, false, fallbackY, anchor, intent.preserveRail, true, intent); // the source changes, never the rail's viewport position
+  const activeSurface = Reader.open ? $("#rdBody") : ($("#parshaText") || $("#dafText"));
+  if (!torah) void settlePagerIntent(activeSurface, intent, () => activeSurface?.isConnected);
   requestAnimationFrame(() => {
     if (Reader.open) { if (Reader.kind === "daf") commitDafReadState(); else commitReaderHistoryState(); }
     else if (State.route?.name === "daf") commitDafReadState();
@@ -1399,6 +1472,14 @@ function parshaScrollAnchor(box) {
   const rect = row.getBoundingClientRect(), offset = rect.top - top;
   return { ref: row.dataset.ref, offset, progress: rect.height > 0 ? Math.max(0, Math.min(1, -offset / rect.height)) : 0 };
 }
+function dafPaperScrollAnchor(box) {
+  if (!box || activeTorahBox()) return null;
+  const paper = box.querySelector(":scope > .leaf-book > .dafpage, :scope > .amud");
+  const rail = box.querySelector(":scope > .daf-colhead");
+  if (!paper || !rail) return null;
+  const pageRect = paper.getBoundingClientRect(), railRect = rail.getBoundingClientRect();
+  return { paperOffset: Math.max(0, railRect.bottom - pageRect.top) };
+}
 function visibleTorahVerse(box, ref) {
   const rows = [...box.querySelectorAll(".torah-verse")], exact = rows.find(n => n.dataset.ref === ref);
   const visible = n => { const r = n?.getBoundingClientRect(); return !!r && r.width > 0 && r.height > 0; };
@@ -1412,6 +1493,7 @@ function visibleTorahVerse(box, ref) {
 }
 function saveColScroll(col) {
   const all = ensureColScroll(), pb = activeTorahBox(), anchor = parshaScrollAnchor(pb);
+  const dafAnchor = pb ? null : dafPaperScrollAnchor(Reader.open ? $("#rdBody") : $("#dafText"));
   let key = colScrollKey(col || "gemara");
   if (Reader.open && Reader.kind === "daf" && Reader._renderedM && Reader._renderedD)
     key = `r:${Reader._renderedM}:${Reader._renderedD}:${Reader._renderedMode || Reader.mode}:${col || "gemara"}`;
@@ -1420,7 +1502,7 @@ function saveColScroll(col) {
     if (b?._renderedMas && b._renderedAmud)
       key = `p:${b._renderedMas}:${b._renderedAmud}:${b._renderedMode || b.dataset.mode}:${col || "gemara"}`;
   }
-  all[key] = { y: curDafScroll(), ...(anchor || {}), at: Date.now() };
+  all[key] = { y: curDafScroll(), ...(anchor || {}), ...(dafAnchor || {}), at: Date.now() };
   persistColScroll();
 }
 function committedDafSnapshot() {
@@ -1499,10 +1581,41 @@ function dafTopScroll() {
   const barH = min ? 0 : (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--bar-h")) || 0);
   return Math.max(0, Math.ceil((window.scrollY || 0) + box.getBoundingClientRect().top - barH));
 }
+function pagerStickyViewportTop(rail) {
+  if (!rail) return 0;
+  const offset = parseFloat(getComputedStyle(rail).top) || 0;
+  const scroller = rail.closest(".reader-body");
+  if (!scroller) return offset;
+  const pad = parseFloat(getComputedStyle(scroller).paddingTop) || 0;
+  return scroller.getBoundingClientRect().top + pad + offset;
+}
+function holdPagerIntent(intent) {
+  if (!intent) return;
+  if (typeof intent.minimized === "boolean" && !Reader.open)
+    document.documentElement.classList.toggle("dy-min", intent.minimized);
+  lockReadMin(curDafScroll());
+}
+function enforceDockedPager(surface, intent) {
+  if (!surface || !intent?.docked || activeTorahBox()) return;
+  if (typeof intent.minimized === "boolean" && !Reader.open)
+    document.documentElement.classList.toggle("dy-min", intent.minimized);
+  const rail = surface.querySelector(":scope > .daf-colhead"); if (!rail) return;
+  const delta = rail.getBoundingClientRect().top - pagerStickyViewportTop(rail);
+  if (delta > .5) setDafScroll(curDafScroll() + Math.ceil(delta));
+}
+async function settlePagerIntent(surface, intent, isCurrent) {
+  if (!surface || !intent) return;
+  for (let frame = 0; frame < 3; frame++) {
+    if (!surface.isConnected || (isCurrent && !isCurrent())) return;
+    holdPagerIntent(intent); enforceDockedPager(surface, intent); lockReadMin(curDafScroll());
+    if (frame < 2) await pageMotionFrame();
+  }
+  if (!isCurrent || isCurrent()) commitRestoredReadingState();
+}
 // Restore a remembered spot for this daf+column. On a plain column switch we stay
 // put when the column hasn't been seen; on a page flip (toTopIfUnseen) an unseen
 // daf starts at its top instead of inheriting the previous page's scroll.
-function restoreColScroll(col, toTopIfUnseen, fallbackY, fallbackAnchor, preferFallback, preferSavedSameRef = false) {
+function restoreColScroll(col, toTopIfUnseen, fallbackY, fallbackAnchor, preferFallback, preferSavedSameRef = false, railIntent = null) {
   const saved = ensureColScroll()[colScrollKey(col || "gemara")];
   const wasReaderOpen = Reader.open, surface = Reader.open ? $("#rdBody") : ($("#parshaText") || $("#dafText"));
   const identity = () => Reader.open
@@ -1519,11 +1632,11 @@ function restoreColScroll(col, toTopIfUnseen, fallbackY, fallbackAnchor, preferF
   const pinSurface = preferFallback && fallbackY != null && !fallbackAnchor && !activeTorahBox();
   if (pinSurface) {
     const target = Math.max(0, fallbackY);
-    setDafScroll(target); lockReadMin(target);
+    setDafScroll(target); enforceDockedPager(surface, railIntent); lockReadMin(curDafScroll());
     commitRestoredReadingState();
     requestAnimationFrame(() => {
       if (!surfaceIsCurrent()) return;
-      setDafScroll(target); lockReadMin(target);
+      setDafScroll(target); enforceDockedPager(surface, railIntent); lockReadMin(curDafScroll());
       commitRestoredReadingState();
     });
     return;
@@ -1550,17 +1663,25 @@ function restoreColScroll(col, toTopIfUnseen, fallbackY, fallbackAnchor, preferF
     const ceil = dafTopScroll();                               // the sticky-header "ceiling" (column top, header pinned)
     let target = null;
     const savedY = typeof saved === "number" ? saved : saved?.y;
+    const savedPaperOffset = Number.isFinite(+saved?.paperOffset) ? Math.max(0, +saved.paperOffset) : null;
     // When a reader flips before the rail has reached its sticky position, the
     // operating buttons must remain under the pointer. Restoring the new amud's
     // top here would pull that rail up to the header and make it look as though
     // the control jumped. Preserve the surface offset for this one case; once
     // the rail is docked, normal per-amud memory remains authoritative.
     if (preferFallback && fallbackY != null) target = Math.max(0, fallbackY);
+    else if (savedPaperOffset != null && !activeTorahBox()) {
+      const paper = surface?.querySelector(":scope > .leaf-book > .dafpage, :scope > .amud");
+      const rail = surface?.querySelector(":scope > .daf-colhead");
+      if (paper && rail) target = Math.max(0, curDafScroll() + paper.getBoundingClientRect().top + savedPaperOffset - rail.getBoundingClientRect().bottom);
+    }
     else if (savedY != null) target = Math.max(savedY, ceil);  // restore a remembered spot — but never above the ceiling
     else if (toTopIfUnseen) target = ceil;                    // page-flip into an unseen daf → its top
     else if (fallbackY != null) target = Math.max(fallbackY, ceil);
     else if (curDafScroll() < ceil) target = ceil;            // column switch, first view → snap down, never above the ceiling
-    if (target != null) { setDafScroll(target); lockReadMin(target); commitRestoredReadingState(); }   // this programmatic scroll must NOT flip the header open/closed
+    if (target != null) setDafScroll(target);
+    enforceDockedPager(surface, railIntent);
+    if (target != null || railIntent?.docked) { lockReadMin(curDafScroll()); commitRestoredReadingState(); }   // this programmatic scroll must NOT flip the header open/closed
   });
 }
 
@@ -1639,19 +1760,22 @@ function resetGemaraFlipTransactions() {
   _gemaraFlipBusy = false;
 }
 const pagerKind = source => typeof source === "string" ? (source === "head" ? "head" : "") : (source?.closest(".daf-colhead") ? "head" : "");
-function pagerIntent(source) {
+function pagerIntent(source, fromPointer = false) {
   const kind = pagerKind(source);
   const surface = Reader.open ? $("#rdBody") : ($("#parshaText") || $("#dafText"));
-  const rail = kind === "head" ? source.closest(".daf-colhead") : surface?.querySelector(".daf-colhead");
-  if (!rail) return { kind, fallbackY: curDafScroll(), preserveRail: false };
+  const rail = kind === "head" && typeof source !== "string" ? source.closest(".daf-colhead") : surface?.querySelector(".daf-colhead");
+  const focusedDir = !fromPointer && source instanceof Element && source.matches("[data-gemflip]") && document.activeElement === source
+    ? +source.dataset.gemflip : null;
+  if (!rail) return { kind, focusedDir, fallbackY: curDafScroll(), preserveRail: false, docked: false, minimized: document.documentElement.classList.contains("dy-min") };
   const rectTop = rail.getBoundingClientRect().top;
-  const stickyTop = parseFloat(getComputedStyle(rail).top) || 0;
-  return { kind, fallbackY: curDafScroll(), preserveRail: rectTop > stickyTop + 2 };
+  const stickyTop = pagerStickyViewportTop(rail), docked = rectTop <= stickyTop + 2;
+  return { kind, focusedDir, fallbackY: curDafScroll(), preserveRail: !docked, docked, minimized: document.documentElement.classList.contains("dy-min"), railTop: rectTop };
 }
-function refocusPager(box, kind, dir) {
-  const scope = kind === "head" ? ".daf-colhead" : "";
-  const next = scope && box?.querySelector(`${scope} [data-gemflip="${dir}"]`);
-  if (next) { try { next.focus({ preventScroll: true }); } catch { next.focus(); } }
+function repairPagerFocus(box, activatedDir) {
+  if (!box || activatedDir == null) return;
+  const same = box.querySelector(`[data-gemflip="${activatedDir}"]`);
+  const target = same && !same.disabled ? same : box.querySelector(`[data-gemflip="${-activatedDir}"]:not([disabled])`);
+  if (target && document.activeElement !== target) { try { target.focus({ preventScroll: true }); } catch { target.focus(); } }
 }
 function announceAmud(masechta, amud) {
   const s = $("#readStatus"), text = `${masechta} ${amudLeaf(amud)}${amudSide(amud) === "right" ? "b" : "a"} loaded. Reading position restored.`;
@@ -1688,13 +1812,17 @@ async function gemaraFlipOnce(dir, intent, epoch = _gemaraFlipEpoch) {
   const liveIntent = pagerIntent(box.querySelector(".daf-colhead"));
   const stableIntent = {
     kind: intent?.kind || "",
+    focusedDir: intent?.focusedDir ?? liveIntent.focusedDir,
     fallbackY: intent?.fallbackY ?? liveIntent.fallbackY,
     preserveRail: !!(intent?.preserveRail || liveIntent.preserveRail),
+    docked: intent?.docked ?? liveIntent.docked,
+    minimized: intent?.minimized ?? liveIntent.minimized,
+    railTop: intent?.railTop ?? liveIntent.railTop,
   };
   const cur = box.dataset.amud || amudKeysFor(box.dataset.mas, +box.dataset.daf)[0];
   const nx = amudStep(box.dataset.mas, +box.dataset.daf, cur, dir); if (!nx) return;
   const transition = RM.transitionFor({ masechta: box.dataset.mas, amud: cur }, nx);
-  const focusKind = stableIntent.kind, expected = `${box.dataset.mas}|${box.dataset.daf}|${cur}|${box.dataset.mode}`;
+  const expected = `${box.dataset.mas}|${box.dataset.daf}|${cur}|${box.dataset.mode}`;
   // Prepare while the old page remains fully live. Only once the destination is
   // ready do we freeze its last visual frame, commit, and begin the motion. A
   // cold cross-masechta fetch therefore never strands a screenshot on screen.
@@ -1706,12 +1834,20 @@ async function gemaraFlipOnce(dir, intent, epoch = _gemaraFlipEpoch) {
   const motion = beginPageFlip(box, transition.kind, transition.outSide);
   if (!box._renderedDaf || (box._renderedMas === box.dataset.mas && box._renderedDaf === box.dataset.daf && box._renderedAmud === cur))
     saveColScroll(State._dafCol);                // remember our place — but only when what's on screen IS this amud (rapid double-flip guard)
+  holdPagerIntent(stableIntent);                 // DOM height changes cannot reopen chrome or undock the frozen pager before restoration
+  // Only a keyboard-activated control that is still focused at commit owns a
+  // focus repair. Pointer taps and users who Tab elsewhere during a cold load
+  // must never have focus pulled back after the destination arrives.
+  const repairDir = stableIntent.focusedDir != null
+    && document.activeElement === box.querySelector(`[data-gemflip="${stableIntent.focusedDir}"]`) ? stableIntent.focusedDir : null;
   box.dataset.mas = nx.masechta; box.dataset.daf = nx.daf; box.dataset.amud = nx.amud;
   const painted = await hydrateDaf(prepared);    // synchronous commit of the prepared amud incl. fresh boundary arrows
   if (!painted) { motion?.cleanup(); return; }
-  restoreColScroll(State._dafCol, true, stableIntent.fallbackY, null, stableIntent.preserveRail); // keep an undocked rail under the pointer; otherwise restore this amud
-  announceAmud(nx.masechta, nx.amud); refocusPager(box, focusKind, dir);
-  await playPageFlip(motion);
+  restoreColScroll(State._dafCol, true, stableIntent.fallbackY, null, stableIntent.preserveRail, false, stableIntent); // keep the pager at the same viewport edge while restoring this amud
+  const arrived = () => epoch === _gemaraFlipEpoch && box.dataset.mas === nx.masechta && +box.dataset.daf === nx.daf && box.dataset.amud === nx.amud;
+  announceAmud(nx.masechta, nx.amud); repairPagerFocus(box, repairDir);
+  await playPageFlip(motion, () => settlePagerIntent(box, stableIntent, arrived));
+  if (!motion?.userInterrupted) await settlePagerIntent(box, stableIntent, arrived);
 }
 function dayNav(dir) {                           // top arrows — whole lecture page
   const [m, d] = (State.route.id || "").split("|");
@@ -1851,22 +1987,28 @@ function restoreReaderFromSnapshot(snapshot, { push = false } = {}) {
   return true;
 }
 async function readerFlip(dir, source) {
-  if (Reader._flipBusy) { Reader._flipQueue = Reader._flipQueue || []; if (Reader._flipQueue.length < 6) Reader._flipQueue.push({ dir, source: pagerKind(source) }); return; }
+  const intent = source && typeof source === "object" && "fallbackY" in source ? source : pagerIntent(source);
+  if (Reader._flipBusy) { Reader._flipQueue = Reader._flipQueue || []; if (Reader._flipQueue.length < 6) Reader._flipQueue.push({ dir, intent }); return; }
   const epoch = Reader._flipEpoch;
   Reader._flipBusy = true;
-  try { await readerFlipOnce(dir, source, epoch); }
+  try { await readerFlipOnce(dir, intent, epoch); }
   finally {
     if (epoch !== Reader._flipEpoch) return;
     Reader._flipBusy = false;
-    const next = Reader._flipQueue?.shift(); if (next && Reader.open && epoch === Reader._flipEpoch) readerFlip(next.dir, next.source);
+    const next = Reader._flipQueue?.shift(); if (next && Reader.open && epoch === Reader._flipEpoch) readerFlip(next.dir, next.intent);
   }
 }
-async function readerFlipOnce(dir, source, epoch = Reader._flipEpoch) {
+async function readerFlipOnce(dir, intent, epoch = Reader._flipEpoch) {
   if (epoch !== Reader._flipEpoch || !Reader.open || Reader.kind !== "daf") return;
   const cur = Reader.amud || amudKeysFor(Reader.masechta, Reader.daf)[0];
   const nx = amudStep(Reader.masechta, Reader.daf, cur, dir); if (!nx) return;
   const transition = RM.transitionFor({ masechta: Reader.masechta, amud: cur }, nx);
-  const body = $("#rdBody"), focusKind = pagerKind(source), mode = Reader.mode;
+  const body = $("#rdBody"), liveIntent = pagerIntent(body?.querySelector(".daf-colhead")), mode = Reader.mode;
+  const stableIntent = {
+    kind: intent?.kind || "", focusedDir: intent?.focusedDir ?? liveIntent.focusedDir, fallbackY: intent?.fallbackY ?? liveIntent.fallbackY,
+    preserveRail: !!(intent?.preserveRail || liveIntent.preserveRail), docked: intent?.docked ?? liveIntent.docked,
+    minimized: intent?.minimized ?? liveIntent.minimized, railTop: intent?.railTop ?? liveIntent.railTop,
+  };
   const expected = `${Reader.masechta}|${Reader.daf}|${cur}|${mode}`;
   body?.setAttribute("aria-busy", "true");
   const prepared = await dafBodyHtml(nx.masechta, nx.daf, mode, nx.amud);
@@ -1876,12 +2018,17 @@ async function readerFlipOnce(dir, source, epoch = Reader._flipEpoch) {
   const motion = beginPageFlip(body, transition.kind, transition.outSide);
   if (!Reader._renderedD || (Reader._renderedM === Reader.masechta && Reader._renderedD === cur))
     saveColScroll(State._dafCol);                // save a spot only for the amud actually rendered (rapid double-flip guard)
+  holdPagerIntent(stableIntent);
+  const repairDir = stableIntent.focusedDir != null
+    && document.activeElement === body?.querySelector(`[data-gemflip="${stableIntent.focusedDir}"]`) ? stableIntent.focusedDir : null;
   Reader.masechta = nx.masechta; Reader.daf = nx.daf; Reader.amud = nx.amud; Reader._restoreScroll = true;
   syncReaderChrome();
-  const painted = await fillReaderBody(nx.masechta, nx.daf, mode, nx.amud, prepared);
+  const painted = await fillReaderBody(nx.masechta, nx.daf, mode, nx.amud, prepared, stableIntent);
   if (!painted) { motion?.cleanup(); return; }
-  announceAmud(nx.masechta, nx.amud); refocusPager($("#rdBody"), focusKind, dir);
-  await playPageFlip(motion);
+  const arrived = () => epoch === Reader._flipEpoch && Reader.open && Reader.kind === "daf" && Reader.masechta === nx.masechta && Reader.daf === nx.daf && Reader.amud === nx.amud;
+  announceAmud(nx.masechta, nx.amud); repairPagerFocus(body, repairDir);
+  await playPageFlip(motion, () => settlePagerIntent(body, stableIntent, arrived));
+  if (!motion?.userInterrupted) await settlePagerIntent(body, stableIntent, arrived);
 }
 function renderReader() {
   if (Reader.kind === "torah") { renderTorahReader(); return; }
@@ -1890,16 +2037,16 @@ function renderReader() {
 function renderDafReader() {
   const r = $("#reader"); if (!r) return;
   r.innerHTML = `
-    <div class="reader-bar">
+    <div class="reader-bar daf-reader-bar">
       <div class="rd-side rd-left"><button class="rd-ic close" id="rdClose" aria-label="Close full screen">✕</button></div>
-      <div class="rd-title" id="rdTitle"><span class="he" lang="he"></span><span class="en"></span></div>
+      <div class="rd-title sr-only" id="rdTitle"><span class="he" lang="he"></span><span class="en"></span></div>
       <div class="rd-side rd-right">
         <div class="rd-modes">${modeSegHtml("rdMode", Reader.mode, "rmode")}</div>
         <div class="rd-tools">${tsizeHtml()}<button class="rd-ic play" id="rdPlay" aria-label="Play this shiur" title="Play this daf's shiur">${svgPlay(13)}</button></div>
       </div>
     </div>
     <div class="sr-only" id="rdStatus" role="status" aria-live="polite" aria-atomic="true"></div>
-    <div class="reader-body" id="rdBody" role="region" aria-label="Daf text" aria-busy="true" aria-keyshortcuts="ArrowLeft ArrowRight"><div class="daf-loading">Loading the daf…</div></div>`;
+    <div class="reader-body daf-reader-body" id="rdBody" role="region" aria-label="Daf text" aria-busy="true" aria-keyshortcuts="ArrowLeft ArrowRight"><div class="daf-loading">Loading the daf…</div></div>`;
   $("#rdClose").onclick = closeReader;
   $$("#rdMode button").forEach(b => b.onclick = () => setReaderMode(b.dataset.rmode));
   $$("#reader [data-tsize]").forEach(b => b.onclick = () => bumpDafScale(+b.dataset.tsize));
@@ -1907,12 +2054,13 @@ function renderDafReader() {
   let bodyControlIntent = null;
   const rememberControlIntent = e => {
     const control = e.target.closest("[data-gemflip], [data-dcol]");
-    if (control) { bodyControlIntent = pagerIntent(control); lockReadMin(bodyControlIntent.fallbackY); }
+    if (control) { bodyControlIntent = pagerIntent(control, true); lockReadMin(bodyControlIntent.fallbackY); }
   };
   body.onpointerdown = rememberControlIntent;
   body.onmousedown = e => { if (!bodyControlIntent) rememberControlIntent(e); if (e.target.closest("[data-gemflip], [data-dcol]")) e.preventDefault(); };
   body.onclick = e => {
-    const g = e.target.closest("[data-gemflip]"); if (g) { readerFlip(+g.dataset.gemflip, g); return; }
+    const g = e.target.closest("[data-gemflip]");
+    if (g) { const intent = bodyControlIntent || pagerIntent(g); bodyControlIntent = null; readerFlip(+g.dataset.gemflip, intent); return; }
     const c = e.target.closest("[data-dcol]"); if (c) { const intent = bodyControlIntent; bodyControlIntent = null; selectDafCol(c.dataset.dcol, intent); }
   };
   syncReaderChrome();
@@ -1989,20 +2137,22 @@ function syncReaderChrome() {
 async function setReaderMode(mode) {
   if (!Reader.open || Reader.mode === mode) return;
   clearPageMotions();
+  const intent = pagerIntent(); holdPagerIntent(intent);
   saveColScroll(State._dafCol || "gemara");
   Reader.mode = mode; State._dafMode = mode; Reader._restoreScroll = true;
   syncReaderChrome();
-  await fillReaderBody(Reader.masechta, Reader.daf, mode, Reader.amud);
+  await fillReaderBody(Reader.masechta, Reader.daf, mode, Reader.amud, undefined, intent);
+  await settlePagerIntent($("#rdBody"), intent, () => Reader.open && Reader.kind === "daf" && Reader.mode === mode);
 }
-async function fillReaderBody(m, d, mode, amud, preparedHtml) {
+async function fillReaderBody(m, d, mode, amud, preparedHtml, railIntent) {
   const gen = ++Reader._bodyGen, body = $("#rdBody");
   if (body) body.setAttribute("aria-busy", "true");
   const html = preparedHtml == null ? await dafBodyHtml(m, d, mode, amud) : preparedHtml;
   if (body && gen === Reader._bodyGen && Reader.open && Reader.masechta === m && Reader.daf === d && Reader.amud === amud && Reader.mode === mode) {
-    body.innerHTML = html; Reader._renderedM = m; Reader._renderedN = d; Reader._renderedD = amud; Reader._renderedMode = mode;
+    commitDafBodyHtml(body, html); Reader._renderedM = m; Reader._renderedN = d; Reader._renderedD = amud; Reader._renderedMode = mode;
     body.setAttribute("aria-busy", "false");
     sizeDafCarves(body); applyDafCol(body); attachDafSwipe(body);
-    Reader._restoreScroll = false; restoreColScroll(State._dafCol, true);
+    Reader._restoreScroll = false; restoreColScroll(State._dafCol, true, railIntent?.fallbackY, null, railIntent?.preserveRail, false, railIntent);
     requestAnimationFrame(commitDafReadState);
     return true;
   }
@@ -2635,15 +2785,18 @@ function wireView(r) {
     const mode = b.dataset.mode; State._dafMode = mode;
     $$("#dafMode button").forEach(x => { const on = x.dataset.mode === mode; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
     const box = $("#dafText"); if (box) {
-      saveColScroll(State._dafCol || "gemara"); box.dataset.mode = mode;
-      if (await hydrateDaf()) restoreColScroll(State._dafCol, true, intent.fallbackY, null, intent.preserveRail);
+      saveColScroll(State._dafCol || "gemara"); holdPagerIntent(intent); box.dataset.mode = mode;
+      if (await hydrateDaf()) {
+        restoreColScroll(State._dafCol, true, intent.fallbackY, null, intent.preserveRail, false, intent);
+        await settlePagerIntent(box, intent, () => box.isConnected && box.dataset.mode === mode);
+      }
     } // re-render text only; leaves any playing video intact
   });
   const dr = $(".daf-read");   // these controls are re-rendered inside the text region each flip → delegate
   let drControlIntent = null;
   const rememberControlIntent = e => {
     const control = e.target.closest("[data-gemflip], [data-dcol]");
-    if (control) { drControlIntent = pagerIntent(control); lockReadMin(drControlIntent.fallbackY); }
+    if (control) { drControlIntent = pagerIntent(control, true); lockReadMin(drControlIntent.fallbackY); }
   };
   if (dr) dr.onpointerdown = rememberControlIntent;
   if (dr) dr.onmousedown = e => { if (!drControlIntent) rememberControlIntent(e); if (e.target.closest("[data-gemflip], [data-dcol]")) e.preventDefault(); };
