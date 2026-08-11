@@ -23,6 +23,7 @@ R2_SECRET_ACCESS_KEY, CDN_BASE_URL, ADMIN_PW_HASH (pbkdf2$<iters>$<salthex>$<has
 SESSION_SECRET, ALLOWED_ORIGINS (comma-separated).
 """
 import base64
+import binascii
 import hashlib
 import hmac
 import json
@@ -114,7 +115,14 @@ def bucket():
 # Best-effort, per-container throttle (documented limitation: each warm Lambda
 # container has its own counters). Lockout is PER-IP so a stranger's failures
 # can't lock the admin out; a much higher global cap bounds total guess volume.
+# Each IP carries its own [count, last_attempt] and expires on that, so someone
+# else's steady stream of failures can no longer hold an IP's lockout open past
+# the hour it promises. The global counter throttles only the failure path — it
+# must never stand between the real admin and a correct password.
 _fails = {"n": 0, "at": 0.0, "ip": {}}
+FAIL_WINDOW = 3600
+IP_FAIL_CAP = 25
+GLOBAL_FAIL_CAP = 500
 
 
 def check_password(pw):
@@ -357,18 +365,28 @@ def apply_op(d, op):
 
 def h_login(body, ip):
     now = time.time()
-    if now - _fails["at"] > 3600:
+    if now - _fails["at"] > FAIL_WINDOW:
         _fails["n"] = 0
-        _fails["ip"] = {}
-    ip_n = _fails["ip"].get(ip, 0)
-    if ip_n >= 25 or _fails["n"] >= 500:
+    # each IP ages out on its own last attempt, not on a shared clock that any
+    # other IP's failure keeps resetting
+    for k, v in list(_fails["ip"].items()):
+        if now - v[1] > FAIL_WINDOW:
+            del _fails["ip"][k]
+    ip_n = _fails["ip"].get(ip, [0, 0.0])[0]
+    if ip_n >= IP_FAIL_CAP:
         return 429, {"error": "too many attempts; try again later"}
     pw = body.get("password")
-    if not isinstance(pw, str) or len(pw) > 256 or not check_password(pw):
+    ok = isinstance(pw, str) and len(pw) <= 256 and check_password(pw)
+    if not ok:
+        # the global cap gates only failures — checking the password first means
+        # a flood against some other IP can never lock out the real admin
         _fails["n"] += 1
         _fails["at"] = now
         if len(_fails["ip"]) < 10000:
-            _fails["ip"][ip] = ip_n + 1
+            _fails["ip"][ip] = [ip_n + 1, now]
+        if _fails["n"] >= GLOBAL_FAIL_CAP:
+            print(json.dumps({"evt": "login_global_cap", "ip": ip, "fails": _fails["n"]}))
+            return 429, {"error": "too many attempts; try again later"}
         time.sleep(min(0.4 * (2 ** min(ip_n + 1, 4)), 6))
         print(json.dumps({"evt": "login_fail", "ip": ip, "fails": ip_n + 1}))
         return 401, {"error": "wrong password"}
@@ -480,8 +498,12 @@ ROUTES = {
 
 # ---------- http plumbing ----------
 
+def allowed_origins():
+    return [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+
+
 def cors_headers(origin):
-    allowed = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+    allowed = allowed_origins()
     h = {"Content-Type": "application/json; charset=utf-8",
          "Cache-Control": "no-store",
          "X-Content-Type-Options": "nosniff"}
@@ -512,18 +534,24 @@ def lambda_handler(event, _context):
     body = {}
     if method == "POST":
         raw = event.get("body") or ""
-        if event.get("isBase64Encoded"):
-            raw = base64.b64decode(raw).decode("utf-8", "replace")
-        if len(raw) > 1_000_000:
-            return resp(413, {"error": "body too large"}, origin)
         try:
+            if event.get("isBase64Encoded"):
+                raw = base64.b64decode(raw).decode("utf-8", "replace")
+            if len(raw) > 1_000_000:
+                return resp(413, {"error": "body too large"}, origin)
             body = json.loads(raw) if raw else {}
             if not isinstance(body, dict):
                 raise ValueError
-        except ValueError:
+        # deeply nested JSON raises RecursionError, not ValueError, and would
+        # otherwise escape as a 502 with no CORS headers
+        except (ValueError, RecursionError, binascii.Error):
             return resp(400, {"error": "invalid JSON"}, origin)
 
     if (method, path) == ("POST", "/login"):
+        # a browser page from anywhere may POST here (CORS only governs reading
+        # the reply); refuse before the password is ever checked
+        if origin and origin not in allowed_origins():
+            return resp(403, {"error": "forbidden"}, origin)
         code, out = h_login(body, ip)
         return resp(code, out, origin)
 

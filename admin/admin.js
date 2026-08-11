@@ -92,27 +92,95 @@
   const fmtDur = s => { s = Math.round(s || 0); if (!s) return ""; const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h ? `${h}h ${m}m` : `${m} min`; };
 
   /* ---------- session + api ---------- */
+  // localStorage is the durable store, but iOS Safari with "Block All Cookies"
+  // (and some in-app web views) throws on write. Keeping the token in memory as
+  // well means a correct password still signs you in for the life of the tab,
+  // instead of bouncing silently back to an empty login form.
+  let memToken = null;
   function token() {
     try {
       const t = JSON.parse(localStorage.getItem(TOKEN_KEY));
       if (t && t.token && t.exp * 1000 > Date.now() + 60000) return t.token;
     } catch {}
+    if (memToken && memToken.exp * 1000 > Date.now() + 60000) return memToken.token;
     return "";
   }
-  function setToken(t, exp) { try { localStorage.setItem(TOKEN_KEY, JSON.stringify({ token: t, exp })); } catch {} }
-  function clearToken() { try { localStorage.removeItem(TOKEN_KEY); } catch {} }
+  function setToken(t, exp) {
+    memToken = { token: t, exp };
+    try {
+      localStorage.setItem(TOKEN_KEY, JSON.stringify(memToken));
+      return !!localStorage.getItem(TOKEN_KEY);   // false = storage is blocked
+    } catch { return false; }
+  }
+  function clearToken() { memToken = null; try { localStorage.removeItem(TOKEN_KEY); } catch {} }
 
-  async function api(path, body, method) {
-    const r = await fetch(API + path, {
-      method: method || (body !== undefined ? "POST" : "GET"),
-      headers: Object.assign({ "content-type": "application/json" }, token() ? { authorization: "Bearer " + token() } : {}),
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
+  // Longer than the Lambda's own 30s timeout, so we only give up after the
+  // server certainly has — but not never, which is how a dead cell signal reads.
+  const API_TIMEOUT = 45000;
+  let mutateChain = Promise.resolve();
+
+  function api(path, body, method) {
+    if (path !== "/mutate") return apiOnce(path, body, method);
+    // /mutate is a read-modify-write of one JSON document on the server, so two
+    // overlapping calls (a double-tap, or two edits in a row) can lose an edit.
+    const run = () => apiOnce(path, body, method);
+    const p = mutateChain.then(run, run);
+    mutateChain = p.catch(() => {});
+    return p;
+  }
+
+  async function apiOnce(path, body, method) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), API_TIMEOUT);
+    let r;
+    try {
+      r = await fetch(API + path, {
+        method: method || (body !== undefined ? "POST" : "GET"),
+        headers: Object.assign({ "content-type": "application/json" }, token() ? { authorization: "Bearer " + token() } : {}),
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+        signal: ctrl.signal,
+      });
+    } catch (ex) {
+      // fetch rejects with a bare TypeError for offline/CORS; don't show that.
+      throw new Error(ex && ex.name === "AbortError"
+        ? "The server is taking too long — check your connection and try again."
+        : "Couldn't reach the server — check your internet connection and try again.");
+    } finally { clearTimeout(timer); }
     let out = {};
     try { out = await r.json(); } catch {}
-    if (r.status === 401 && path !== "/login") { clearToken(); render(); throw new Error("Signed out — please sign in again."); }
+    if (r.status === 401 && path !== "/login") {
+      stashTextDraft();   // keep anything typed; render() is about to wipe the DOM
+      clearToken(); render();
+      throw new Error("Signed out — please sign in again.");
+    }
     if (!r.ok) throw new Error(out.error || ("Request failed (" + r.status + ")"));
     return out;
+  }
+
+  // Site-text edits live only in the DOM until saved, and a 401 re-renders the
+  // login form on top of them. Hold them so re-signing in doesn't lose the work.
+  let textDraft = null;
+  function stashTextDraft() {
+    const f = document.querySelectorAll("[data-tf]");
+    if (!f.length) return;
+    textDraft = {};
+    f.forEach(el => { textDraft[el.dataset.tf] = el.value; });
+  }
+  function applyTextDraft() {
+    if (!textDraft) return;
+    let restored = 0;
+    document.querySelectorAll("[data-tf]").forEach(el => {
+      if (textDraft[el.dataset.tf] !== undefined) { el.value = textDraft[el.dataset.tf]; restored++; }
+    });
+    textDraft = null;
+    if (!restored) return;
+    const save = $("#btnTextSave");
+    if (!save) return;
+    const p = document.createElement("div");
+    p.className = "adm-ok";
+    p.setAttribute("role", "status");
+    p.textContent = "Your unsaved wording is still here — press Save to keep it.";
+    save.parentNode.insertBefore(p, save);
   }
 
   /* ---------- page identity ---------- */
@@ -208,6 +276,9 @@
     if (S.tab === "pages") wirePages();
     else if (S.tab === "uploaded") wireOverview();
     else wireText();
+    // the confirmation sits at the top of the shell; on a phone the button that
+    // triggered it can be a screen or two further down, so bring it into view
+    if (S.note) { const ok = $(".adm-ok"); if (ok) ok.scrollIntoView({ block: "center", behavior: "smooth" }); }
   }
 
   const tabBtn = (id, label) => `<button type="button" data-tab="${id}" class="${S.tab === id ? "on" : ""}" aria-pressed="${S.tab === id}">${label}</button>`;
@@ -465,11 +536,26 @@
     $("#loginForm").onsubmit = async e => {
       e.preventDefault();
       const btn = $("#btnLogin"), err = $("#loginErr");
-      btn.disabled = true; err.textContent = "";
+      const label = btn.textContent;
+      // the server deliberately delays a wrong password by up to 6s, so without
+      // a visible pending state the button reads as "my tap did nothing"
+      btn.disabled = true; btn.setAttribute("aria-busy", "true"); btn.textContent = "Signing in…";
+      err.textContent = "";
       try {
         const out = await api("/login", { password: $("#pw").value });
-        setToken(out.token, out.exp); render();
-      } catch (ex) { err.textContent = ex.message; btn.disabled = false; }
+        const stored = setToken(out.token, out.exp);
+        render();
+        if (!stored) {
+          S.note = "Your browser is blocking site storage, so you'll need to sign in again next time you open this page.";
+          render();
+        }
+      } catch (ex) {
+        err.textContent = ex.message;
+      } finally {
+        if (document.body.contains(btn)) {   // still on the login screen
+          btn.disabled = false; btn.removeAttribute("aria-busy"); btn.textContent = label;
+        }
+      }
     };
   }
 
@@ -525,6 +611,7 @@
   function wireText() {
     $("#btnTextSave").onclick = saveText;
     $("#btnTextRestore").onclick = restoreText;
+    applyTextDraft();
   }
 
   async function refresh() {
@@ -584,9 +671,12 @@
   async function uploadToR2(file, kind, prog) {
     const ctype = contentTypeOf(file);
     if (!ctype) throw new Error("That file type isn't supported.");
-    const pre = await api("/presign", { kind, pageKey: pageKey(), filename: file.name, contentType: ctype, size: file.size });
+    // wire Cancel before the round trip, not after — a cold Lambda plus the
+    // multipart create can leave the button dead for several seconds otherwise
     let cancelled = false;
     prog.onCancel(() => { cancelled = true; if (putWithProgress._xhr) putWithProgress._xhr.abort(); });
+    const pre = await api("/presign", { kind, pageKey: pageKey(), filename: file.name, contentType: ctype, size: file.size });
+    if (cancelled) throw new Error("cancelled");
     if (pre.mode === "single") {
       await putWithProgress(pre.url, file, ctype, (l, t) => prog.set(l / t));
       return pre.key;
@@ -597,15 +687,32 @@
       for (let i = 0; i < nParts; i++) {
         if (cancelled) throw new Error("cancelled");
         const blob = file.slice(i * pre.partSize, Math.min((i + 1) * pre.partSize, file.size));
-        const { url } = await api("/sign-part", { key: pre.key, uploadId: pre.uploadId, partNumber: i + 1 });
-        let etag;
-        try {
-          ({ etag } = await putWithProgress(url, blob, "", l => prog.set((i * pre.partSize + l) / file.size, `Part ${i + 1} of ${nParts} · ${Math.round(((i * pre.partSize + l) / file.size) * 100)}%`)));
-        } catch (ex) {
-          if (cancelled) throw ex;
-          ({ etag } = await putWithProgress(url, blob, "", l => prog.set((i * pre.partSize + l) / file.size)));   // one retry per part
+        const label = n => `Part ${i + 1} of ${nParts} · ${n}%`;
+        // A phone on cellular drops out for a few seconds at a time. Retry each
+        // part with a growing pause and a freshly signed URL (the old one may
+        // have expired while we waited) rather than losing a multi-GB upload.
+        let etag, lastErr, fatal = false;
+        for (let attempt = 0; attempt < 4 && !etag && !fatal; attempt++) {
+          if (cancelled) throw new Error("cancelled");
+          if (attempt) {
+            prog.set((i * pre.partSize) / file.size, `Part ${i + 1} of ${nParts} · connection lost, retrying…`);
+            await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
+            if (cancelled) throw new Error("cancelled");
+          }
+          try {
+            const { url } = await api("/sign-part", { key: pre.key, uploadId: pre.uploadId, partNumber: i + 1 });
+            const res = await putWithProgress(url, blob, "", l =>
+              prog.set((i * pre.partSize + l) / file.size, label(Math.round(((i * pre.partSize + l) / file.size) * 100))));
+            // a PUT that succeeds without an ETag is a bucket-CORS problem;
+            // re-sending 100MB three more times would not fix it
+            if (res.etag) etag = res.etag;
+            else { fatal = true; lastErr = new Error("The storage server didn't return an upload receipt (ETag) — check the bucket CORS settings."); }
+          } catch (ex) {
+            if (cancelled) throw ex;
+            lastErr = ex;
+          }
         }
-        if (!etag) throw new Error("The storage server didn't return an upload receipt (ETag) — check the bucket CORS settings.");
+        if (!etag) throw lastErr || new Error("Upload failed — please try again.");
         parts.push({ PartNumber: i + 1, ETag: etag });
       }
       await api("/complete", { key: pre.key, uploadId: pre.uploadId, parts });

@@ -144,8 +144,10 @@ function applyContentOverrides(base, admin) {
   // content.json carries an exact hand-made Zelle QR payload that outranks
   // name/email. If the Rov changed either, that payload would still point at the
   // OLD account — drop it so the QR is rebuilt from the new details.
+  // z.qr is the hand-made QR IMAGE for the old account and viewDonate falls back
+  // to it whenever the generator is unavailable — drop it with the payload.
   const z = (base.donate && base.donate.zelle) || null;
-  if (z && ((z.name || "") !== wasName || (z.email || "") !== wasEmail)) delete z.qrData;
+  if (z && ((z.name || "") !== wasName || (z.email || "") !== wasEmail)) { delete z.qrData; delete z.qr; }
   return base;
 }
 
@@ -2575,7 +2577,7 @@ function viewSponsor() {
       <button class="btn block" data-route="donate">Open Zelle details →</button>
       ${s.note ? `<p class="muted" style="font-size:12.5px;margin-top:12px">${esc(s.note)}</p>` : ""}
     </div>` : "";
-  return `<div class="pagetitle" role="heading" aria-level="1">${esc(s.heading || "Sponsor the Shiur")}</div><p class="lead">${esc(s.blurb || "")}</p>${picker}${form}`;
+  return `<div class="pagetitle" role="heading" aria-level="1">${esc(s.heading || "Sponsor the Shiur")}</div><p class="lead prewrap">${esc(s.blurb || "")}</p>${picker}${form}`;
 }
 function sponsorBody() {
   const sp = State.sponsor, c = State.content;
@@ -2623,13 +2625,13 @@ function viewDonate() {
     || (z.qr ? `<img src="${esc(z.qr)}" alt="Zelle QR for ${esc(z.name || "")}">` : "");
   // On the phone that would do the paying, a QR on the same screen is unusable —
   // the name + email + Copy lead; the QR follows for a second device.
-  return `<div class="pagetitle" role="heading" aria-level="1">${esc(d.heading || "Donate")}</div><p class="lead">${esc(d.blurb || "")}</p>
+  return `<div class="pagetitle" role="heading" aria-level="1">${esc(d.heading || "Donate")}</div><p class="lead prewrap">${esc(d.blurb || "")}</p>
     <div class="donate-box">
       <div class="zelle-line" style="margin-top:0">Pay <b>${esc(z.name || "")}</b> via <span class="zelle-brand">Zelle</span><span class="muted">${esc(z.email || "")}</span></div>
       <button class="btn sm copy-btn" data-copy="${esc(z.email || "")}">Copy email</button>
       <p class="muted" style="font-size:13px;margin:10px auto 20px;max-width:40ch">In your bank's app, choose “Send with Zelle” and paste the email above.</p>
       <div class="qr-frame">${qr}<div class="qr-cap">On a computer? Scan with your bank app to pay by <span class="zelle-brand">Zelle</span></div></div>
-      ${d.dedicationNote ? `<p class="muted" style="font-size:13px;margin-top:14px">${esc(d.dedicationNote)}</p>` : ""}</div>`;
+      ${d.dedicationNote ? `<p class="muted prewrap" style="font-size:13px;margin-top:14px">${esc(d.dedicationNote)}</p>` : ""}</div>`;
 }
 function viewAbout() {
   const a = State.content.about || {}, c = State.content.contact || {}, p = State.content.phone || {};
@@ -2638,7 +2640,8 @@ function viewAbout() {
     ${a.tradition ? `<div class="section" role="heading" aria-level="2">${esc(a.tradition.heading)}</div><div class="prose"><p>${esc(a.tradition.body)}</p></div>` : ""}
     <div class="section" role="heading" aria-level="2">FAQ</div>${(Array.isArray(State.content.faqs) ? State.content.faqs : []).map(x => `<details class="faq"><summary>${esc(x.q)}</summary><div class="a">${esc(x.a)}</div></details>`).join("")}
     <div class="section" role="heading" aria-level="2">Contact</div>
-    <p class="prose"><a class="textlink" href="mailto:${esc(c.email || "")}">${esc(c.email || "")}</a>${p.number ? ` · Listen by phone: <a class="textlink" href="tel:${esc(telHref(p.number))}">${esc(p.number)}</a>${p.extension ? `, then ext. ${esc(p.extension)}` : ""}` : ""}</p>
+    <p class="prose"><a class="textlink" href="mailto:${esc(c.email || "")}">${esc(c.email || "")}</a>${c.phone ? ` · <a class="textlink" href="tel:${esc(telHref(c.phone))}">${esc(c.phone)}</a>` : ""}${c.whatsapp ? ` · WhatsApp: <a class="textlink" href="tel:${esc(telHref(c.whatsapp))}">${esc(c.whatsapp)}</a>` : ""}${p.number ? ` · ${esc(p.label || "Listen by phone")}: <a class="textlink" href="tel:${esc(telHref(p.number))}">${esc(p.number)}</a>${p.extension ? `, then ext. ${esc(p.extension)}` : ""}` : ""}</p>
+    ${p.note ? `<p class="muted" style="font-size:13.5px;margin-top:-6px">${esc(p.note)}</p>` : ""}
     <p class="credits">Torah &amp; daf text courtesy of Sefaria — Tanach, Gemara, Rashi, Tosafos &amp; Onkelos public domain · English © Steinsaltz (CC-BY-NC)</p>`;
 }
 // "605-477-2100" → tel:+16054772100 (assume US when 10 digits; otherwise dial as written)
@@ -2894,9 +2897,14 @@ function wireRows(scope) {
 }
 function playId(id) {
   const lec = State.all.find(l => l.id === id); if (!lec) return;
+  // "What plays on this page" in the admin is a PAGE override, and every other
+  // surface lets it win — so a ▶ in a list has to honour it too.
+  const pgOv = lec._dk && lec._dk.daf
+    ? (om => om && om.audio && adminMediaUrl(om.audio.key))(adminPageMedia(`daf:${lec._dk.masechta}:${lec._dk.daf}`))
+    : "";
   const localUrl = lec.origAudio || lec.localAudio;   // origAudio = self-hosted original recording, preferred over the TA-sourced copy
-  const local = lec.ovAudio || (State.content.options?.preferSelfHosted !== false && localUrl);   // an admin replacement outranks every tier
-  const url = lec.ovAudio || (local ? localUrl : lec.audio);
+  const local = pgOv || lec.ovAudio || (State.content.options?.preferSelfHosted !== false && localUrl);   // an admin replacement outranks every tier
+  const url = pgOv || lec.ovAudio || (local ? localUrl : lec.audio);
   if (!url) { toast("This shiur isn't available to play yet."); return; }
   Player.playAudio(lec, url, !!local); noteProgress(id);
 }
@@ -3018,9 +3026,11 @@ const Player = {
       const nx = dafStep(k.masechta, k.daf, 1);
       const nxShiur = nx && shiurFor(nx.masechta, nx.daf);
       const nxPk = nx ? `daf:${nx.masechta}:${nx.daf}` : null;   // an override-only next daf continues too
-      const nxOv = !nxShiur && nxPk && (om => om && om.audio && adminMediaUrl(om.audio.key))(adminPageMedia(nxPk));
+      // the page override wins here exactly as it does everywhere else, not
+      // only when the catalog has nothing for that daf
+      const nxOv = nxPk && (om => om && om.audio && adminMediaUrl(om.audio.key))(adminPageMedia(nxPk));
       if (nxShiur || nxOv) {
-        this._next = nxShiur || { ovPk: nxPk };
+        this._next = nxOv ? { ovPk: nxPk } : nxShiur;
         const t = $("#pTitle"); if (t) t.innerHTML = `Up next: ${esc(nx.masechta)} ${nx.daf} — press ▶`;
       }
     }

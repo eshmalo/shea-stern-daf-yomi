@@ -2,7 +2,12 @@
 # deploy.sh — create/update the monseydafyomi.com admin API on AWS Lambda.
 #
 #   ./deploy.sh                 # deploy (creates everything on first run)
-#   ./deploy.sh --new-password  # deploy AND rotate the admin password (prints it once)
+#   ./deploy.sh --new-password  # deploy AND rotate to a strong random password (prints it once)
+#   ./deploy.sh --set-password  # deploy AND rotate to a password you type at the prompt
+#
+# --set-password never takes the password as an argument (argv is visible to
+# every process on the machine and lands in shell history); it prompts with echo
+# off, or reads one line from stdin when the script is piped.
 #
 # Reads R2 credentials from ../build/cloud.config. Persists the generated
 # ADMIN_PW_HASH + SESSION_SECRET in admin-api/.secrets (git-ignored) so
@@ -31,8 +36,30 @@ if [ -z "$SESSION_SECRET" ]; then
   echo "SESSION_SECRET=$SESSION_SECRET" >> .secrets
 fi
 ADMIN_PW_HASH=$(get ADMIN_PW_HASH)
-if [ -z "$ADMIN_PW_HASH" ] || [ "${1:-}" = "--new-password" ]; then
-  read -r PW ADMIN_PW_HASH <<< "$(python3 - <<'EOF'
+MODE="${1:-}"
+if [ -z "$ADMIN_PW_HASH" ] || [ "$MODE" = "--new-password" ] || [ "$MODE" = "--set-password" ]; then
+  SHOW_PW=""
+  if [ "$MODE" = "--set-password" ]; then
+    if [ -t 0 ]; then
+      printf 'New admin password: ' >&2; read -rs PW; printf '\n' >&2
+      printf 'Repeat it:          ' >&2; read -rs PW2; printf '\n' >&2
+      [ "$PW" = "$PW2" ] || { echo "passwords did not match"; exit 1; }
+    else
+      IFS= read -r PW || true          # piped: one line, trailing newline optional
+    fi
+    [ ${#PW} -ge 8 ] || { echo "password must be at least 8 characters"; exit 1; }
+    # PW goes to python through the environment, never argv
+    ADMIN_PW_HASH=$(PW="$PW" python3 - <<'EOF'
+import hashlib, os, secrets
+salt = secrets.token_bytes(16)
+h = hashlib.pbkdf2_hmac("sha256", os.environ["PW"].encode(), salt, 600_000)
+print(f"pbkdf2$600000${salt.hex()}${h.hex()}")
+EOF
+)
+    PW=""; PW2=""                      # a password you chose is never echoed back
+    echo "admin password set from your input (not printed)"
+  else
+    read -r PW ADMIN_PW_HASH <<< "$(python3 - <<'EOF'
 import secrets, hashlib
 words = ("gemara shiur daf yomi torah mishna rashi tosfos sugya masechta "
          "chazara halacha mesivta kollel seder amud blatt perek chabura maggid").split()
@@ -44,19 +71,23 @@ h = hashlib.pbkdf2_hmac("sha256", pw.encode(), salt, 600_000)
 print(pw, f"pbkdf2$600000${salt.hex()}${h.hex()}")
 EOF
 )"
+    SHOW_PW="$PW"
+  fi
   # rotating the password also rotates SESSION_SECRET so every old session dies
   SESSION_SECRET=$(python3 -c "import secrets;print(secrets.token_hex(32))")
   umask 077
   printf 'SESSION_SECRET=%s\nADMIN_PW_HASH=%s\n' "$SESSION_SECRET" "$ADMIN_PW_HASH" > .secrets
   chmod 600 .secrets
-  echo ""
-  echo "  ============================================================"
-  echo "  NEW ADMIN PASSWORD (write it down — it is not stored):"
-  echo ""
-  echo "      $PW"
-  echo ""
-  echo "  ============================================================"
-  echo ""
+  if [ -n "$SHOW_PW" ]; then
+    echo ""
+    echo "  ============================================================"
+    echo "  NEW ADMIN PASSWORD (write it down — it is not stored):"
+    echo ""
+    echo "      $SHOW_PW"
+    echo ""
+    echo "  ============================================================"
+    echo ""
+  fi
 fi
 
 # --- IAM role (logs only; R2 access is via env keys, not IAM) ---

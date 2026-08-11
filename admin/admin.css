@@ -13,6 +13,9 @@
 .adm-login input:focus { border-color: var(--accent); outline: none; }
 .adm-login input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .adm-err { color: var(--accent); font-size: 14px; min-height: 20px; margin-top: 10px; }
+/* .btn.solid hardcodes its background, so the UA's disabled graying never shows
+   and a request in flight looks identical to an idle button. */
+#adminRoot .btn:disabled, .adm-login .btn:disabled { opacity: .55; cursor: default; }
 
 .adm-tabs { display: flex; justify-content: center; margin: 16px 0 4px; }
 .adm-ok { text-align: center; color: var(--ok); font-size: 14.5px; margin: 10px 0 0; }
@@ -46,7 +49,9 @@
 .adm-pick { display: grid; gap: 12px; margin: 18px 0; }
 .adm-pick .seg { justify-content: center; display: flex; }
 .adm-selrow { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-.adm-selrow select { flex: 1 1 160px; max-width: 100%; border: 1px solid var(--hair-2); border-radius: 4px; padding: 10px; font: inherit; font-size: 15.5px; background: #fffdf8; color: var(--ink); }
+/* 16px is a floor, not a taste: iOS Safari zooms the whole page when you tap a
+   form control whose text is smaller, and never zooms back out. */
+.adm-selrow select { flex: 1 1 160px; max-width: 100%; border: 1px solid var(--hair-2); border-radius: 4px; padding: 10px; font: inherit; font-size: 16px; background: #fffdf8; color: var(--ink); }
 .adm-selrow select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .adm-panel { border: 1px solid var(--hair-2); border-radius: 8px; padding: 18px 16px 22px; margin-top: 10px; background: color-mix(in srgb, var(--paper-2) 35%, var(--paper)); }
@@ -81,6 +86,15 @@
 
 .adm-note { font-size: 14px; color: var(--ink-soft); font-style: italic; text-align: center; margin-top: 26px; }
 input[type="file"] { display: none; }
+
+/* Touch: this admin is used mostly from a phone, and the site-wide .btn.sm /
+   inline links are sized for a mouse. Grow them here only — the public site
+   keeps its own proportions. */
+@media (pointer: coarse), (max-width: 680px) {
+  #adminRoot .btn.sm { min-height: 40px; padding: 8px 16px; }
+  .adm-ib { width: 40px; height: 40px; }
+  .adm-lsrc .lv a, .adm-mrow .mv a, .adm-item .it a { display: inline-block; padding: 7px 0; }
+}
 
 @supports not (background: color-mix(in srgb, red 50%, white)) {
   .adm-panel { background: #faf7ee; }

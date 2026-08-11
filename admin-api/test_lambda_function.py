@@ -71,16 +71,19 @@ class FakeS3:
         self.mpu.pop(Key, None)
 
 
-def call(method, path, body=None, token=None, origin="https://monseydafyomi.com"):
-    headers = {"origin": origin}
+def call(method, path, body=None, token=None, origin="https://monseydafyomi.com",
+         ip="1.2.3.4", raw_body=None, b64=False):
+    headers = {} if origin is None else {"origin": origin}
     if token:
         headers["authorization"] = "Bearer " + token
     event = {
-        "requestContext": {"http": {"method": method, "sourceIp": "1.2.3.4"}},
+        "requestContext": {"http": {"method": method, "sourceIp": ip}},
         "rawPath": path,
         "headers": headers,
-        "body": json.dumps(body) if body is not None else "",
+        "body": raw_body if raw_body is not None else (json.dumps(body) if body is not None else ""),
     }
+    if b64:
+        event["isBase64Encoded"] = True
     r = lf.lambda_handler(event, None)
     return r["statusCode"], json.loads(r["body"]) if r["body"] else {}, r["headers"]
 
@@ -138,6 +141,47 @@ class TestAuth(Base):
     def test_non_string_password(self):
         code, _, _ = call("POST", "/login", {"password": {"$gt": ""}})
         self.assertEqual(code, 401)
+
+    def test_lockout_expires_even_while_another_ip_keeps_failing(self):
+        # each IP must age out on its own clock: a stranger's steady stream of
+        # guesses used to keep the admin's own lockout pinned open indefinitely
+        t0 = 1_000_000.0
+        with mock.patch("time.time", return_value=t0):
+            for _ in range(25):
+                call("POST", "/login", {"password": "nope"}, ip="9.9.9.9")
+            code, _, _ = call("POST", "/login", {"password": "correct-horse"}, ip="9.9.9.9")
+            self.assertEqual(code, 429)
+        with mock.patch("time.time", return_value=t0 + 3601):
+            call("POST", "/login", {"password": "nope"}, ip="5.5.5.5")
+            code, _, _ = call("POST", "/login", {"password": "correct-horse"}, ip="9.9.9.9")
+            self.assertEqual(code, 200)
+
+    def test_one_ips_failures_do_not_lock_out_another(self):
+        for _ in range(30):
+            call("POST", "/login", {"password": "nope"}, ip="9.9.9.9")
+        code, _, _ = call("POST", "/login", {"password": "correct-horse"}, ip="1.2.3.4")
+        self.assertEqual(code, 200)
+
+    def test_global_cap_never_blocks_a_correct_password(self):
+        lf._fails.update(n=lf.GLOBAL_FAIL_CAP + 10, at=time.time(), ip={})
+        code, _, _ = call("POST", "/login", {"password": "correct-horse"})
+        self.assertEqual(code, 200)
+
+    def test_global_cap_still_throttles_guesses(self):
+        lf._fails.update(n=lf.GLOBAL_FAIL_CAP - 1, at=time.time(), ip={})
+        code, _, _ = call("POST", "/login", {"password": "nope"})
+        self.assertEqual(code, 429)
+
+    def test_login_from_foreign_origin_refused_before_password_check(self):
+        code, _, _ = call("POST", "/login", {"password": "correct-horse"},
+                          origin="https://evil.example")
+        self.assertEqual(code, 403)
+        self.assertEqual(lf._fails["ip"], {})   # never reached the throttle
+
+    def test_login_without_an_origin_header_still_works(self):
+        code, out, _ = call("POST", "/login", {"password": "correct-horse"}, origin=None)
+        self.assertEqual(code, 200)
+        self.assertIn("token", out)
 
 
 class TestCors(Base):
@@ -485,6 +529,22 @@ class TestPlumbing(Base):
                  "isBase64Encoded": True}
         r = lf.lambda_handler(event, None)
         self.assertEqual(r["statusCode"], 200)
+
+    def test_deeply_nested_json_is_400_not_a_crash(self):
+        # json.loads raises RecursionError here, not ValueError; it used to
+        # escape the handler and return a 502 with no CORS headers
+        code, out, headers = call("POST", "/login", raw_body="[" * 60_000)
+        self.assertEqual(code, 400)
+        self.assertEqual(headers.get("Access-Control-Allow-Origin"),
+                         "https://monseydafyomi.com")
+
+    def test_malformed_base64_body_is_400(self):
+        code, _, _ = call("POST", "/login", raw_body="!!!not base64!!!", b64=True)
+        self.assertEqual(code, 400)
+
+    def test_oversize_body_rejected(self):
+        code, _, _ = call("POST", "/login", raw_body='{"password":"' + "x" * 1_000_100 + '"}')
+        self.assertEqual(code, 413)
 
 
 if __name__ == "__main__":
