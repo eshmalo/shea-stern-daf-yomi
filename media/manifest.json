@@ -9400,5 +9400,19 @@
     "title": "Daf 104 Chullin",
     "video": "media/468711.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "469241": {
+    "audio": "media/469241.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parasha Shoftim: \u05ea\u05de\u05d9\u05dd \u05ea\u05d4\u05d9\u05d4-\u05d4' \u05e6\u05dc\u05da",
+    "video": "media/469241.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "469242": {
+    "audio": "media/469242.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 106 Chullin",
+    "video": "media/469242.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
