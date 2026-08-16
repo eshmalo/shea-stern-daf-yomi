@@ -429,6 +429,7 @@ function normalizeReadSnapshot(read) {
   const source = DAF_SOURCE_KEYS.has(read.source) ? read.source : "gemara";
   const out = { masechta, daf, amud, mode, source };
   if (Number.isFinite(+read.y) && +read.y >= 0) out.y = +read.y;
+  if (Number.isFinite(+read.at) && +read.at > 0) out.at = +read.at;   // when this spot was last on screen — restores expire an hour later
   return out;
 }
 function normalizeTorahSnapshot(read) {
@@ -436,6 +437,7 @@ function normalizeTorahSnapshot(read) {
   const mode = read.mode === "he" ? "he" : "daf", source = DAF_SOURCE_KEYS.has(read.source) ? read.source : "gemara";
   const out = { mode, source };
   if (Number.isFinite(+read.y) && +read.y >= 0) out.y = +read.y;
+  if (Number.isFinite(+read.at) && +read.at > 0) out.at = +read.at;
   if (read.anchor && /^\d+-\d+$/.test(String(read.anchor.ref || ""))) {
     out.anchor = { ref: String(read.anchor.ref), offset: Number.isFinite(+read.anchor.offset) ? +read.anchor.offset : 0 };
     if (Number.isFinite(+read.anchor.progress)) out.anchor.progress = Math.max(0, Math.min(1, +read.anchor.progress));
@@ -515,7 +517,7 @@ function updateBackBtn() { const b = $("#backBtn"); if (b) b.hidden = _navDepth 
 // phone-view iframe so it can't clobber the parent tab's saved page.
 function persistRoute() {
   if (_embedded) return;
-  try { sessionStorage.setItem("dy_route", JSON.stringify({ route: State.route, sponsor: State.sponsor, depth: _navDepth, y: window.scrollY || 0, reader: readerHistorySnapshot() })); } catch {}
+  try { sessionStorage.setItem("dy_route", JSON.stringify({ route: State.route, sponsor: State.sponsor, depth: _navDepth, y: window.scrollY || 0, reader: readerHistorySnapshot(), at: Date.now() })); } catch {}
 }
 const KNOWN_ROUTES = new Set(["today", "browse", "seder", "masechta", "daf", "topics", "parsha", "sefer", "parshaS", "holidays", "holiday", "category", "search", "mystuff", "sponsor", "about", "donate"]);
 // Validate a route restored from history.state / sessionStorage before trusting it — a forged or
@@ -589,7 +591,12 @@ function restoreInitialRoute() {
     State.route = st.route;
     if (st.sponsor) State.sponsor = st.sponsor;
     _navDepth = typeof st.depth === "number" ? st.depth : 0;
-    _pendingY = typeof st.y === "number" ? st.y : (normalizeReadSnapshot(st.route.read)?.y ?? normalizeTorahSnapshot(st.route.torah)?.y ?? null);
+    // Reading pages return to a remembered spot only within an hour of the last
+    // viewing (rolling); an older or never-stamped sitting starts at the top.
+    const readingPage = st.route.name === "daf" || st.route.name === "parshaS";
+    _pendingY = readingPage && !freshPos({ at: st.at })
+      ? null
+      : (typeof st.y === "number" ? st.y : (normalizeReadSnapshot(st.route.read)?.y ?? normalizeTorahSnapshot(st.route.torah)?.y ?? null));
     try { history.replaceState({ route: State.route, sponsor: State.sponsor, depth: _navDepth, y: _pendingY ?? 0, ...(!fromSession && savedReader ? { reader: savedReader } : {}) }, "", urlFor(State.route)); } catch {}
     rerender({ skipSave: true }); window.scrollTo(0, 0); updateBackBtn();
     if (_pendingY != null && State.route.name !== "daf" && State.route.name !== "parshaS") consumePendingY();
@@ -614,7 +621,8 @@ window.addEventListener("popstate", e => {
   }
   persistRoute();
   closeMenu();
-  _pendingY = (st && typeof st.y === "number") ? st.y : 0;
+  const readingPop = State.route.name === "daf" || State.route.name === "parshaS";
+  _pendingY = (st && typeof st.y === "number" && !(readingPop && !freshPos({ at: st.at }))) ? st.y : 0;   // a reading spot older than an hour goes back to the top
   rerender({ skipSave: true });
   window.scrollTo(0, _pendingY);   // Back returns to the spot you left, not the top (async views re-apply after hydrate)
   updateBackBtn();
@@ -1449,10 +1457,17 @@ function colScrollKey(col) {   // every physical side, display mode, and source 
   const pb = $("#parshaText"); if (pb) return `pp:${pb.dataset.sefer}:${pb.dataset.parsha}:${pb.dataset.mode}:${col}`;
   const b = $("#dafText"); return `p:${b ? b.dataset.mas : ""}:${b ? (b.dataset.amud || b.dataset.daf) : ""}:${b ? b.dataset.mode : ""}:${col}`;
 }
+// A reading spot lives one hour past the LAST viewing — every save while the
+// text is on screen (scroll, flip, leave) re-stamps it, so an open sitting
+// never expires mid-read, and a daf you haven't looked at in an hour opens at
+// its top again.
+const POS_TTL = 3600000;
+const freshPos = e => (e && +e.at > 0 && Date.now() - +e.at < POS_TTL) ? e : null;
 function ensureColScroll() {
   if (State._colScroll) return State._colScroll;
   try { State._colScroll = JSON.parse(sessionStorage.getItem("dy_reader_positions_v2") || "{}") || {}; }
   catch { State._colScroll = {}; }
+  for (const k of Object.keys(State._colScroll)) if (!freshPos(State._colScroll[k])) delete State._colScroll[k];   // spots from an earlier sitting start fresh
   return State._colScroll;
 }
 function persistColScroll() {
@@ -1504,6 +1519,10 @@ function saveColScroll(col) {
     if (b?._renderedMas && b._renderedAmud)
       key = `p:${b._renderedMas}:${b._renderedAmud}:${b._renderedMode || b.dataset.mode}:${col || "gemara"}`;
   }
+  // Sitting at (or above) the top of the reading region means "not really
+  // viewed" — remember nothing, and forget any older spot for this key, so the
+  // next visit starts clean at the top.
+  if (curDafScroll() <= dafTopScroll() + 2) { if (all[key]) { delete all[key]; persistColScroll(); } return; }
   all[key] = { y: curDafScroll(), ...(anchor || {}), ...(dafAnchor || {}), at: Date.now() };
   persistColScroll();
 }
@@ -1511,7 +1530,7 @@ function committedDafSnapshot() {
   if (Reader.open && Reader.kind === "daf") {
     const masechta = Reader._renderedM || Reader.masechta, amud = Reader._renderedD || Reader.amud;
     const daf = +(Reader._renderedN || Reader.daf), mode = Reader._renderedMode || Reader.mode;
-    return normalizeReadSnapshot({ masechta, daf, amud, mode, source: State._dafCol, y: curDafScroll() });
+    return normalizeReadSnapshot({ masechta, daf, amud, mode, source: State._dafCol, y: curDafScroll(), at: Date.now() });
   }
   const box = $("#dafText"); if (!box) return null;
   return normalizeReadSnapshot({
@@ -1521,6 +1540,7 @@ function committedDafSnapshot() {
     mode: box._renderedMode || box.dataset.mode,
     source: State._dafCol,
     y: window.scrollY || 0,
+    at: Date.now(),
   });
 }
 function readerHistorySnapshot() {
@@ -1529,7 +1549,7 @@ function readerHistorySnapshot() {
   if (Reader.kind === "torah") return {
     kind: "torah", sefer: Reader.sefer, parsha: Reader.parsha, mode: Reader.mode,
     inlineMode: Reader.inlineMode || "daf", source: Reader.source || "gemara", sourceChanged: !!Reader._sourceChanged, y: curDafScroll(),
-    anchor: parshaScrollAnchor($("#rdBody")),
+    anchor: parshaScrollAnchor($("#rdBody")), at: Date.now(),
   };
   return null;
 }
@@ -1544,16 +1564,16 @@ function commitDafReadState() {
     try { history.replaceState({ ...(history.state || {}), reader: { kind: "daf", read } }, "", urlFor({ ...State.route, read })); } catch {}
   } else if (!Reader.open && State.route?.name === "daf") {
     State.route = { ...State.route, read };
-    try { history.replaceState({ ...(history.state || {}), route: State.route, sponsor: State.sponsor, depth: _navDepth, y: window.scrollY || 0 }, "", urlFor(State.route)); } catch {}
+    try { history.replaceState({ ...(history.state || {}), route: State.route, sponsor: State.sponsor, depth: _navDepth, y: window.scrollY || 0, at: Date.now() }, "", urlFor(State.route)); } catch {}
   }
   persistRoute();
 }
 function commitTorahReadState() {
   if (Reader.open) { if (Reader.kind === "torah") commitReaderHistoryState(); return; }
   const box = $("#parshaText"); if (!box || State.route?.name !== "parshaS") return;
-  const torah = normalizeTorahSnapshot({ mode: box.dataset.mode, source: State._parCol, y: window.scrollY || 0, anchor: parshaScrollAnchor(box) });
+  const torah = normalizeTorahSnapshot({ mode: box.dataset.mode, source: State._parCol, y: window.scrollY || 0, anchor: parshaScrollAnchor(box), at: Date.now() });
   State.route = { ...State.route, torah };
-  try { history.replaceState({ ...(history.state || {}), route: State.route, sponsor: State.sponsor, depth: _navDepth, y: window.scrollY || 0 }, "", urlFor(State.route)); } catch {}
+  try { history.replaceState({ ...(history.state || {}), route: State.route, sponsor: State.sponsor, depth: _navDepth, y: window.scrollY || 0, at: Date.now() }, "", urlFor(State.route)); } catch {}
   persistRoute();
 }
 function saveActiveReadingPosition() {
@@ -1618,7 +1638,7 @@ async function settlePagerIntent(surface, intent, isCurrent) {
 // put when the column hasn't been seen; on a page flip (toTopIfUnseen) an unseen
 // daf starts at its top instead of inheriting the previous page's scroll.
 function restoreColScroll(col, toTopIfUnseen, fallbackY, fallbackAnchor, preferFallback, preferSavedSameRef = false, railIntent = null) {
-  const saved = ensureColScroll()[colScrollKey(col || "gemara")];
+  const saved = freshPos(ensureColScroll()[colScrollKey(col || "gemara")]);
   const wasReaderOpen = Reader.open, surface = Reader.open ? $("#rdBody") : ($("#parshaText") || $("#dafText"));
   const identity = () => Reader.open
     ? `${Reader.kind}|${Reader.masechta || ""}|${Reader.daf || ""}|${Reader.amud || ""}|${Reader.sefer || ""}|${Reader.parsha || ""}|${Reader.mode || ""}`
@@ -1741,13 +1761,54 @@ function attachDafSwipe(box) {
   if (box.id === "rdBody") box.addEventListener("scroll", onReadScroll, { passive: true });   // the reader body scrolls itself
 }
 
+/* "Both" mode is sentence-by-sentence: each Hebrew segment sits directly above
+   its translation. The two languages are parsed from separate William Davidson
+   exports, so their line counts can drift — almost always because a perek's
+   closing הדרן עלך line has no English. Align in three steps: equal counts pair
+   1:1; a Hebrew surplus exactly explained by hadran/slik lines renders those as
+   standalone dividers; anything else splits at מתני׳/גמ׳ ↔ MISHNA/GEMARA
+   anchors and aligns each stretch on its own, so one drifted stretch never
+   un-pairs the rest of the amud. */
+const SEG_TAG_RE = /<[^>]+>/g, HADRAN_RE = /^(הדרן\s+על|סליק)/;
+const segPlain = s => s.replace(SEG_TAG_RE, "").trim();
+const heAnchorKind = t => t.startsWith("מתני") ? "M" : t.startsWith("גמ") ? "G" : "";
+const enAnchorKind = t => (t = t.replace(/^[§\s]+/, "")).startsWith("MISHNA") ? "M" : t.startsWith("GEMARA") ? "G" : "";
+function alignStretch(he, en) {
+  if (he.length === en.length) return he.map((h, i) => ["pair", h, en[i]]);
+  const divs = new Set(); he.forEach((h, i) => { if (HADRAN_RE.test(segPlain(h))) divs.add(i); });
+  if (divs.size && he.length - en.length === divs.size) {
+    const out = []; let j = 0;
+    he.forEach((h, i) => out.push(divs.has(i) ? ["divider", h] : ["pair", h, en[j++]]));
+    return out;
+  }
+  return null;
+}
+function alignAmud(he, en) {
+  const whole = alignStretch(he, en);
+  if (whole) return whole;
+  const ha = [], ea = [];
+  he.forEach((h, i) => { if (heAnchorKind(segPlain(h))) ha.push(i); });
+  en.forEach((e, i) => { if (enAnchorKind(segPlain(e))) ea.push(i); });
+  if (ha.length && ha.length === ea.length && ha.every((hi, x) => heAnchorKind(segPlain(he[hi])) === enAnchorKind(segPlain(en[ea[x]])))) {
+    const out = [];
+    for (let s = 0; s <= ha.length; s++) {
+      const hs = he.slice(s ? ha[s - 1] : 0, s < ha.length ? ha[s] : he.length);
+      const es = en.slice(s ? ea[s - 1] : 0, s < ea.length ? ea[s] : en.length);
+      if (hs.length || es.length) out.push(...(alignStretch(hs, es) || [["blocks", hs, es]]));
+    }
+    return out;
+  }
+  return [["blocks", he, en]];
+}
 function renderAmud(seg, mode) {
   const he = (seg.he || "").split("\n").filter(Boolean), en = (seg.en || "").split("\n").filter(Boolean);
-  if (mode === "he") return `<div class="daf-he" lang="he">${he.map(safeHe).join("<br>")}</div>`;
-  if (mode === "en") return `<div class="daf-en" lang="en" dir="ltr">${en.map(safeEn).join("<br>")}</div>`;
-  // both: interleave by segment if counts align, else stacked blocks
-  if (he.length === en.length && he.length) return he.map((h, i) => `<div class="seg-pair"><div class="daf-he" lang="he" dir="rtl">${safeHe(h)}</div><div class="daf-en" lang="en" dir="ltr">${safeEn(en[i])}</div></div>`).join("");
-  return `<div class="daf-he" lang="he" dir="rtl">${he.map(safeHe).join("<br>")}</div><hr class="rule thin"><div class="daf-en" lang="en" dir="ltr">${en.map(safeEn).join("<br>")}</div>`;
+  if (mode === "he" || (mode === "both" && !en.length)) return `<div class="daf-he" lang="he">${he.map(safeHe).join("<br>")}</div>`;
+  if (mode === "en" || (mode === "both" && !he.length)) return `<div class="daf-en" lang="en" dir="ltr">${en.map(safeEn).join("<br>")}</div>`;
+  return alignAmud(he, en).map(p =>
+    p[0] === "pair" ? `<div class="seg-pair"><div class="daf-he" lang="he" dir="rtl">${safeHe(p[1])}</div><div class="daf-en" lang="en" dir="ltr">${safeEn(p[2])}</div></div>`
+    : p[0] === "divider" ? `<div class="daf-hadran" lang="he" dir="rtl">${safeHe(p[1])}</div>`
+    : `${p[1].length ? `<div class="daf-he" lang="he" dir="rtl">${p[1].map(safeHe).join("<br>")}</div>` : ""}${p[1].length && p[2].length ? `<hr class="rule thin">` : ""}${p[2].length ? `<div class="daf-en" lang="en" dir="ltr">${p[2].map(safeEn).join("<br>")}</div>` : ""}`
+  ).join("");
 }
 
 /* ---------- two navigation layers ----------
@@ -1963,7 +2024,8 @@ function normalizeReaderSnapshot(snapshot) {
       ? { ref: String(snapshot.anchor.ref), offset: Number.isFinite(+snapshot.anchor.offset) ? +snapshot.anchor.offset : 0,
           ...(Number.isFinite(+snapshot.anchor.progress) ? { progress: Math.max(0, Math.min(1, +snapshot.anchor.progress)) } : {}) } : null;
     return { kind: "torah", sefer, parsha, mode: "daf", inlineMode: snapshot.inlineMode === "he" ? "he" : "daf", source,
-      sourceChanged: !!snapshot.sourceChanged, y, anchor };
+      sourceChanged: !!snapshot.sourceChanged, y, anchor,
+      ...(Number.isFinite(+snapshot.at) && +snapshot.at > 0 ? { at: +snapshot.at } : {}) };
   }
   return null;
 }
@@ -1975,14 +2037,15 @@ function restoreReaderFromSnapshot(snapshot, { push = false } = {}) {
     const read = saved.read; State._dafCol = read.source;
     Reader.kind = "daf"; Reader.sefer = null; Reader.parsha = null;
     Reader.masechta = read.masechta; Reader.daf = read.daf; Reader.amud = read.amud; Reader.mode = read.mode;
-    ensureColScroll()[`r:${read.masechta}:${read.amud}:${read.mode}:${read.source}`] = { y: read.y || 0, at: Date.now() };
+    // Only a spot from within the last hour reopens mid-daf; an older sitting starts at the top.
+    if (freshPos(read)) ensureColScroll()[`r:${read.masechta}:${read.amud}:${read.mode}:${read.source}`] = { y: read.y || 0, at: +read.at };
   } else {
     if (State.route?.name !== "parshaS" || State.route.parsha !== saved.parsha) return false;
     Reader.kind = "torah"; Reader.masechta = null; Reader.daf = null; Reader.amud = null;
     Reader.sefer = saved.sefer; Reader.parsha = saved.parsha; Reader.mode = "daf"; Reader.inlineMode = saved.inlineMode;
     Reader.source = saved.source; Reader._sourceChanged = saved.sourceChanged;
-    Reader._restoreAnchor = saved.anchor;
-    ensureColScroll()[`tr:${saved.sefer}:${saved.parsha}:daf:${saved.source}`] = { y: saved.y, ...(saved.anchor || {}), at: Date.now() };
+    Reader._restoreAnchor = freshPos(saved) ? saved.anchor : null;
+    if (freshPos(saved)) ensureColScroll()[`tr:${saved.sefer}:${saved.parsha}:daf:${saved.source}`] = { y: saved.y, ...(saved.anchor || {}), at: +saved.at };
   }
   Reader.open = true; Reader._restoreScroll = true; _pendingY = null;
   showReader({ push });

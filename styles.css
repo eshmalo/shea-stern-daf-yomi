@@ -376,6 +376,11 @@ html.is-phone .reader-body.daf-reader-body { padding-top: 0; }
 .daf-en b, .daf-en strong { font-weight: 700; color: #000; }
 .seg-pair { margin: 0 0 14px; padding-bottom: 14px; border-bottom: 1px solid var(--hair); }
 .seg-pair .daf-he { margin-bottom: 8px; }
+/* a perek's closing line (הדרן עלך…) has no translation — it stands alone as the
+   traditional centered divider, flanked by rules like the amud label */
+.daf-hadran { font-family: var(--serif-he); direction: rtl; text-align: center; font-size: calc(19px * var(--daf-scale, 1)); font-weight: 700; color: var(--accent); letter-spacing: .05em; margin: 8px 0 22px; position: relative; padding: 2px 0; }
+.daf-hadran::before, .daf-hadran::after { content: ""; position: absolute; top: 50%; width: 18%; height: 1px; background: var(--hair-2); }
+.daf-hadran::before { left: 0; } .daf-hadran::after { right: 0; }
 .daf-loading { text-align: center; color: var(--ink-faint); padding: 34px; font-style: italic; }
 
 /* ---------- "Daf" layout — Tzuras Hadaf (Gemara center · Rashi + Tosafos margins) ---------- */
