@@ -538,3 +538,64 @@ have NOT had a dedicated pass, plus a regression sweep of our own ~36 changes.**
 - **P3-E — Changed-surface regression review**: re-review all Pass-1/Pass-2 fixes specifically for regressions any
   fix may have introduced (the changed-surface pattern that previously caught self-inflicted regressions).
 - Continue to NOT auto-fix the owner-decision queue (S7-4, S8-1, S8-4).
+
+---
+
+## Feature build — folio picker (2026-08-18)
+
+Not a hardening pass. Recorded here because the manual-QA checklist belongs with the
+rest of the QA record. Plan and rationale: `DAF-PICKER-PLAN.md`.
+
+**What shipped.** Tapping the folio running head (`חולין קב·ב`) opens a popover listing
+every masechta and daf. Choosing one moves the *reading* surface through the same
+in-place commit the ‹ › arrows use, so a shiur — audio or video — is never interrupted.
+The panel carries one built-in button: the daf now loaded in the player, or today's daf
+when nothing is loaded.
+
+**Files:** `jump-model.js` (new, pure), `tests/jump-model.test.mjs` (new, 17 tests),
+`app.js`, `styles.css`, `index.html` (cache-buster → `20260818a`).
+
+**Refactor first (no behaviour change).** `gemaraFlipOnce` / `readerFlipOnce` were split
+into "choose the destination" + `gemaraGoTo` / `readerGoTo` ("commit the destination"),
+so a jump inherits every epoch, pager-intent and scroll guard the flip path already
+carries. `amudKeysFor` / `amudStep` / `dafStep` moved to `jump-model.js` — same bodies,
+now unit-tested, and Tamid's three-amud daf 26 is encoded once for every caller.
+
+**Automated:** `node --test tests/*.test.mjs` → 31 pass (17 new + 14 pre-existing).
+
+**Manual QA — all verified in the browser against the real data:**
+1. Video playing → open the picker → jump to another masechta. The **same** `<video>` node
+   survives (identity-checked), still connected, player bar still up. ✔
+2. Same with audio, and from inside the full-screen reader with the page video still running. ✔
+3. Panel z-index 46 sits above the reader's 44; the reader's own rail carries the trigger. ✔
+4. Arrow after a jump steps from the **new** position (`ברכות ב·ב` → `ברכות ג·א`). ✔
+5. Sequential run — arrow +1/−1, long jump, adjacent jump, arrow, Tamid 25b, Tamid 26a,
+   Shekalim — every step correct, `_gemaraFlipBusy` released each time, no orphaned `.pflip`. ✔
+6. Long jump uses the quiet cross-fade; an adjacent jump uses the real page-turn. ✔
+7. Hash carries the jumped-to amud (`&read=Berachos|2|2a`); the page route is untouched. ✔
+8. Tamid daf 26 offers three targets (25b / 26a / 26b). Shekalim, Kinnim, Middos show the
+   explanatory line with a working rail. ✔
+9. Typed references: `bava metzia 8b`, `daf 8 bava metzia`, `חולין קב:`, `102`, `bava`, `zzz`. ✔
+10. Grid keyboard: →/↓/Home/End move focus, the daf underneath never flips; Esc closes and
+    returns focus to the trigger; the site menu and any route change close the panel. ✔
+11. Desktop two-pane / phone single-pane with the back chevron; both stay inside the app shell,
+    including the desktop "Phone view" preview. ✔
+12. Panel is pinned to the rail's bottom edge, never covers the video, clears the player bar,
+    and its dismiss layer is fully transparent (never `#mask`). ✔
+
+**Defects found and fixed during the build (all by this QA):**
+- A fully typed reference (`bava metzia 8b`) emptied the masechta list. `parseJumpQuery` now
+  returns `name` — the masechta-naming part of the query — and the list filters on that, with
+  a fallback to the full list when the reference was understood but matches no name.
+- The inline `max-height` overrode the stylesheet's cap, turning the panel into a full-height
+  wall on tall windows. The JS now reports available room as `--jp-room`; the cap stays in CSS.
+- The panel could run under the transport bar. Its height now subtracts the player.
+- The panel did not re-anchor when the page reflowed under it (a video settling its metadata
+  moved the rail without firing scroll or resize). It now re-anchors on a rAF watch loop while
+  open, writing styles only when the anchor actually moved.
+- In the desktop "Phone view" the panel spilled past the simulated phone. Width now clamps
+  to `--app` as the player bar already does.
+
+**Known limits:** the parsha rail (`parshaColHead`) does not carry the picker — see
+`DAF-PICKER-PLAN.md` §12 phase 3, which is deliberately not built: there is no in-place
+parsha swap, so a parsha jump would route and restart an in-page video.

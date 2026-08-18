@@ -500,6 +500,141 @@ html.is-phone .daf-colhead .col-tab.on { color: var(--accent); border-bottom-col
 html.is-phone .daf-colhead .col-tab:disabled { opacity: .3; cursor: default; border-bottom-color: transparent; }
 
 
+/* ---------- folio picker: the running head is a door ----------
+   At rest the head looks exactly as it always did; the only permanent addition
+   is a small gold caret, quiet enough to read as printer's ornament and present
+   enough that a first-time visitor knows the head is live. The hover pill is
+   the same recipe as .pageflip, so the head and its two arrows light up as one
+   family. */
+.folio-jump { -webkit-appearance: none; appearance: none; border: 0; background: none; color: inherit; font: inherit;
+  display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; min-height: 38px;
+  padding: 2px 11px 3px; border-radius: 999px; cursor: pointer; transition: background .13s, color .13s; }
+.folio-caret { flex: none; width: 7px; height: 7px; opacity: .45;
+  border-right: 1.5px solid var(--gold); border-bottom: 1.5px solid var(--gold);
+  transform: rotate(45deg) translateY(-2px); transition: opacity .13s, border-color .13s, transform .18s; }
+.folio-jump:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent-2); }
+.folio-jump:hover .folio-caret { opacity: .9; border-color: var(--accent-2); }
+.folio-jump[aria-expanded="true"] { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.folio-jump[aria-expanded="true"] .folio-caret { transform: rotate(-135deg) translateY(1px); opacity: .9; }
+.folio-jump:focus-visible { border-radius: 999px; }
+
+/* The dismiss layer is deliberately TRANSPARENT. The site's .mask is 40% black
+   plus a blur — over a playing video that is exactly the interruption this
+   panel exists to avoid. */
+.jp-scrim { position: fixed; inset: 0; z-index: 45; background: transparent; }
+.jump-pop { position: fixed; z-index: 46; display: flex; flex-direction: column; overflow: hidden;
+  width: min(520px, calc(100vw - 24px), calc(var(--app) - 24px)); max-height: min(58vh, 460px, var(--jp-room, 100vh));
+  background: var(--leaf-paper); border: 1px solid var(--leaf-edge); border-top-color: var(--leaf-rule);
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 18px 40px -18px rgba(33,30,24,.55), inset 0 0 0 1px rgba(255,255,255,.5);
+  animation: jpIn .16s cubic-bezier(.4,0,.2,1); }
+.jump-pop[hidden], .jp-scrim[hidden] { display: none; }
+@keyframes jpIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+
+.jp-head { display: flex; align-items: center; gap: 7px; padding: 9px 10px; border-bottom: 1px solid var(--hair); }
+.jp-now { flex: 1; min-width: 0; -webkit-appearance: none; appearance: none; text-align: left; font: inherit;
+  border: 1px solid var(--hair-2); background: var(--paper); border-radius: 5px; padding: 7px 11px;
+  display: flex; align-items: center; gap: 9px; color: var(--ink); cursor: pointer;
+  transition: border-color .13s, background .13s; }
+.jp-now:hover { border-color: var(--accent); background: var(--leaf-paper); }
+.jp-now[hidden], .jp-chip[hidden] { display: none; }
+.jp-ic { flex: none; width: 19px; text-align: center; color: var(--accent); font-size: 12px; line-height: 1; }
+.jp-tx { min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.jp-k { font-family: var(--sans); font-size: 9.5px; letter-spacing: .11em; text-transform: uppercase; color: var(--ink-faint); }
+.jp-v { min-width: 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jp-he { font-family: var(--serif-he); direction: rtl; font-weight: 700; color: var(--accent); }
+.jp-en { color: var(--ink-soft); font-size: 13px; }
+.jp-chip { flex: none; -webkit-appearance: none; appearance: none; border: 1px solid var(--hair-2); background: var(--paper);
+  border-radius: 999px; padding: 7px 12px; min-height: 38px; cursor: pointer;
+  font-family: var(--serif-he); font-size: 14px; color: var(--accent);
+  transition: background .13s, color .13s, border-color .13s; }
+.jp-chip:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.jp-x { flex: none; -webkit-appearance: none; appearance: none; border: 0; background: none; color: var(--ink-faint);
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; cursor: pointer; }
+.jp-x:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
+
+.jp-find { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--hair); }
+.jp-mag { color: var(--ink-faint); font-size: 13px; }
+.jp-find input { flex: 1; min-width: 0; -webkit-appearance: none; appearance: none; font-family: inherit; font-size: 14.5px;
+  border: 1px solid var(--hair-2); border-radius: 4px; background: var(--paper); padding: 7px 9px; color: var(--ink); }
+.jp-find input::placeholder { color: var(--ink-faint); }
+.jp-find input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent); }
+
+.jp-panes { flex: 1; min-height: 0; display: grid; grid-template-columns: 44% 56%; }
+.jp-pane { min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.jp-mas { border-right: 1px solid var(--hair); }
+.jp-sed { position: sticky; top: 0; z-index: 2; background: var(--leaf-paper); border-bottom: 1px solid var(--hair);
+  font-family: var(--serif-he); direction: rtl; font-size: 12.5px; font-weight: 700; color: var(--gold);
+  letter-spacing: .06em; padding: 8px 12px 5px; }
+.jp-mi { -webkit-appearance: none; appearance: none; width: 100%; font: inherit; color: var(--ink); cursor: pointer;
+  border: 0; border-left: 2px solid transparent; background: none; min-height: 40px; padding: 8px 12px;
+  display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; transition: background .12s; }
+.jp-mi-en { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--sans); font-size: 9.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint); }
+.jp-mi-he { flex: none; font-family: var(--serif-he); direction: rtl; font-size: 16.5px; }
+.jp-mi:hover { background: var(--paper-2); }
+.jp-mi[aria-current="true"] { border-left-color: var(--accent); background: var(--accent-soft); }
+.jp-mi[aria-current="true"] .jp-mi-he { color: var(--accent); font-weight: 700; }
+.jp-mi.thin .jp-mi-he { color: var(--ink-faint); }        /* no native text for this masechta */
+.jp-tag { flex: none; font-family: var(--serif-he); font-size: 10px; line-height: 1.5; color: var(--gold);
+  border: 1px solid var(--gold); border-radius: 3px; padding: 0 4px; }
+.jp-dot { flex: none; color: var(--accent); font-size: 8px; }
+
+.jp-hint { position: sticky; top: 0; z-index: 2; background: var(--leaf-paper); border-bottom: 1px solid var(--hair);
+  font-family: var(--sans); font-size: 9.5px; letter-spacing: .05em; color: var(--ink-faint);
+  padding: 9px 10px 7px; text-align: center; }
+.jp-hint b { font-family: var(--serif-he); font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.jp-back { display: none; float: left; border: 0; background: none; color: var(--accent);
+  font-size: 15px; line-height: 1; padding: 0 6px; cursor: pointer; }
+.jp-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; padding: 8px 10px 0; }
+.jp-cell { display: grid; grid-template-columns: 1fr 26px; height: 46px; overflow: hidden;
+  border: 1px solid var(--hair-2); border-radius: 3px; background: var(--paper); }
+.jp-cell .jp-n, .jp-cell .jp-b { -webkit-appearance: none; appearance: none; border: 0; background: none; padding: 0;
+  cursor: pointer; color: var(--ink); position: relative; display: grid; place-items: center;
+  font-family: var(--serif-he); transition: background .12s, color .12s; }
+.jp-cell .jp-n { font-size: 18px; }
+.jp-cell .jp-b { font-size: 13px; color: var(--ink-faint); border-left: 1px solid var(--hair); }
+.jp-cell .jp-n:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
+.jp-cell .jp-b:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.jp-cell.ungiven .jp-n { color: var(--ink-faint); }        /* no shiur yet — the same weight cue .drow.future uses */
+.jp-cell.today { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.jp-cell.here { border-color: var(--accent); }
+.jp-cell.here .jp-n { background: var(--accent); color: var(--paper); }
+.jp-cell.learned .jp-n::after { content: "✓"; position: absolute; right: 3px; bottom: 1px;
+  font-family: var(--sans); font-size: 8px; color: var(--ok); }
+.jp-cell.here.learned .jp-n::after { color: var(--paper); }
+.jp-cell.aim { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent); }
+.jp-legend { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; padding: 10px 10px 12px;
+  font-family: var(--sans); font-size: 9.5px; letter-spacing: .05em; color: var(--ink-faint); }
+.jp-legend i { font-style: normal; display: inline-flex; align-items: center; gap: 4px; }
+.jp-legend i.dim { opacity: .7; }
+.jp-sw { display: inline-block; width: 9px; height: 9px; border-radius: 2px; }
+.jp-sw.here { background: var(--accent); }
+.jp-sw.today { border: 1px solid var(--gold); }
+.jp-sw.ok { width: auto; height: auto; color: var(--ok); }
+.jp-empty { padding: 14px 16px; margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-soft); }
+
+/* .toast-wrap is pointer-events:none so toasts never block the page; a toast
+   that carries an action re-enables hit-testing on just that control. */
+.toast-act { -webkit-appearance: none; appearance: none; pointer-events: auto; font: inherit; cursor: pointer;
+  border: 0; background: none; color: var(--paper); text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-thickness: .6px; padding: 0 2px; }
+.toast-act:hover { color: #fff; }
+
+/* Phone: one pane at a time, opening straight on the grid of the masechta
+   you're already in — the common case is one tap deep, not two. */
+/* --app is clamped too, so the desktop "Phone view" preview stays inside the
+   simulated phone instead of spilling across the whole window. */
+html.is-phone .jump-pop { width: min(calc(100vw - 20px), calc(var(--app) - 16px)); max-height: min(64vh, 520px, var(--jp-room, 100vh)); }
+html.is-phone .jp-panes { grid-template-columns: minmax(0, 1fr); }
+html.is-phone .jp-mas { border-right: 0; }
+html.is-phone .jump-pop.pick-daf .jp-mas { display: none; }
+html.is-phone .jump-pop:not(.pick-daf) .jp-daf { display: none; }
+html.is-phone .jp-back { display: block; }
+html.is-phone .jp-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+html.is-phone .jp-cell { grid-template-columns: 1fr 34px; }
+@media (prefers-reduced-motion: reduce) { .jump-pop { animation: none; } }
+
 /* ---------- Sponsor ---------- */
 .sp-opts { display: grid; gap: 10px; margin: 8px 0 16px; }
 .sp-opt { -webkit-appearance: none; appearance: none; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--hair-2); border-radius: 5px; padding: 14px 16px; background: var(--paper); text-align: left; color: var(--ink); font: inherit; transition: border-color .14s, background .14s; }

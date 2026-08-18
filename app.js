@@ -31,6 +31,7 @@ const safeEn = s => esc((s ?? "").toString().replace(/<\/?span[^>]*>/gi, "").rep
 const safeHe = s => esc(s).replace(/&lt;(\/?(?:big|strong|b|i|em|br))&gt;/gi, "<$1>");
 const DY = window.DafYomi;
 const RM = window.DafReaderModel;
+const JM = window.DafJumpModel;
 
 const State = {
   speaker: null, all: [], content: {}, media: {}, admin: {}, dafIndex: {}, dafCache: {}, commCache: {}, dafPending: {}, commPending: {},
@@ -324,7 +325,9 @@ function renderShell() {
   <aside class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Site menu" inert aria-hidden="true"></aside>
   <div class="toast-wrap" id="toasts" aria-live="polite" aria-atomic="false"></div>
   <div class="sr-only" id="readStatus" role="status" aria-live="polite" aria-atomic="true"></div>
-  <div class="reader" id="reader" role="dialog" aria-modal="true" aria-labelledby="rdTitle" hidden aria-hidden="true"></div>`;
+  <div class="reader" id="reader" role="dialog" aria-modal="true" aria-labelledby="rdTitle" hidden aria-hidden="true"></div>
+  <div class="jp-scrim" id="jpScrim" hidden></div>
+  <aside class="jump-pop" id="dafJump" role="dialog" aria-modal="false" aria-label="Go to a daf" hidden></aside>`;
 
   $("#burger").onclick = openMenu; $("#mask").onclick = closeMenu;
   $("#searchBtn").onclick = () => route("search");
@@ -332,7 +335,7 @@ function renderShell() {
   $("#backBtn").onclick = goBack;
   applyViewportClasses(); applyDafScale();
   const homeEl = $("#home"); homeEl.onclick = () => route("today"); homeEl.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); route("today"); } };
-  Player.mount(); buildMenu(); setStatus(State._sk || "checking"); updateBackBtn(); setBarH();
+  Player.mount(); buildMenu(); buildJump(); setStatus(State._sk || "checking"); updateBackBtn(); setBarH();
 }
 // The sticky column bar pins just below the top bar — measure the bar so the offset
 // stays exact across font sizes and the iPhone safe-area.
@@ -399,6 +402,7 @@ function togglePhoneView() {
 }
 function openMenu() {
   const menu = $("#menu"); if (!menu || Reader.open) return;
+  closeJump();
   menu.removeAttribute("inert"); menu.setAttribute("aria-hidden", "false"); menu.classList.add("open");
   $("#mask").classList.add("open"); $("#burger")?.setAttribute("aria-expanded", "true"); $("#app")?.setAttribute("inert", "");
   setTimeout(() => $("#menuClose")?.focus(), 0);
@@ -642,6 +646,7 @@ function pageTitle(r) {
   return "Rabbi Shea Stern · Daf Yomi";
 }
 function rerender({ skipSave = false } = {}) {
+  closeJump();                                          // the picker is anchored to a rail this render may replace
   const v = $("#view"); if (!v) return;
   resetGemaraFlipTransactions();                            // an old cold-load flip cannot own the newly routed reading surface
   clearPageMotions();                                        // a route/history swap always outranks decorative paper motion
@@ -942,6 +947,14 @@ function patchDafColHead(current, next) {
     const live = a.querySelector(".folio-current"); if (live) live.textContent = value;
     const aria = b.getAttribute("aria-label");
     if (aria == null) a.removeAttribute("aria-label"); else a.setAttribute("aria-label", aria);
+    // The picker's trigger keeps its DOM identity — and its focus — across a
+    // flip, exactly as the arrows do; only its labels are refreshed here.
+    // aria-expanded belongs to the live button and is never copied.
+    const trigger = a.querySelector("[data-dafjump]"), nextTrigger = b.querySelector("[data-dafjump]");
+    if (trigger && nextTrigger) ["aria-label", "title"].forEach(name => {
+      const v = nextTrigger.getAttribute(name);
+      if (v == null) trigger.removeAttribute(name); else trigger.setAttribute(name, v);
+    });
   });
   const currentSources = current.querySelector(":scope > .daf-cols-row"), nextSources = next.querySelector(":scope > .daf-cols-row");
   if (currentSources && nextSources) {
@@ -1040,33 +1053,14 @@ function consumePendingY() {
    the same sheet (turning between them turns the leaf), while ב and the next
    daf's א face each other across the gutter (moving between them turns nothing
    — the book just shifts). Every transition animation follows from that. */
-function amudKeysFor(masechta, daf) {
-  const k = [daf + "a", daf + "b"];
-  if (masechta === "Tamid" && daf === 26) k.unshift("25b");   // Tamid's opening Mishnah sits on Vilna 25b
-  return k;
-}
+// The physical page and the walk through Shas live in jump-model.js, where the
+// folio picker shares them and node can test them without a DOM. Tamid's
+// three-amud daf 26 is encoded there, once, for every caller.
+const amudKeysFor = JM.amudKeysFor;                            // the amudim of one daf, in printed order
 const amudLeaf = RM.amudLeaf;                                  // the sheet this amud is a side of
 const amudSide = RM.amudSide;
-// Step one amud, crossing daf and masechta boundaries in Shas order.
-function amudStep(masechta, daf, amud, dir) {
-  const keys = amudKeysFor(masechta, daf), i = keys.indexOf(String(amud)), j = i + dir;
-  if (i >= 0 && j >= 0 && j < keys.length) return { masechta, daf, amud: keys[j] };
-  const nx = dafStep(masechta, daf, dir); if (!nx) return null;
-  const nk = amudKeysFor(nx.masechta, nx.daf);
-  return { masechta: nx.masechta, daf: nx.daf, amud: dir > 0 ? nk[0] : nk[nk.length - 1] };
-}
-// Step to the previous / next daf, crossing masechta boundaries in Daf Yomi
-// (Shas) order. Returns {masechta, daf} or null at the very start/end of Shas.
-function dafStep(masechta, daf, dir) {
-  const m = DY.BYEN[masechta]; if (!m) return null;
-  const i = DY.SHAS.findIndex(x => x.en === masechta);
-  if (dir > 0) {
-    if (daf < m.lastDaf) return { masechta, daf: daf + 1 };
-    const nx = DY.SHAS[i + 1]; return nx ? { masechta: nx.en, daf: nx.firstDaf } : null;
-  }
-  if (daf > m.firstDaf) return { masechta, daf: daf - 1 };
-  const pv = DY.SHAS[i - 1]; return pv ? { masechta: pv.en, daf: pv.lastDaf } : null;
-}
+const amudStep = JM.amudStep;                                  // one amud, across daf and masechta boundaries
+const dafStep = JM.dafStep;                                    // one daf, across masechta boundaries, in Shas order
 const dafTitleHe = (masechta, daf) => `${DY.BYEN[masechta] ? DY.BYEN[masechta].he : masechta} ${heDaf(daf)}`;
 /* ---------- "Daf" layout — the page as it appears in print (Tzuras Hadaf):
    Gemara in the center, Rashi on the inner margin, Tosafos on the outer.
@@ -1393,7 +1387,7 @@ function dafColHead(masechta, daf, amud, sources) {
     <span class="folio-source folio-source-left" lang="he" aria-hidden="true"><span class="folio-current">${esc(leftSource)}</span></span>
     <div class="daf-flip-row">
       <button class="pageflip next" data-gemflip="1" aria-label="${esc(aria(1, "Next amud"))}" title="Next amud"${dis(1)}>‹</button>
-      <span class="daf-flip-lbl" lang="he" role="heading" aria-level="2" aria-label="${esc(dafLbl)}"><span class="folio-current">${esc(dafLbl)}</span></span>
+      <span class="daf-flip-lbl" lang="he" role="heading" aria-level="2" aria-label="${esc(dafLbl)}"><button type="button" class="folio-jump" data-dafjump aria-haspopup="dialog" aria-expanded="false" aria-controls="dafJump" title="Go to another daf" aria-label="${esc(dafLbl)} — go to another daf"><span class="folio-current">${esc(dafLbl)}</span><span class="folio-caret" aria-hidden="true"></span></button></span>
       <button class="pageflip prev" data-gemflip="-1" aria-label="${esc(aria(-1, "Previous amud"))}" title="Previous amud"${dis(-1)}>›</button>
     </div>
     <span class="folio-source folio-source-right" lang="he" aria-hidden="true"><span class="folio-current">${esc(rightSource)}</span></span>
@@ -1870,6 +1864,21 @@ async function gemaraFlipOnceQueued(next, epoch) {
 async function gemaraFlipOnce(dir, intent, epoch = _gemaraFlipEpoch) {
   if (epoch !== _gemaraFlipEpoch) return;
   const box = $("#dafText"); if (!box) return;
+  const cur = box.dataset.amud || amudKeysFor(box.dataset.mas, +box.dataset.daf)[0];
+  const nx = amudStep(box.dataset.mas, +box.dataset.daf, cur, dir); if (!nx) return;
+  return gemaraGoTo(nx, intent, epoch);
+}
+// Commit one destination onto the in-page daf surface. The rail arrows and the
+// folio picker share this: the only thing that differs between them is how `nx`
+// was chosen, so a jump inherits every epoch, intent and scroll guard the flip
+// path already carries — and, critically, never calls route(), so a playing
+// video is never re-rendered out of existence.
+// opts.motion === false swaps with the quiet fade the column switcher uses: a
+// jump across Shas is not a leaf turning, and animating it as one would assert
+// a contiguity the destination does not have.
+async function gemaraGoTo(nx, intent, epoch = _gemaraFlipEpoch, opts = {}) {
+  if (epoch !== _gemaraFlipEpoch) return;
+  const box = $("#dafText"); if (!box || !nx) return;
   // Re-measure before the async render as a hard fallback for keyboard and
   // assistive activations, which have no pointer target to carry an intent.
   const liveIntent = pagerIntent(box.querySelector(".daf-colhead"));
@@ -1883,7 +1892,7 @@ async function gemaraFlipOnce(dir, intent, epoch = _gemaraFlipEpoch) {
     railTop: intent?.railTop ?? liveIntent.railTop,
   };
   const cur = box.dataset.amud || amudKeysFor(box.dataset.mas, +box.dataset.daf)[0];
-  const nx = amudStep(box.dataset.mas, +box.dataset.daf, cur, dir); if (!nx) return;
+  const turning = opts.motion !== false;
   const transition = RM.transitionFor({ masechta: box.dataset.mas, amud: cur }, nx);
   const expected = `${box.dataset.mas}|${box.dataset.daf}|${cur}|${box.dataset.mode}`;
   // Prepare while the old page remains fully live. Only once the destination is
@@ -1894,7 +1903,7 @@ async function gemaraFlipOnce(dir, intent, epoch = _gemaraFlipEpoch) {
   const stillExpected = epoch === _gemaraFlipEpoch && box.isConnected
     && `${box.dataset.mas}|${box.dataset.daf}|${box.dataset.amud || cur}|${box.dataset.mode}` === expected;
   if (!stillExpected) { if (box.isConnected) box.setAttribute("aria-busy", "false"); return; }
-  const motion = beginPageFlip(box, transition.kind, transition.outSide);
+  const motion = turning ? beginPageFlip(box, transition.kind, transition.outSide) : null;
   if (!box._renderedDaf || (box._renderedMas === box.dataset.mas && box._renderedDaf === box.dataset.daf && box._renderedAmud === cur))
     saveColScroll(State._dafCol);                // remember our place — but only when what's on screen IS this amud (rapid double-flip guard)
   holdPagerIntent(stableIntent);                 // DOM height changes cannot reopen chrome or undock the frozen pager before restoration
@@ -1906,6 +1915,7 @@ async function gemaraFlipOnce(dir, intent, epoch = _gemaraFlipEpoch) {
   box.dataset.mas = nx.masechta; box.dataset.daf = nx.daf; box.dataset.amud = nx.amud;
   const painted = await hydrateDaf(prepared);    // synchronous commit of the prepared amud incl. fresh boundary arrows
   if (!painted) { motion?.cleanup(); return; }
+  if (!turning) restartAnim(box, "col-switched");   // a jump arrives; it does not turn
   restoreColScroll(State._dafCol, true, stableIntent.fallbackY, null, stableIntent.preserveRail, false, stableIntent); // keep the pager at the same viewport edge while restoring this amud
   const arrived = () => epoch === _gemaraFlipEpoch && box.dataset.mas === nx.masechta && +box.dataset.daf === nx.daf && box.dataset.amud === nx.amud;
   announceAmud(nx.masechta, nx.amud); repairPagerFocus(box, repairDir);
@@ -1947,6 +1957,7 @@ function openTorahReader(sefer, parsha, mode) {
 }
 function showReader({ push = true } = {}) {
   const r = $("#reader"); if (!r) return;
+  closeJump();
   resetGemaraFlipTransactions();                            // the inert page underneath cannot keep navigating in the background
   Reader._flipEpoch++; Reader._flipQueue = []; Reader._flipBusy = false;
   _readerOpener = document.activeElement;
@@ -1963,6 +1974,7 @@ function showReader({ push = true } = {}) {
 }
 function closeReader() { if (Reader.open && !_readerClosing) { _readerClosing = true; try { history.back(); } catch { hideReader(); } } }  // routed through popstate so #view is left intact
 function hideReader() {
+  closeJump();
   const kind = Reader.kind, torahAnchor = kind === "torah" ? parshaScrollAnchor($("#rdBody")) : null;
   const torahSource = kind === "torah" ? (Reader.source || "gemara") : null;
   // Chumash is fully representable in the compact Mikra surface. A reader may
@@ -2067,6 +2079,13 @@ async function readerFlipOnce(dir, intent, epoch = Reader._flipEpoch) {
   if (epoch !== Reader._flipEpoch || !Reader.open || Reader.kind !== "daf") return;
   const cur = Reader.amud || amudKeysFor(Reader.masechta, Reader.daf)[0];
   const nx = amudStep(Reader.masechta, Reader.daf, cur, dir); if (!nx) return;
+  return readerGoTo(nx, intent, epoch);
+}
+// The reader's half of the same split: arrows and picker both land here.
+async function readerGoTo(nx, intent, epoch = Reader._flipEpoch, opts = {}) {
+  if (epoch !== Reader._flipEpoch || !Reader.open || Reader.kind !== "daf" || !nx) return;
+  const cur = Reader.amud || amudKeysFor(Reader.masechta, Reader.daf)[0];
+  const turning = opts.motion !== false;
   const transition = RM.transitionFor({ masechta: Reader.masechta, amud: cur }, nx);
   const body = $("#rdBody"), liveIntent = pagerIntent(body?.querySelector(".daf-colhead")), mode = Reader.mode;
   const stableIntent = {
@@ -2080,7 +2099,7 @@ async function readerFlipOnce(dir, intent, epoch = Reader._flipEpoch) {
   const stillExpected = epoch === Reader._flipEpoch && Reader.open && Reader.kind === "daf" && body?.isConnected
     && `${Reader.masechta}|${Reader.daf}|${Reader.amud || cur}|${Reader.mode}` === expected;
   if (!stillExpected) { if (body?.isConnected) body.setAttribute("aria-busy", "false"); return; }
-  const motion = beginPageFlip(body, transition.kind, transition.outSide);
+  const motion = turning ? beginPageFlip(body, transition.kind, transition.outSide) : null;
   if (!Reader._renderedD || (Reader._renderedM === Reader.masechta && Reader._renderedD === cur))
     saveColScroll(State._dafCol);                // save a spot only for the amud actually rendered (rapid double-flip guard)
   holdPagerIntent(stableIntent);
@@ -2090,6 +2109,7 @@ async function readerFlipOnce(dir, intent, epoch = Reader._flipEpoch) {
   syncReaderChrome();
   const painted = await fillReaderBody(nx.masechta, nx.daf, mode, nx.amud, prepared, stableIntent);
   if (!painted) { motion?.cleanup(); return; }
+  if (!turning) restartAnim(body, "col-switched");   // a jump arrives; it does not turn
   const arrived = () => epoch === Reader._flipEpoch && Reader.open && Reader.kind === "daf" && Reader.masechta === nx.masechta && Reader.daf === nx.daf && Reader.amud === nx.amud;
   announceAmud(nx.masechta, nx.amud); repairPagerFocus(body, repairDir);
   await playPageFlip(motion, () => settlePagerIntent(body, stableIntent, arrived));
@@ -2118,12 +2138,14 @@ function renderDafReader() {
   const body = $("#rdBody");
   let bodyControlIntent = null;
   const rememberControlIntent = e => {
-    const control = e.target.closest("[data-gemflip], [data-dcol]");
+    const control = e.target.closest("[data-gemflip], [data-dcol], [data-dafjump]");
     if (control) { bodyControlIntent = pagerIntent(control, true); lockReadMin(bodyControlIntent.fallbackY); }
   };
   body.onpointerdown = rememberControlIntent;
   body.onmousedown = e => { if (!bodyControlIntent) rememberControlIntent(e); if (e.target.closest("[data-gemflip], [data-dcol]")) e.preventDefault(); };
   body.onclick = e => {
+    const j = e.target.closest("[data-dafjump]");
+    if (j) { e.preventDefault(); bodyControlIntent = null; toggleJump(j); return; }
     const g = e.target.closest("[data-gemflip]");
     if (g) { const intent = bodyControlIntent || pagerIntent(g); bodyControlIntent = null; readerFlip(+g.dataset.gemflip, intent); return; }
     const c = e.target.closest("[data-dcol]"); if (c) { const intent = bodyControlIntent; bodyControlIntent = null; selectDafCol(c.dataset.dcol, intent); }
@@ -2861,12 +2883,14 @@ function wireView(r) {
   const dr = $(".daf-read");   // these controls are re-rendered inside the text region each flip → delegate
   let drControlIntent = null;
   const rememberControlIntent = e => {
-    const control = e.target.closest("[data-gemflip], [data-dcol]");
+    const control = e.target.closest("[data-gemflip], [data-dcol], [data-dafjump]");
     if (control) { drControlIntent = pagerIntent(control, true); lockReadMin(drControlIntent.fallbackY); }
   };
   if (dr) dr.onpointerdown = rememberControlIntent;
   if (dr) dr.onmousedown = e => { if (!drControlIntent) rememberControlIntent(e); if (e.target.closest("[data-gemflip], [data-dcol]")) e.preventDefault(); };
   if (dr) dr.onclick = e => {
+    const j = e.target.closest("[data-dafjump]");
+    if (j) { e.preventDefault(); drControlIntent = null; toggleJump(j); return; }
     const g = e.target.closest("[data-gemflip]"); if (g) { e.preventDefault(); const intent = drControlIntent; drControlIntent = null; gemaraFlip(+g.dataset.gemflip, g, intent); return; }
     const c = e.target.closest("[data-dcol]"); if (c) { const intent = drControlIntent; drControlIntent = null; selectDafCol(c.dataset.dcol, intent); }
     const fs = e.target.closest("[data-parsha-fullscreen]"); if (fs) { const box = $("#parshaText"); if (box) openTorahReader(box.dataset.sefer, box.dataset.parsha, box.dataset.mode); }
@@ -3129,6 +3153,7 @@ const Player = {
     if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = "none"; navigator.mediaSession.metadata = null; } catch {} }
     this._elCur = this._elDur = this._elSeek = null;
     this.isVideo = false;
+    syncJumpNow();                                     // nothing is loaded now — the picker's button becomes today's daf
   },
   bar() {
     if (!this.lec) return;
@@ -3156,6 +3181,7 @@ const Player = {
     if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = playing ? "playing" : "paused"; } catch {} }
     c.innerHTML = `<button id="pB" aria-label="Back 10 seconds">↺<span class="d">10</span></button><button class="pp" id="pP" aria-label="${playing ? "Pause" : "Play"}">${playing ? svgPause(16) : svgPlay(16)}</button><button id="pF" aria-label="Forward 10 seconds"><span class="d">10</span>↻</button><button class="pill" id="pS" aria-label="Playback speed">${this.speed}×</button>`;
     $("#pP").onclick = () => this.toggle(); $("#pB").onclick = () => this.skip(-10); $("#pF").onclick = () => this.skip(10); $("#pS").onclick = () => this.setSpeed();
+    syncJumpNow();                                     // the picker's "Now playing" button tracks the transport
   },
   tick() {
     const m = this.media, cur = m ? m.currentTime || 0 : 0, dur = m ? m.duration || 0 : 0, c = this._elCur, d = this._elDur, s = this._elSeek;
@@ -3167,10 +3193,322 @@ const Player = {
 };
 
 /* =====================================================================
+   FOLIO PICKER — the running head is a door.
+   Tapping the folio head (חולין קב·ב) opens a quiet popover anchored under the
+   rail: every masechta, every daf. Choosing one moves the READING surface
+   through the same in-place commit the ‹ › arrows use (gemaraGoTo / readerGoTo),
+   so the shiur — audio or video — is never touched.
+   Two rules the whole design rests on:
+     · the panel is pinned to the rail's BOTTOM edge, so it can only ever grow
+       downward over the daf text, never upward over a playing video;
+     · its dismiss layer is transparent. The site's .mask (40% black + blur)
+       would dim the picture, which is the one thing this must not do.
+   ===================================================================== */
+const Jump = { open: false, mas: null, q: "", _opener: null, _raf: 0, _tracking: false, _anchor: "" };
+
+function buildJump() {
+  const pop = $("#dafJump"); if (!pop) return;
+  pop.innerHTML = `<div class="jp-head">
+      <button type="button" class="jp-now" id="jpNow"></button>
+      <button type="button" class="jp-chip" id="jpChip" hidden></button>
+      <button type="button" class="jp-x" id="jpClose" aria-label="Close">✕</button>
+    </div>
+    <div class="jp-find"><span class="jp-mag" aria-hidden="true">⌕</span>
+      <input id="jpQ" type="search" autocomplete="off" spellcheck="false" aria-label="Find a daf" placeholder="chullin 102b · חולין קב · 102"></div>
+    <div class="jp-panes">
+      <div class="jp-pane jp-mas" id="jpMas" role="group" aria-label="Masechta"></div>
+      <div class="jp-pane jp-daf" id="jpDaf" role="group" aria-label="Daf"></div>
+    </div>`;
+  $("#jpClose").onclick = () => closeJump({ restoreFocus: true });
+  const scrim = $("#jpScrim"); if (scrim) scrim.onclick = () => closeJump();
+  const q = $("#jpQ");
+  q.oninput = () => runJumpQuery(q.value);
+  q.onkeydown = e => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const hit = JM.parseJumpQuery(q.value, { masechta: Jump.mas });
+    if (hit && hit.daf) { jumpTo(hit.masechta, hit.daf, hit.amud); return; }
+    const first = $("#jpDaf .jp-cell .jp-n"); if (first) first.click();
+  };
+  $("#jpMas").onclick = e => { const b = e.target.closest("[data-jmas]"); if (b) selectJumpMasechta(b.dataset.jmas); };
+  $("#jpDaf").onclick = e => {
+    if (e.target.closest("[data-jback]")) { pop.classList.remove("pick-daf"); $("#jpMas .jp-mi[aria-current='true']")?.focus(); return; }
+    const c = e.target.closest("[data-jdaf]"); if (c) jumpTo(c.dataset.jmasechta, +c.dataset.jdaf, c.dataset.jamud);
+  };
+}
+
+/* ---------- which surface the picker is steering ---------- */
+const jumpSurface = () => Reader.open && Reader.kind === "daf" ? $("#rdBody") : $("#dafText");
+const jumpRail = () => jumpSurface()?.querySelector(":scope > .daf-colhead") || null;
+function jumpReading() {
+  if (Reader.open && Reader.kind === "daf") return { masechta: Reader.masechta, daf: +Reader.daf, amud: Reader.amud || amudKeysFor(Reader.masechta, +Reader.daf)[0] };
+  const box = $("#dafText"); if (!box || !box.dataset.mas) return null;
+  return { masechta: box.dataset.mas, daf: +box.dataset.daf, amud: box.dataset.amud || amudKeysFor(box.dataset.mas, +box.dataset.daf)[0] };
+}
+const scrollJumpHome = () => setDafScroll(dafTopScroll());
+const isPhoneLayout = () => document.documentElement.classList.contains("is-phone");
+
+/* ---------- open / close ---------- */
+function toggleJump(trigger) { if (Jump.open) closeJump({ restoreFocus: true }); else openJump(trigger); }
+function openJump(trigger) {
+  const pop = $("#dafJump"), scrim = $("#jpScrim"); if (!pop || !scrim) return;
+  const read = jumpReading(); if (!read || !DY.BYEN[read.masechta]) return;
+  Jump.open = true; Jump._opener = trigger || null; Jump.mas = read.masechta; Jump.q = "";
+  pop.hidden = false; scrim.hidden = false;
+  pop.classList.toggle("pick-daf", isPhoneLayout());   // phones open straight on the grid of the masechta you're in
+  trigger?.setAttribute("aria-expanded", "true");
+  $("#jpQ").value = "";
+  renderJumpNow(); renderJumpMasechtos(""); renderJumpDapim();
+  positionJump(); jumpTrack(true);
+  setTimeout(() => (isPhoneLayout() ? $("#jpDaf .jp-cell.here .jp-n") || $("#jpDaf .jp-cell .jp-n") : $("#jpQ"))?.focus(), 0);
+}
+function closeJump({ restoreFocus = false } = {}) {
+  const pop = $("#dafJump"); if (!pop || !Jump.open) return;
+  Jump.open = false;
+  pop.hidden = true; pop.classList.remove("pick-daf");
+  const scrim = $("#jpScrim"); if (scrim) scrim.hidden = true;
+  jumpTrack(false);
+  $$("[data-dafjump][aria-expanded='true']").forEach(b => b.setAttribute("aria-expanded", "false"));
+  const opener = Jump._opener; Jump._opener = null;
+  if (restoreFocus && opener?.isConnected) { try { opener.focus({ preventScroll: true }); } catch { opener.focus(); } }
+}
+// Watch the rail every frame while the panel is open. Scroll and resize are not
+// enough: the rail also moves when the page reflows under it — a video settling
+// its metadata, a webfont landing, the chrome collapsing — and none of those
+// fire an event the panel could listen for. One rect read per frame, only while
+// open, and the style write is skipped unless the anchor actually moved.
+function jumpTrack(on) {
+  if (on === Jump._tracking) return;
+  Jump._tracking = on;
+  if (!on) { cancelAnimationFrame(Jump._raf); Jump._raf = 0; Jump._anchor = ""; return; }
+  const tick = () => { if (!Jump.open) { Jump._raf = 0; return; } positionJump(); Jump._raf = requestAnimationFrame(tick); };
+  Jump._raf = requestAnimationFrame(tick);
+}
+function positionJump() {
+  const pop = $("#dafJump"); if (!pop || !Jump.open) return;
+  const rail = jumpRail(); if (!rail) { closeJump(); return; }
+  const r = rail.getBoundingClientRect();
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  const vw = window.innerWidth || document.documentElement.clientWidth;
+  if (r.bottom < 8 || r.top > vh - 8) { closeJump(); return; }    // the rail scrolled away; so does its drawer
+  const label = rail.querySelector(".daf-flip-lbl") || rail, lr = label.getBoundingClientRect();
+  const player = $("#player"), bar = player && !player.classList.contains("hidden") ? player.offsetHeight : 0;
+  const anchor = [r.bottom, lr.left, lr.width, vw, vh, bar].map(Math.round).join("|");
+  if (anchor === Jump._anchor) return;                            // nothing moved — don't touch the DOM
+  Jump._anchor = anchor;
+  const pad = 10, w = pop.offsetWidth;
+  pop.style.top = Math.round(r.bottom - 1) + "px";                // pinned to the rail's bottom hairline: it can only grow DOWN
+  pop.style.left = Math.round(Math.min(Math.max(pad, lr.left + lr.width / 2 - w / 2), Math.max(pad, vw - w - pad))) + "px";
+  // Report the room below the rail as a variable; the stylesheet keeps the cap,
+  // so a very tall window doesn't turn the panel into a full-height wall. The
+  // transport bar is subtracted so the two never overlap.
+  pop.style.setProperty("--jp-room", Math.max(200, Math.round(vh - r.bottom - 14 - bar)) + "px");
+}
+
+/* ---------- the one built-in button ---------- */
+function jumpNowInput() {
+  const bar = $("#player"), k = Player.lec && Player.lec._dk, m = Player.media;
+  return {
+    playerUp: !!(bar && !bar.classList.contains("hidden") && Player.lec),
+    lecDaf: k && k.daf ? { masechta: k.masechta, daf: k.daf } : null,
+    video: !!Player.isVideo,
+    paused: !!(m && (m.paused || m.ended)),
+    today: DY.dafForDate(new Date()),
+    reading: jumpReading(),
+  };
+}
+function renderJumpNow() {
+  const btn = $("#jpNow"), chip = $("#jpChip"); if (!btn || !chip) return;
+  const input = jumpNowInput(), t = JM.nowTarget(input);
+  if (!t) { btn.hidden = true; chip.hidden = true; return; }
+  btn.hidden = false;
+  const he = `${DY.masechtaHe(t.masechta)} ${window.HebCal ? window.HebCal.gematria(t.daf) : t.daf}`;
+  const kicker = t.here ? "You're reading this"
+    : t.kind === "today" ? "Today's daf"
+    : t.alsoToday ? (t.paused ? "Paused · today's daf" : "Now playing · today's daf")
+    : (t.paused ? "Paused at" : "Now playing");
+  const icon = t.here ? "✓" : t.kind === "today" ? "✦" : (t.video ? svgVideo(14) : "♪");
+  btn.innerHTML = `<span class="jp-ic" aria-hidden="true">${icon}</span><span class="jp-tx"><span class="jp-k">${esc(kicker)}</span><span class="jp-v"><span class="jp-he" lang="he">${esc(he)}</span> <span class="jp-en">${esc(t.masechta)} ${t.daf}</span></span></span>`;
+  btn.setAttribute("aria-label", `${kicker} — ${t.masechta} daf ${t.daf}`);
+  btn.onclick = () => { if (t.here) { closeJump({ restoreFocus: true }); scrollJumpHome(); return; } jumpTo(t.masechta, t.daf, null); };
+  // Today stays one tap away whatever is loaded — the picker never makes you
+  // choose between "where the shiur is" and "where the world is".
+  const second = JM.secondaryToday(input, t);
+  chip.hidden = !second;
+  if (second) {
+    const g = window.HebCal ? window.HebCal.gematria(second.daf) : second.daf;
+    chip.innerHTML = `<span lang="he">היום</span> · <span lang="he">${esc(String(g))}</span>`;
+    chip.title = chip.ariaLabel = `Today's daf — ${second.masechta} ${second.daf}`;
+    chip.setAttribute("aria-label", `Today's daf — ${second.masechta} daf ${second.daf}`);
+    chip.onclick = () => jumpTo(second.masechta, second.daf, null);
+  }
+}
+function syncJumpNow() { if (Jump.open) renderJumpNow(); }
+
+/* ---------- the two panes ---------- */
+// `keepAllIfEmpty` is set when the query resolved a masechta: the reference was
+// understood, so the list stays browsable even though "daf 8 bava metzia"
+// matches no name by substring. A query that resolved nothing keeps the honest
+// empty state.
+function renderJumpMasechtos(filter, keepAllIfEmpty) {
+  const box = $("#jpMas"); if (!box) return;
+  const raw = (filter || "").trim(), low = raw.toLowerCase();
+  const today = DY.dafForDate(new Date()), read = jumpReading();
+  let html = "";
+  const matches = m => !raw || m.en.toLowerCase().includes(low) || m.he.includes(raw);
+  // A filter that narrows to nothing is worse than no filter: "daf 8 bava
+  // metzia" names a masechta perfectly well without matching one by substring.
+  const narrows = !raw || DY.SHAS.some(matches) || !keepAllIfEmpty;
+  DY.SEDARIM.forEach(s => {
+    const list = DY.masechtosInSeder(s.en).filter(m => !narrows || matches(m));
+    if (!list.length) return;
+    html += `<div class="jp-sed" lang="he">${esc(s.he)}</div>`;
+    list.forEach(m => {
+      const picked = m.en === Jump.mas, here = read && read.masechta === m.en;
+      const hasText = !!State.dafIndex[m.en];              // Shekalim / Kinnim / Middos have no native text
+      html += `<button type="button" class="jp-mi${hasText ? "" : " thin"}" data-jmas="${esc(m.en)}" aria-current="${picked}"` +
+        ` aria-label="${esc(m.en)}${here ? " — the masechta you're reading" : ""}${hasText ? "" : " — no native text"}">` +
+        `<span class="jp-mi-en">${esc(m.en)}</span>` +
+        (today && today.masechta === m.en ? `<span class="jp-tag" lang="he" title="Today's daf is in this masechta">היום</span>` : "") +
+        (here ? `<span class="jp-dot" aria-hidden="true">●</span>` : "") +
+        `<span class="jp-mi-he" lang="he">${esc(m.he)}</span></button>`;
+    });
+  });
+  box.innerHTML = html || `<p class="jp-empty">No masechta matches that.</p>`;
+  const cur = box.querySelector(".jp-mi[aria-current='true']");
+  if (cur) box.scrollTop = Math.max(0, cur.offsetTop - box.clientHeight / 2);
+}
+function renderJumpDapim() {
+  const box = $("#jpDaf"), m = DY.BYEN[Jump.mas]; if (!box || !m) return;
+  const back = `<button type="button" class="jp-back" data-jback aria-label="Back to masechtos">‹</button>`;
+  if (!State.dafIndex[m.en]) {
+    const why = { Shekalim: "Shekalim is learned from the Talmud Yerushalmi, which isn't in the native reader yet.",
+      Kinnim: "Kinnim is a Mishnah-only masechta — it has no Gemara text.",
+      Middos: "Middos is a Mishnah-only masechta — it has no Gemara text." }[m.en] || "Native text for this masechta isn't available yet.";
+    box.innerHTML = `<div class="jp-hint">${back}<span lang="he">${esc(m.he)}</span></div><p class="jp-empty">${esc(why)} The page still opens, with its rail and its shiur intact.</p>`;
+    return;
+  }
+  const today = DY.dafForDate(new Date()), read = jumpReading(), L = learnedAll();
+  let cells = "";
+  for (let d = m.firstDaf; d <= m.lastDaf; d++) {
+    const keys = amudKeysFor(m.en, d), strips = keys.slice(1);
+    const cls = [];
+    if (read && read.masechta === m.en && +read.daf === d) cls.push("here");
+    if (today && today.masechta === m.en && today.daf === d) cls.push("today");
+    if (L[dafKey(m.en, d)]) cls.push("learned");
+    if (!shiurFor(m.en, d) && !adminPageMedia(`daf:${m.en}:${d}`)) cls.push("ungiven");
+    const g = window.HebCal ? window.HebCal.gematria(d) : d;
+    // Tamid daf 26 carries three amudim (its Mishnah opens on Vilna 25b), so
+    // the cell is built from amudKeysFor and grows a strip per extra amud.
+    const wide = strips.length > 1 ? ` style="grid-template-columns:1fr repeat(${strips.length},26px)"` : "";
+    cells += `<div class="jp-cell${cls.length ? " " + cls.join(" ") : ""}"${wide}>` +
+      `<button type="button" class="jp-n" data-jdaf="${d}" data-jmasechta="${esc(m.en)}" data-jamud="${esc(keys[0])}"` +
+      ` aria-label="${esc(m.en)} daf ${d}${keys[0] === "25b" ? ", opens on 25b" : ", amud alef"}${cls.includes("learned") ? ", learned" : ""}${cls.includes("today") ? ", today's daf" : ""}"${cls.includes("here") ? ' aria-current="page"' : ""}>${esc(String(g))}</button>` +
+      strips.map(k => `<button type="button" class="jp-b" data-jdaf="${d}" data-jmasechta="${esc(m.en)}" data-jamud="${esc(k)}" lang="he" aria-label="${esc(m.en)} daf ${d}, amud ${k.endsWith("b") ? "beis" : "alef"}">${k.endsWith("b") ? "ב" : "א"}</button>`).join("") +
+      `</div>`;
+  }
+  box.innerHTML = `<div class="jp-hint">${back}<span>tap the daf for <b lang="he">א</b> · tap the edge for <b lang="he">ב</b></span></div>
+    <div class="jp-grid">${cells}</div>
+    <div class="jp-legend"><i><span class="jp-sw here"></span>reading</i><i><span class="jp-sw today"></span>today</i><i><span class="jp-sw ok">✓</span>learned</i><i class="dim">faint · no shiur yet</i></div>`;
+  const focus = box.querySelector(".jp-cell.here") || box.querySelector(".jp-cell.today");
+  if (focus) box.scrollTop = Math.max(0, focus.offsetTop - box.clientHeight / 2);
+}
+function selectJumpMasechta(en) {
+  if (!DY.BYEN[en]) return;
+  Jump.mas = en;
+  $("#dafJump")?.classList.add("pick-daf");
+  renderJumpMasechtos(Jump.q); renderJumpDapim();
+  if (isPhoneLayout()) setTimeout(() => $("#jpDaf .jp-cell .jp-n")?.focus(), 0);
+}
+// "chullin 102b" · "חולין קב:" · "בבא מציעא 8" · a bare number inside the
+// masechta you're already in. A resolved reference aims the grid; Enter takes it.
+function runJumpQuery(q) {
+  Jump.q = q || "";
+  const hit = JM.parseJumpQuery(Jump.q, { masechta: Jump.mas });
+  if (hit && hit.masechta !== Jump.mas) { Jump.mas = hit.masechta; renderJumpDapim(); }
+  // Filter the list on the part of the query that named a masechta, never on the
+  // whole thing — "bava metzia 8b" must narrow to Bava Metzia, not empty the list.
+  renderJumpMasechtos(hit ? hit.name : Jump.q, !!hit);
+  const pane = $("#jpDaf"); if (!pane) return;
+  pane.querySelectorAll(".jp-cell.aim").forEach(n => n.classList.remove("aim"));
+  if (!hit || !hit.daf) return;
+  const cell = pane.querySelector(`.jp-n[data-jdaf="${hit.daf}"]`)?.closest(".jp-cell");
+  if (cell) { cell.classList.add("aim"); pane.scrollTop = Math.max(0, cell.offsetTop - pane.clientHeight / 2); }
+}
+
+/* ---------- the jump itself ---------- */
+async function jumpTo(masechta, daf, amud) {
+  if (!JM.validDaf(masechta, +daf)) return;
+  daf = +daf;
+  const keys = amudKeysFor(masechta, daf);
+  const key = keys.indexOf(String(amud)) >= 0 ? String(amud) : keys[0];
+  const from = jumpReading();
+  const intent = pagerIntent(jumpRail() || undefined);
+  closeJump({ restoreFocus: true });
+  if (from && from.masechta === masechta && +from.daf === daf && from.amud === key) { scrollJumpHome(); return; }
+  const nx = { masechta, daf, amud: key }, adjacent = from ? JM.isAdjacent(from, nx) : false;
+  clearPageMotions();
+  if (Reader.open && Reader.kind === "daf") {
+    Reader._flipEpoch++; Reader._flipQueue = []; Reader._flipBusy = true;
+    const epoch = Reader._flipEpoch;
+    try { await readerGoTo(nx, intent, epoch, { motion: adjacent }); }
+    finally { if (epoch === Reader._flipEpoch) Reader._flipBusy = false; }
+    return;
+  }
+  resetGemaraFlipTransactions();                       // a jump supersedes any queued arrow flip
+  const epoch = _gemaraFlipEpoch;
+  _gemaraFlipBusy = true;
+  try { await gemaraGoTo(nx, intent, epoch, { motion: adjacent }); }
+  finally {
+    if (epoch === _gemaraFlipEpoch) {
+      _gemaraFlipBusy = false;
+      const next = _gemaraFlipQueue.shift(); if (next) gemaraFlipOnceQueued(next, epoch);
+    }
+  }
+  if (!adjacent) offerJumpPage(masechta, daf);
+}
+// A long jump deliberately leaves the PAGE where it was — that separation is
+// the feature, and it is why the shiur survives. The route is offered as one
+// quiet, opt-in line instead: taking it re-renders the view and would restart
+// an in-page video at its saved spot.
+function offerJumpPage(masechta, daf) {
+  if (Reader.open) return;                             // full screen is for reading, not page-hopping
+  const g = window.HebCal ? window.HebCal.gematria(daf) : daf;
+  const node = toast(`Reading <b lang="he">${esc(DY.masechtaHe(masechta))} ${esc(String(g))}</b> · <button type="button" class="toast-act">Open its shiur page</button>`, 6500);
+  const act = node?.querySelector(".toast-act");
+  if (act) act.onclick = () => route("daf", { id: `${masechta}|${daf}` });
+}
+
+/* ---------- keyboard inside the grid ---------- */
+function jumpGridCols(cells) {
+  if (cells.length < 2) return 1;
+  const top = cells[0].offsetTop; let n = 0;
+  while (n < cells.length && cells[n].offsetTop === top) n++;
+  return Math.max(1, n);
+}
+function jumpGridKey(e) {
+  const active = document.activeElement;
+  if (!active?.closest?.("#jpDaf .jp-grid")) return false;
+  if (e.metaKey || e.ctrlKey || e.altKey) return false;
+  const cells = $$("#jpDaf .jp-cell"), cell = active.closest(".jp-cell");
+  let i = cells.indexOf(cell); if (i < 0) return false;
+  const cols = jumpGridCols(cells);
+  const step = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols, PageDown: cols * 5, PageUp: -cols * 5 }[e.key];
+  if (step != null) i += step;
+  else if (e.key === "Home") i = 0;
+  else if (e.key === "End") i = cells.length - 1;
+  else return false;
+  e.preventDefault();
+  const target = cells[Math.min(cells.length - 1, Math.max(0, i))]?.querySelector(".jp-n");
+  if (target) target.focus();
+  return true;
+}
+
+/* =====================================================================
    status / toast / editor
    ===================================================================== */
 function setStatus(kind) { State._sk = kind; const d = $("#live"); if (d) d.className = "live" + (kind === "err" ? " err" : kind === "checking" ? " warn" : ""); }
-function toast(html, ms = 4000) { const w = $("#toasts"); if (!w) return; const n = el("div", "toast", html); w.appendChild(n); setTimeout(() => { n.style.transition = "opacity .4s"; n.style.opacity = "0"; setTimeout(() => n.remove(), 400); }, ms); }
+function toast(html, ms = 4000) { const w = $("#toasts"); if (!w) return null; const n = el("div", "toast", html); w.appendChild(n); setTimeout(() => { n.style.transition = "opacity .4s"; n.style.opacity = "0"; setTimeout(() => n.remove(), 400); }, ms); return n; }
 
 
 function dialogFocusables(root) {
@@ -3186,6 +3524,16 @@ function trapDialogTab(e, root) {
   return true;
 }
 window.addEventListener("keydown", e => {
+  // The folio picker owns the keyboard while it is open. This branch comes
+  // first for one reason: otherwise an arrow pressed inside the panel would
+  // fall through and flip the daf underneath it.
+  const jp = $("#dafJump");
+  if (jp && !jp.hidden) {
+    if (e.key === "Escape") { e.preventDefault(); closeJump({ restoreFocus: true }); return; }
+    if (trapDialogTab(e, jp)) return;
+    jumpGridKey(e);
+    return;
+  }
   // Arrows must stay native where they already mean something: form fields, a
   // focused video/audio (seek), text selection (Shift), and under the open menu.
   const tag = (e.target && e.target.tagName) || "";
