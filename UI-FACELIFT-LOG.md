@@ -23,8 +23,8 @@ cycle table says what is done, what is open, and what was deliberately rejected.
 | 2 | Touch feel: press states, tap highlight, hit areas, scrollbars | done |
 | 3 | Make the picker native; motion audit | done |
 | 4 | Sizing systems — content-driven grid, the grid min-width trap | done |
-| 5 | Typography & rhythm — eyebrows, empty/loading states | next |
-| 6 | Surface pass — cards, rules, ornament, the Today page hierarchy | planned |
+| 5 | Typography — one eyebrow scale; empty & loading states | done |
+| 6 | Today page hierarchy — the primary action leads | done |
 
 ## Findings
 
@@ -138,3 +138,53 @@ on `.cont-main b` never got the chance to fire. One `min-width: 0` fixes it.
 overflows its box and reports no scroll. The sweep now measures each leaf's actual text
 ink with a Range against its content box, and runs over all 15 routes. Result at 320px
 and 375px: clean, no clipping and no horizontal overflow anywhere.
+
+### Cycle 5 — one label, three sizes (2026-08-18)
+
+The uppercase micro-label is the site's most repeated device, and it had been written
+**20 times across 7 font sizes and 12 tracking values** — from .05em to .2em — with no
+relationship between the two. That is the typographic version of the hardcoded column
+counts: a value set locally each time, by hand, drifting.
+
+Three tokens now, and they encode the actual rule — *tracking widens as size drops*,
+because small caps need more air:
+
+| token | size | tracking | used by |
+|---|---|---|---|
+| `--eyebrow-lg` | 11.5px | .13em | section heads, form labels, top-bar sections |
+| `--eyebrow-md` | 11px | .15em | captions under a title, reader/toolbar labels |
+| `--eyebrow-sm` | 9.5px | .17em | picker rows, tags, badges |
+
+Colour and weight are deliberately **not** tokenised — accent vs ink-soft vs ink-faint
+carries meaning, and flattening it would lose information. 15 rules moved onto the scale.
+`.today .eyebrow` keeps its .2em: it is a display eyebrow, not a caption.
+
+Empty and loading states were bare centred italic — the weakest moment in the UI, and
+the daf one appears while a 2–3MB text file loads. They now carry the gold ❦ that
+already closes an amud, and the loading one breathes gently (the global reduced-motion
+reset stills it).
+
+Widening tracking widens labels, so the clip sweep was re-run at 390 / 768 / 1280:
+clean. It did surface a **false positive in my own check** first — `.bar::before` is an
+absolutely-positioned 100vw scrim by design, which inflates `scrollWidth`. The sweep now
+judges overflow on real in-flow children.
+
+### Cycle 6 — the primary action leads (2026-08-18)
+
+On a daf whose shiur has not been given yet, the Today page offered `✦ Sponsor today's
+daf` in accent and **Read the daf** as a plain outline button. Reading the daf is what
+the page is *for*; sponsorship was outranking it purely by styling.
+
+Read the daf now leads and wears the solid treatment — the same slot `▶ Listen` occupies
+when a shiur exists, so the two states of the page finally match. Sponsorship keeps its
+accent colour and its ✦ and simply stops outranking the daf. Nothing was removed.
+
+**Owner call:** this touches how prominently sponsorship is offered. It is a styling and
+order change only — the button, its wording and its ornament are untouched — but say the
+word and it goes back.
+
+### Still open
+- Dead CSS: `.editor` rules remain although the public editor was removed in admin v2
+  (`class="editor` appears 0× in app.js). Left alone — a separate cleanup, not a facelift.
+- The parsha rail is 62px against the daf rail's 53px, set by its 44px fullscreen button
+  and the chapter select. Not a bug; noted so nobody re-measures it a third time.

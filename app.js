@@ -737,7 +737,10 @@ function viewToday() {
   const listenBtn = tovA ? `<button class="btn solid" data-oplay="${esc(tpk)}">▶ Listen</button>` : (t.shiur ? `<button class="btn solid" data-play="${esc(t.shiur.id)}">▶ Listen</button>` : "");
   const actions = (listenBtn || hasVid)
     ? `${listenBtn}${hasVid ? `<button class="btn" data-watchdaf="${ref}"><span class="vic" aria-hidden="true">${svgVideo(15)}</span>Watch</button>` : ""}<button class="btn" data-daf="${ref}">Read the daf</button>`
-    : `<button class="btn accent" data-sponsor-daf="${ref}">✦ Sponsor today's daf</button><button class="btn" data-daf="${ref}">Read the daf</button>`;
+    // No shiur yet: reading the daf IS the page's purpose, so it leads and wears
+    // the solid treatment — the same slot "▶ Listen" holds when a shiur exists.
+    // Sponsorship keeps its accent and its ✦; it simply stops outranking the daf.
+    : `<button class="btn solid" data-daf="${ref}">Read the daf</button><button class="btn accent" data-sponsor-daf="${ref}">✦ Sponsor today's daf</button>`;
   return `
     <div class="titlepage">
       <div class="he" lang="he">${esc(mh.hebrew || "שיעורי הדף היומי")}</div>
