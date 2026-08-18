@@ -841,8 +841,22 @@ html.force-phone #app { box-shadow: 0 0 0 1px rgba(33,30,24,.1), 0 24px 70px -20
 }
 .daf-loading::before { animation: dyBreathe 1.9s ease-in-out infinite; }
 @keyframes dyBreathe { 0%, 100% { opacity: .26; } 50% { opacity: .68; } }
+/* A flip into a masechta this session has not fetched yet has to wait on the
+   network before it can paint, and until now nothing on screen said so — the
+   rail just looked unresponsive. Every flip path already sets aria-busy on the
+   surface, so the cue costs no JS. The delay means a cached flip, which lands
+   within a frame, never flashes it. */
+#dafText[aria-busy="true"], #rdBody[aria-busy="true"], #parshaText[aria-busy="true"] { cursor: progress; }
+#dafText[aria-busy="true"] .daf-colhead,
+#rdBody[aria-busy="true"] .daf-colhead,
+#parshaText[aria-busy="true"] .parsha-colhead { opacity: .6; transition: opacity .18s ease .28s; }
+
 .toast-wrap { position: fixed; bottom: calc(120px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 80; display: flex; flex-direction: column; gap: 8px; align-items: center; width: 100%; max-width: var(--app); pointer-events: none; }
-.toast { background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 6px; font-size: 14px; box-shadow: 0 10px 34px -8px rgba(0,0,0,.4); animation: fade .25s; }
+.toast { background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 6px; font-size: 14px; box-shadow: 0 10px 34px -8px rgba(0,0,0,.4); animation: fade .25s;
+  transition: opacity .25s, transform .25s; }
+/* leaves the way it arrived — `fade` enters on opacity and a 4px settle, so the
+   exit reverses exactly that instead of fading on its own timing. */
+.toast.out { opacity: 0; transform: translateY(4px); }
 footer { margin-top: auto; text-align: center; font-family: var(--sans); font-size: 12px; color: var(--ink-faint); padding: 34px 22px 30px; line-height: 1.8; border-top: 1px solid var(--hair); }
 footer .fhe { font-family: var(--serif-he); direction: rtl; font-size: 17px; color: var(--ink-soft); display: block; margin-bottom: 4px; }
 footer a { color: var(--ink-soft); }

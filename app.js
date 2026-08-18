@@ -308,7 +308,7 @@ function renderShell() {
     <a class="skip-link" href="#view">Skip to the daf</a>
     <header class="bar">
       <button class="ic-btn back" id="backBtn" aria-label="Back" hidden>‹</button>
-      <button class="ic-btn" id="burger" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">☰</button>
+      <button class="ic-btn" id="burger" aria-label="Menu" aria-haspopup="dialog" aria-expanded="false" aria-controls="menu">☰</button>
       <span class="wordmark" id="home" role="link" tabindex="0" title="Today's daf" lang="he">${esc(mh.hebrew || "הדף היומי")}</span>
       <span class="spacer"></span>
       <nav class="bar-nav" aria-label="Sections">
@@ -339,7 +339,7 @@ function renderShell() {
   $$(".bar-nav button").forEach(b => b.onclick = () => route(b.dataset.route));
   $("#backBtn").onclick = goBack;
   applyViewportClasses(); applyDafScale();
-  const homeEl = $("#home"); homeEl.onclick = () => route("today"); homeEl.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); route("today"); } };
+  const homeEl = $("#home"); homeEl.onclick = () => route("today"); homeEl.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); route("today"); } };   // role="link" — Space stays the page-scroll key
   Player.mount(); buildMenu(); buildJump(); setStatus(State._sk || "checking"); updateBackBtn(); setBarH();
 }
 // The sticky column bar pins just below the top bar — measure the bar so the offset
@@ -1977,7 +1977,7 @@ function openReader(masechta, daf, mode, amud) {
   Reader.kind = "daf"; Reader.sefer = null; Reader.parsha = null;
   Reader._renderedM = Reader._renderedN = Reader._renderedD = Reader._renderedMode = null;
   Reader.masechta = masechta; Reader.daf = +daf; Reader.amud = amud || amudKeysFor(masechta, +daf)[0];
-  Reader.mode = mode || State._dafMode || "daf"; Reader.open = true; Reader._restoreScroll = true;
+  Reader.mode = mode || State._dafMode || "daf"; Reader.open = true;
   showReader();
 }
 function openTorahReader(sefer, parsha, mode) {
@@ -1988,7 +1988,7 @@ function openTorahReader(sefer, parsha, mode) {
   Reader._renderedM = Reader._renderedN = Reader._renderedD = Reader._renderedMode = null;
   Reader.sefer = sefer; Reader.parsha = parsha; Reader.inlineMode = inlineMode; Reader.mode = "daf";
   Reader.source = inlineMode === "he" ? "gemara" : (State._parCol || "gemara"); Reader._sourceChanged = false;
-  Reader._restoreAnchor = parshaScrollAnchor($("#parshaText")); Reader.open = true; Reader._restoreScroll = true;
+  Reader._restoreAnchor = parshaScrollAnchor($("#parshaText")); Reader.open = true;
   showReader();
 }
 function showReader({ push = true } = {}) {
@@ -2100,7 +2100,7 @@ function restoreReaderFromSnapshot(snapshot, { push = false } = {}) {
     Reader._restoreAnchor = freshPos(saved) ? saved.anchor : null;
     if (freshPos(saved)) ensureColScroll()[`tr:${saved.sefer}:${saved.parsha}:daf:${saved.source}`] = { y: saved.y, ...(saved.anchor || {}), at: +saved.at };
   }
-  Reader.open = true; Reader._restoreScroll = true; _pendingY = null;
+  Reader.open = true; _pendingY = null;
   showReader({ push });
   return true;
 }
@@ -2146,7 +2146,7 @@ async function readerGoTo(nx, intent, epoch = Reader._flipEpoch, opts = {}) {
   holdPagerIntent(stableIntent);
   const repairDir = stableIntent.focusedDir != null
     && document.activeElement === body?.querySelector(`[data-gemflip="${stableIntent.focusedDir}"]`) ? stableIntent.focusedDir : null;
-  Reader.masechta = nx.masechta; Reader.daf = nx.daf; Reader.amud = nx.amud; Reader._restoreScroll = true;
+  Reader.masechta = nx.masechta; Reader.daf = nx.daf; Reader.amud = nx.amud;
   syncReaderChrome();
   const painted = await fillReaderBody(nx.masechta, nx.daf, mode, nx.amud, prepared, stableIntent);
   if (!painted) { motion?.cleanup(); return; }
@@ -2244,7 +2244,7 @@ async function fillTorahReaderBody(sefer, parsha, mode, anchor) {
     body.innerHTML = html; body.dataset.readerKind = "torah"; body.dataset.sefer = sefer; body.dataset.parsha = parsha; body.dataset.mode = mode;
     body.setAttribute("aria-busy", "false");
     applyDafCol(body); attachDafSwipe(body); wireParshaChapterJumps(body);
-    Reader._restoreAnchor = null; Reader._restoreScroll = false;
+    Reader._restoreAnchor = null;
     restoreColScroll(Reader.source || "gemara", true, undefined, anchor || null);
     syncParshaChapterNav();
     return true;
@@ -2269,7 +2269,7 @@ async function setReaderMode(mode) {
   clearPageMotions();
   const intent = pagerIntent(); holdPagerIntent(intent);
   saveColScroll(State._dafCol || "gemara");
-  Reader.mode = mode; State._dafMode = mode; Reader._restoreScroll = true;
+  Reader.mode = mode; State._dafMode = mode;
   syncReaderChrome();
   await fillReaderBody(Reader.masechta, Reader.daf, mode, Reader.amud, undefined, intent);
   await settlePagerIntent($("#rdBody"), intent, () => Reader.open && Reader.kind === "daf" && Reader.mode === mode);
@@ -2282,7 +2282,7 @@ async function fillReaderBody(m, d, mode, amud, preparedHtml, railIntent) {
     commitDafBodyHtml(body, html); Reader._renderedM = m; Reader._renderedN = d; Reader._renderedD = amud; Reader._renderedMode = mode;
     body.setAttribute("aria-busy", "false");
     sizeDafCarves(body); applyDafCol(body); attachDafSwipe(body);
-    Reader._restoreScroll = false; restoreColScroll(State._dafCol, true, railIntent?.fallbackY, null, railIntent?.preserveRail, false, railIntent);
+    restoreColScroll(State._dafCol, true, railIntent?.fallbackY, null, railIntent?.preserveRail, false, railIntent);
     requestAnimationFrame(commitDafReadState);
     return true;
   }
@@ -3150,7 +3150,25 @@ const Player = {
     m.addEventListener("pause", () => { if (this.media === m) this.ctrls(); });
     m.addEventListener("ratechange", () => { if (this.media === m && this.speed !== m.playbackRate) { this.speed = m.playbackRate; this.ctrls(); } });   // keep the bar's speed in sync with the native video menu (and vice-versa)
     m.addEventListener("ended", () => { if (this.media === m && this.lec) { clearPos(this.lec.id); markShiurLearned(this.lec); this._onEnded(); } });
-    m.addEventListener("error", () => { if (this.media === m && this.lec && this.local && !this.isVideo) { this.local = false; if (!this.lec.audio) { this.bar(); return; } this._skipPending = true; this.audio.src = this.lec.audio; this.audio.play().catch(() => {}); this.bar(); } });
+    m.addEventListener("error", () => {
+      if (this.media !== m) return;
+      // Teardown looks like an error: rerender() strips src and calls load() on
+      // in-page video, and an aborted load reports MEDIA_ERR_ABORTED. Neither is
+      // a shiur that failed, and neither should say anything to anyone.
+      if (m.error && m.error.code === m.error.MEDIA_ERR_ABORTED) return;
+      if (!m.getAttribute("src") && !m.currentSrc) return;
+      // One silent retry: a local file that won't play falls back to the hosted audio.
+      if (this.lec && this.local && !this.isVideo && this.lec.audio) {
+        this.local = false; this._skipPending = true;
+        this.audio.src = this.lec.audio; this.audio.play().catch(() => {}); this.bar();
+        return;
+      }
+      // Nothing left to try. Say so — a bar that sits there never playing reads
+      // as the site being broken, and the listener has no way to tell.
+      this.local = false;
+      toast("This shiur wouldn't load. Check your connection and try again.");
+      this.hide();
+    });
   },
   // End of a shiur: say the daf was marked learned, and offer the next one —
   // the daily catch-up loop shouldn't end in silence.
@@ -3735,7 +3753,7 @@ async function torahGoTo(sefer, parsha) {
   if (Reader.open && Reader.kind === "torah") {
     const body = $("#rdBody"); if (!body) return;
     saveColScroll(Reader.source || "gemara");
-    Reader.sefer = sefer; Reader.parsha = parsha; Reader._restoreScroll = true;
+    Reader.sefer = sefer; Reader.parsha = parsha;
     syncTorahReaderChrome();
     if (await fillTorahReaderBody(sefer, parsha, Reader.mode, null)) {
       restartAnim(body, "col-switched"); announceParsha(parsha); commitReaderHistoryState();
@@ -3802,7 +3820,7 @@ function jumpGridKey(e) {
    status / toast / editor
    ===================================================================== */
 function setStatus(kind) { State._sk = kind; const d = $("#live"); if (d) d.className = "live" + (kind === "err" ? " err" : kind === "checking" ? " warn" : ""); }
-function toast(html, ms = 4000) { const w = $("#toasts"); if (!w) return null; const n = el("div", "toast", html); w.appendChild(n); setTimeout(() => { n.style.transition = "opacity .4s"; n.style.opacity = "0"; setTimeout(() => n.remove(), 400); }, ms); return n; }
+function toast(html, ms = 4000) { const w = $("#toasts"); if (!w) return null; const n = el("div", "toast", html); w.appendChild(n); setTimeout(() => { n.classList.add("out"); setTimeout(() => n.remove(), 260); }, ms); return n; }   // leaves the way it arrived — see .toast.out
 
 
 function dialogFocusables(root) {

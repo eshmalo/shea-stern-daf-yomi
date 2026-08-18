@@ -414,3 +414,54 @@ daf that holds it, and no leaf in Shas answers to two masechtos. All three were
 negative-tested by reverting each fix in turn. Verified in the browser by walking the whole
 volume one amud at a time: 72 pages, 72 unique, zero gaps, Meilah 2a → Middos 37b, and the
 reverse walk retraces the forward walk exactly.
+
+### Cycle 12 — the eight that were left (2026-08-18)
+
+No new audit this cycle: the six-lens sweep from cycle 9 produced 34 findings and cycles
+9–11 implemented about twenty of them. These are the remainder, each re-verified against
+the code before being touched — and one of them turned out not to be real.
+
+**A shiur that failed to load played forever in silence.** `Player._bind`'s `error`
+listener only did anything when `this.local && !this.isVideo` — a local file falling back
+to the hosted audio. Every other failure produced nothing at all: no retry, no message,
+and a player bar still sitting there with the shiur's title on it. A remote object that
+404s, a video that won't decode, or the fallback itself failing all looked identical to
+the site being broken. The listener now keeps the one silent retry, then says so and
+clears the bar.
+
+The care here is in *not* firing it wrongly. Teardown looks exactly like a failure:
+`rerender()` strips `src` and calls `load()` on in-page video, and an aborted load reports
+`MEDIA_ERR_ABORTED`. Both are now ignored, along with an element that has no source at
+all. Verified both directions: playing a shiur and navigating across four routes produces
+no failure toast (only the legitimate "Resumed from 1:42"), while a genuinely dead source
+with nothing to fall back to produces the message and dismisses the bar.
+
+**The rest**
+- The burger declared `aria-haspopup="true"`, which per the ARIA spec means *menu* — but
+  it opens `#menu`, which is `role="dialog"`. The folio triggers beside it already said
+  `dialog`. Now they agree.
+- The home wordmark is `role="link"` but fired on Space as well as Enter. Space is the
+  page-scroll key, so a keyboard user who happened to be focused there got navigated
+  instead of scrolled. Enter only now — verified Space leaves the route untouched.
+- The toast entered on a CSS `fade` (opacity plus a 4px settle) and left via inline
+  `style.transition = "opacity .4s"` — different property set, different duration, written
+  from JS. It now leaves by a `.toast.out` class that reverses the entrance exactly.
+- `Reader._restoreScroll` was assigned in eight places and read in none. It reads exactly
+  like a guard, which is what makes it worth deleting rather than leaving to mislead the
+  next person. Removed; `Reader._restoreAnchor`, which looks similar, *is* live and was
+  left alone. (The regex that removed it merged one statement onto the line above — caught
+  by checking the diff rather than trusting "parses OK", and unmerged.)
+- **A cold flip now shows that it is working.** Flipping into a masechta this session
+  hasn't fetched waits on the network before it can paint, and nothing on screen said so —
+  the rail just looked dead. Every flip path already sets `aria-busy`, so the cue costs no
+  JS: `cursor: progress` and the rail at 60%, on a 0.28s delay so a cached flip (which
+  lands within a frame) never flashes it.
+
+### Refuted — measured, not fixed
+The audit claimed the jump-to-daf placeholder clips on the ~15 masechtos with three-digit
+dapim, reasoning that an 80px input with 12px padding leaves "roughly 36px" for text. It
+leaves 54px. Measured the real ink of `2–176` against the real content box at both 1280px
+and 375px: **45.7px and 43.2px against 54px** — 8px of headroom, no clipping, no row
+overflow, no document overflow. Left alone. Two vendor-prefix fallbacks
+(`-webkit-sticky`, `-webkit-overflow-scrolling`) were also flagged as inert; they are, but
+they cost nothing and removing them only risks old iOS, so they stay.
