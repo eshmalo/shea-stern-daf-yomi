@@ -10,30 +10,64 @@
 
   /* ---------- the physical page ---------- */
 
-  // The amudim of one daf, in printed order.
+  // Daf Yomi names the DAF; the printed volume names the PAGE. For almost all of
+  // Shas the two agree — a masechta opens on 2a and closes on the b side of its
+  // last daf — so its page list is simply [Na, Nb].
   //
-  // The Meilah volume is one continuously-paginated unit and its masechtos do
-  // not begin on daf boundaries: Meilah runs to 22a (its hadran is printed
-  // there), Kinnim occupies 22a–25a, and Tamid opens on 25b. Daf Yomi still
-  // counts whole dapim, so it calls daf 25 "Kinnim" and daf 26 "Tamid" — which
-  // leaves Vilna 25b, where Tamid's opening Mishnah is printed, sitting inside
-  // the daf named for Kinnim.
+  // One volume breaks that. Meilah, Kinnim, Tamid and Middos are printed as a
+  // single continuously-paginated unit of 36 dapim (SHAS `hb` 36), and their
+  // masechtos begin and end MID-DAF. Their printed Vilna spans:
   //
-  // So daf 26 of Tamid is a THREE-amud page (never build a list as
-  // [d + "a", d + "b"] or that Mishnah becomes unreachable), and daf 25 of
-  // Kinnim must give 25b up. If both claim it, one physical leaf answers to two
-  // names and a reader paging one amud at a time hits it twice — blank under
-  // Kinnim, then again with the text under Tamid.
+  //     Meilah  2a – 22a        Kinnim  22a – 25a
+  //     Tamid  25b – 33b        Middos  34a – 37b
   //
-  // 22b needs no matching rule. It is Kinnim's page, it is reachable exactly
-  // once (inside Meilah's daf 22, which is what Daf Yomi calls it), and no
-  // second masechta claims it. The Tamid rule exists to expose real text, not
-  // to model the volume's pagination exhaustively.
+  // (Meilah's own hadran is printed on 22a and Tamid's opening Mishnah on 25b —
+  // both visible in this repo's William Davidson text. Sefaria's index gives
+  // Tamid's first chapter as "Tamid 25b:1-28b:7" and has no daf-addressed Kinnim
+  // at all; Hebrew and English Wikipedia both give Kinnim as 22a–25a.)
+  //
+  // Daf Yomi still counts whole dapim — Meilah 2–22, Kinnim 23–25, Tamid 26–33,
+  // Middos 34–37 — so 22b and 25b fall inside a daf named for the neighbour. The
+  // rule, applied once here rather than as a special case per boundary: a page
+  // belongs to the masechta whose text is printed on it, and the shared boundary
+  // page 22a (which carries the end of Meilah AND the opening of Kinnim) stays
+  // with Meilah, whose daf number it is. What follows are therefore the NAVIGABLE
+  // spans, which partition the volume exactly: 72 amudim over 36 dapim, each
+  // reachable under exactly one masechta. tests/jump-model.test.mjs asserts it.
+  const SPANS = {
+    Meilah: ["2a", "22a"], Kinnim: ["22b", "25a"], Tamid: ["25b", "33b"], Middos: ["34a", "37b"],
+  };
+  // one total order over a volume's pages, so a span is just a numeric range
+  const amudRank = k => parseInt(k, 10) * 2 + (/b$/.test(String(k)) ? 1 : 0);
+  const rankToAmud = r => (r >> 1) + ((r & 1) ? "b" : "a");
+
   function amudKeysFor(masechta, daf) {
-    if (masechta === "Kinnim" && +daf === 25) return ["25a"];   // Kinnim ends on 25a; 25b is Tamid's
-    const k = [daf + "a", daf + "b"];
-    if (masechta === "Tamid" && +daf === 26) k.unshift("25b");
-    return k;
+    const span = SPANS[masechta], m = DY() && DY().BYEN[masechta];
+    if (!span || !m) return [daf + "a", daf + "b"];
+    const lo = amudRank(span[0]), hi = amudRank(span[1]);
+    // the masechta's FIRST daf also carries whatever of its span is printed on the
+    // daf before; its LAST daf stops where the masechta itself stops
+    const from = +daf === m.firstDaf ? lo : amudRank(daf + "a");
+    const to = +daf === m.lastDaf ? hi : amudRank(daf + "b");
+    const out = [];
+    for (let r = Math.max(from, lo); r <= Math.min(to, hi); r++) out.push(rankToAmud(r));
+    return out;
+  }
+
+  // Which daf actually holds an amud. Almost always it is the number in the key —
+  // but in the shared volume a masechta's first daf carries a page printed on the
+  // daf before (Kinnim 23 opens on 22b, Tamid 26 on 25b), so a bare amud cannot be
+  // parsed with parseInt alone. Only the neighbouring dapim can ever hold it.
+  function dafForAmud(masechta, amud) {
+    const n = parseInt(amud, 10);
+    if (!Number.isFinite(n)) return null;
+    const m = DY() && DY().BYEN[masechta];
+    // amudKeysFor answers for any number it is handed, so the daf range has to be
+    // checked here — Tamid 25 is not a daf, even though 25b is one of its pages.
+    const holds = d => (!m || (d >= m.firstDaf && d <= m.lastDaf)) && amudKeysFor(masechta, d).includes(String(amud));
+    if (holds(n)) return n;
+    for (const d of [n + 1, n - 1]) if (holds(d)) return d;
+    return n;
   }
   // Step to the previous / next daf, crossing masechta boundaries in Daf Yomi
   // (Shas) order. Returns {masechta, daf} or null at the very start/end of Shas.
@@ -248,7 +282,7 @@
   }
 
   root.DafJumpModel = Object.freeze({
-    amudKeysFor, dafStep, amudStep, amudCatalog, isAdjacent, validDaf,
+    amudKeysFor, dafForAmud, dafStep, amudStep, amudCatalog, isAdjacent, validDaf,
     gematriaValue, findMasechta, parseJumpQuery, nowTarget, secondaryToday,
     torahIndex, torahNowTarget, secondaryLatest,
   });

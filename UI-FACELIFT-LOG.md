@@ -356,3 +356,61 @@ already validated the amud against `amudKeysFor`.
 The sticky `.daf-colhead` animates `top` rather than `transform`, which the motion lens
 flagged as inconsistent with the bar. That is how it tracks `--bar-h` while staying
 `position: sticky`; converting it to a transform risks the dock the previous item just fixed.
+
+### Cycle 11 — pick a standard, don't special-case (2026-08-18)
+
+Cycle 10 got the ownership call right and the method wrong. Asked to look at the actual
+text, review what Sefaria does, and pick a standard, three things came out.
+
+**1. I had cited a source that contradicted my own data and not noticed.** Cycle 10 quoted
+Wikipedia's "Kinnim occupies folios 22a-25a" while also asserting Meilah ends on 22a —
+both can be true (22a carries the end of Meilah *and* the opening of Kinnim, which is
+ordinary in the Vilna), but I never reconciled them. Reconciled now, and it is what makes
+the rest fall out.
+
+**2. What Sefaria actually does.** There is no daf-addressed Kinnim on Sefaria at all —
+`/api/v2/index/Kinnim` returns *"No book named 'Kinnim'."* Only `Mishnah Kinnim` exists,
+addressed by Chapter:Mishnah with no folio mapping. So Sefaria's Talmud simply *skips*
+22b–25a, and its Daf Yomi calendar labels those days by Mishnah chapter — while labelling
+the Meilah handover day precisely `Meilah 22a`, the amud, not the daf. Sefaria does
+address 25b, and it addresses it as **Tamid 25b**. That settles ownership independently of
+Wikipedia.
+
+*(Checking that calendar also cleared a scare: a first pass suggested the site's Daf Yomi
+was a day behind Sefaria. That was my own bug — I built UTC dates against a site that
+works in local time. Corrected, the two agree exactly, today and across the whole volume.)*
+
+**3. The standard.** Cycle 10 fixed one boundary with an `if` and left the mirror image
+broken: **Meilah 22b showed "This amud isn't available."** — but 22b is not unavailable,
+it is where Kinnim begins. A third special case would have been the wrong answer to that.
+
+So the rule is now declared once, as data, and everything derives from it:
+
+```
+Meilah 2a–22a  ·  Kinnim 22a–25a  ·  Tamid 25b–33b  ·  Middos 34a–37b
+```
+
+*Daf Yomi names the daf; the printed volume names the page. A page belongs to the masechta
+whose text is printed on it, and a shared boundary page stays with the masechta whose daf
+number it is.* That last clause resolves 22a (Meilah's end and Kinnim's opening share it)
+to Meilah, which makes the navigable spans partition the volume exactly. `amudKeysFor` is
+now a range intersection over those spans instead of two hand-written exceptions.
+
+What changed on the page, beyond cycle 10: `Meilah 22 → ["22a"]` and
+`Kinnim 23 → ["22b","23a","23b"]`, so 22b is reachable under the masechta that is actually
+printed on it and says so.
+
+**A bug this shook out.** The short `read=Masechta|Amud` link form infers the daf from the
+amud with `parseInt`, which is wrong for exactly the pages this is about. It carried a
+hardcoded `masechta === "Tamid" && amud === "25b" ? 26` — which would have silently
+mis-resolved `Kinnim|22b`. Replaced with `JM.dafForAmud`, which asks the model. My first
+version of that helper was itself wrong (`amudKeysFor` answers for any number it is handed,
+so `Tamid 25` returned `["25b"]` and the lookup resolved 25b to daf 25); the daf range has
+to be checked. A test now covers every page in Shas resolving back to its own daf.
+
+**Tests: 41 → 44.** The spot-checks became properties: the volume partitions exactly (72
+amudim over 36 dapim, contiguous, no page claimed twice), every page resolves back to the
+daf that holds it, and no leaf in Shas answers to two masechtos. All three were
+negative-tested by reverting each fix in turn. Verified in the browser by walking the whole
+volume one amud at a time: 72 pages, 72 unique, zero gaps, Meilah 2a → Middos 37b, and the
+reverse walk retraces the forward walk exactly.

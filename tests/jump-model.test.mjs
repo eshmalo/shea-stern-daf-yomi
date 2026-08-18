@@ -16,20 +16,60 @@ test("Tamid daf 26 is a three-amud page — its Mishnah opens on Vilna 25b", () 
   assert.deepEqual(JM.amudKeysFor("Chullin", 102), ["102a", "102b"]);
 });
 
-test("Vilna 25b belongs to Tamid alone — Kinnim ends on 25a", () => {
-  // The Meilah volume is continuously paginated: Meilah's hadran is on 22a,
-  // Kinnim runs 22a-25a, Tamid opens on 25b. Daf Yomi names daf 25 for Kinnim,
-  // so 25b sits inside "Kinnim's" daf — but only one of them may claim the leaf
-  // or the reader meets it twice, blank under Kinnim then again under Tamid.
-  assert.deepEqual(JM.amudKeysFor("Kinnim", 25), ["25a"]);
+test("the shared Meilah volume is paginated by the printed book, not the daf number", () => {
+  // Meilah, Kinnim, Tamid and Middos are one continuously-paginated unit whose
+  // masechtos begin and end mid-daf: Meilah 2a-22a, Kinnim 22a-25a, Tamid
+  // 25b-33b, Middos 34a-37b. Daf Yomi still counts whole dapim, so 22b and 25b
+  // sit inside a daf named for the neighbour.
+  assert.deepEqual(JM.amudKeysFor("Meilah", 21), ["21a", "21b"]);
+  assert.deepEqual(JM.amudKeysFor("Meilah", 22), ["22a"]);          // Meilah's hadran is on 22a
+  assert.deepEqual(JM.amudKeysFor("Kinnim", 23), ["22b", "23a", "23b"]);
   assert.deepEqual(JM.amudKeysFor("Kinnim", 24), ["24a", "24b"]);
+  assert.deepEqual(JM.amudKeysFor("Kinnim", 25), ["25a"]);          // Kinnim ends on 25a
+  assert.deepEqual(JM.amudKeysFor("Tamid", 26), ["25b", "26a", "26b"]);   // Tamid's Mishnah opens on 25b
+  assert.deepEqual(JM.amudKeysFor("Tamid", 33), ["33a", "33b"]);
+  assert.deepEqual(JM.amudKeysFor("Middos", 34), ["34a", "34b"]);
+  // and a separately-paginated masechta is untouched by any of it
+  assert.deepEqual(JM.amudKeysFor("Chullin", 102), ["102a", "102b"]);
+});
+
+test("a bare amud resolves to the daf that actually holds it", () => {
+  // the short read=Masechta|Amud link form carries no daf, and parseInt is wrong
+  // exactly where a masechta's first daf opens on the previous daf's page
+  assert.equal(JM.dafForAmud("Tamid", "25b"), 26);
+  assert.equal(JM.dafForAmud("Kinnim", "22b"), 23);
+  assert.equal(JM.dafForAmud("Meilah", "22a"), 22);
+  assert.equal(JM.dafForAmud("Tamid", "26a"), 26);
+  assert.equal(JM.dafForAmud("Chullin", "102b"), 102);
+  assert.equal(JM.dafForAmud("Middos", "37b"), 37);
+  assert.equal(JM.dafForAmud("Chullin", "nonsense"), null);
+  // every page in Shas must resolve back to the daf whose list contains it
+  for (const m of DY.SHAS) for (let d = m.firstDaf; d <= m.lastDaf; d++)
+    for (const a of JM.amudKeysFor(m.en, d)) assert.equal(JM.dafForAmud(m.en, a), d, `${m.en} ${a}`);
+});
+
+test("the shared volume partitions exactly — every page once, under one masechta", () => {
+  // 36 dapim, 72 amudim, no gap and no page claimed twice. This is the property
+  // the two mid-daf boundaries have to preserve; spot-checking them is not enough.
+  const vol = DY.SHAS.filter(m => m.hb === 36).map(m => m.en);
+  assert.deepEqual(vol, ["Meilah", "Kinnim", "Tamid", "Middos"]);
+  const pages = vol.flatMap(en => JM.amudCatalog(en));
+  const rank = k => parseInt(k, 10) * 2 + (/b$/.test(k) ? 1 : 0);
+  assert.equal(new Set(pages).size, pages.length, "a page is claimed twice");
+  assert.equal(pages.length, 36 * 2, "the volume is 36 dapim");
+  const ranks = pages.map(rank);
+  assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b), "pages are out of printed order");
+  for (let i = 1; i < ranks.length; i++) assert.equal(ranks[i] - ranks[i - 1], 1, `gap before ${pages[i]}`);
+  assert.equal(pages[0], "2a");
+  assert.equal(pages[pages.length - 1], "37b");
+});
+
+test("stepping across the volume's mid-daf boundaries lands on the next real page", () => {
+  assert.deepEqual(JM.amudStep("Meilah", 22, "22a", 1), { masechta: "Kinnim", daf: 23, amud: "22b" });
+  assert.deepEqual(JM.amudStep("Kinnim", 23, "22b", -1), { masechta: "Meilah", daf: 22, amud: "22a" });
   assert.deepEqual(JM.amudStep("Kinnim", 25, "25a", 1), { masechta: "Tamid", daf: 26, amud: "25b" });
   assert.deepEqual(JM.amudStep("Tamid", 26, "25b", -1), { masechta: "Kinnim", daf: 25, amud: "25a" });
-  assert.equal(JM.amudCatalog("Kinnim").filter(a => a === "25b").length, 0);
-  assert.equal(JM.amudCatalog("Tamid").filter(a => a === "25b").length, 1);
-  // and no physical leaf in Shas answers to two masechtos. Masechtos that share
-  // a continuously-paginated volume share an `hb` id, so that is the grouping
-  // that makes "same leaf" mean the same printed page.
+  // and no leaf answers to two masechtos anywhere in Shas
   const seen = new Map();
   for (const m of DY.SHAS) for (const a of JM.amudCatalog(m.en)) {
     const leaf = `${m.hb}#${a}`;
@@ -42,9 +82,11 @@ test("a page list built for the picker never loses an amud", () => {
   // the grid is built from amudKeysFor, so every masechta's catalogue must be
   // exactly two per daf — except Tamid, which carries one more
   for (const m of DY.SHAS) {
-    // Tamid carries one extra (25b); Kinnim gives that same leaf up, so the pair
-    // nets to zero and the rest of Shas is exactly two amudim per daf.
-    const expected = (m.lastDaf - m.firstDaf + 1) * 2 + (m.en === "Tamid" ? 1 : 0) - (m.en === "Kinnim" ? 1 : 0);
+    // Every masechta is two amudim per daf except the two whose printed span ends
+    // mid-daf: Meilah gives up 22b and Tamid gains 25b. Across the shared volume
+    // that nets to zero — the partition test above proves it exactly.
+    const off = { Meilah: -1, Tamid: +1 }[m.en] || 0;
+    const expected = (m.lastDaf - m.firstDaf + 1) * 2 + off;
     assert.equal(JM.amudCatalog(m.en).length, expected, m.en);
   }
   assert.equal(JM.amudCatalog("Tamid")[0], "25b");

@@ -565,7 +565,7 @@ function routeFromHash() {
     const out = { name: "daf", id: val }, bits = String(params.get("read") || "").split("|");
     if (bits.length >= 2) {
       const masechta = bits[0], amud = bits[bits.length - 1];
-      const daf = bits.length >= 3 ? +bits[1] : (masechta === "Tamid" && amud === "25b" ? 26 : parseInt(amud, 10));
+      const daf = bits.length >= 3 ? +bits[1] : JM.dafForAmud(masechta, amud);   // a first daf can carry a page printed on the daf before
       const read = normalizeReadSnapshot({ masechta, daf, amud, mode: params.get("mode"), source: params.get("source") });
       if (read) out.read = read;
     }
@@ -3615,12 +3615,13 @@ function renderJumpDapim() {
     if (L[dafKey(m.en, d)]) cls.push("jp-learned");
     if (!shiurFor(m.en, d) && !adminPageMedia(`daf:${m.en}:${d}`)) cls.push("jp-ungiven");
     const g = window.HebCal ? window.HebCal.gematria(d) : d;
-    // Tamid daf 26 carries three amudim (its Mishnah opens on Vilna 25b), so
-    // the cell is built from amudKeysFor and grows a strip per extra amud.
+    // In the shared Meilah volume a masechta's first daf can carry a page printed
+    // on the daf before (Kinnim 23 opens on 22b, Tamid 26 on 25b), and its last daf
+    // can stop at א. The cell is built from amudKeysFor and grows or loses strips.
     const wide = strips.length > 1 ? ` style="grid-template-columns:1fr repeat(${strips.length},26px)"` : "";
     cells += `<div class="jp-cell${cls.length ? " " + cls.join(" ") : ""}"${wide}>` +
       `<button type="button" class="jp-n" data-jdaf="${d}" data-jmasechta="${esc(m.en)}" data-jamud="${esc(keys[0])}"` +
-      ` aria-label="${esc(m.en)} daf ${d}${keys[0] === "25b" ? ", opens on 25b" : ", amud alef"}${cls.includes("jp-learned") ? ", learned" : ""}${cls.includes("jp-today") ? ", today's daf" : ""}"${cls.includes("jp-here") ? ' aria-current="page"' : ""}>${esc(String(g))}</button>` +
+      ` aria-label="${esc(m.en)} daf ${d}${parseInt(keys[0], 10) !== d ? `, opens on ${keys[0]}` : ", amud alef"}${cls.includes("jp-learned") ? ", learned" : ""}${cls.includes("jp-today") ? ", today's daf" : ""}"${cls.includes("jp-here") ? ' aria-current="page"' : ""}>${esc(String(g))}</button>` +
       strips.map(k => `<button type="button" class="jp-b" data-jdaf="${d}" data-jmasechta="${esc(m.en)}" data-jamud="${esc(k)}" lang="he" aria-label="${esc(m.en)} daf ${d}, amud ${k.endsWith("b") ? "beis" : "alef"}">${k.endsWith("b") ? "ב" : "א"}</button>`).join("") +
       `</div>`;
   }
