@@ -2,186 +2,223 @@
   "Berachos": {
     "file": "data/daf/Berachos.json",
     "amudim": 125,
-    "kb": 2070
+    "kb": 2070,
+    "comm": true
   },
   "Shabbos": {
     "file": "data/daf/Shabbos.json",
     "amudim": 312,
-    "kb": 3789
+    "kb": 3789,
+    "comm": true
   },
   "Eruvin": {
     "file": "data/daf/Eruvin.json",
     "amudim": 207,
-    "kb": 2516
+    "kb": 2516,
+    "comm": true
   },
   "Pesachim": {
     "file": "data/daf/Pesachim.json",
     "amudim": 240,
-    "kb": 2976
+    "kb": 2976,
+    "comm": true
   },
   "Yoma": {
     "file": "data/daf/Yoma.json",
     "amudim": 173,
-    "kb": 1999
+    "kb": 1999,
+    "comm": true
   },
   "Sukkah": {
     "file": "data/daf/Sukkah.json",
     "amudim": 110,
-    "kb": 1159
+    "kb": 1159,
+    "comm": true
   },
   "Beitzah": {
     "file": "data/daf/Beitzah.json",
     "amudim": 78,
-    "kb": 930
+    "kb": 930,
+    "comm": true
   },
   "Rosh Hashanah": {
     "file": "data/daf/Rosh_Hashanah.json",
     "amudim": 67,
-    "kb": 808
+    "kb": 808,
+    "comm": true
   },
   "Taanis": {
     "file": "data/daf/Taanis.json",
     "amudim": 59,
-    "kb": 762
+    "kb": 762,
+    "comm": true
   },
   "Megillah": {
     "file": "data/daf/Megillah.json",
     "amudim": 61,
-    "kb": 976
+    "kb": 976,
+    "comm": true
   },
   "Moed Katan": {
     "file": "data/daf/Moed_Katan.json",
     "amudim": 55,
-    "kb": 758
+    "kb": 758,
+    "comm": true
   },
   "Chagigah": {
     "file": "data/daf/Chagigah.json",
     "amudim": 51,
-    "kb": 630
+    "kb": 630,
+    "comm": true
   },
   "Yevamos": {
     "file": "data/daf/Yevamos.json",
     "amudim": 242,
-    "kb": 3289
+    "kb": 3289,
+    "comm": true
   },
   "Kesubos": {
     "file": "data/daf/Kesubos.json",
     "amudim": 222,
-    "kb": 2582
+    "kb": 2582,
+    "comm": true
   },
   "Nedarim": {
     "file": "data/daf/Nedarim.json",
     "amudim": 180,
-    "kb": 1212
+    "kb": 1212,
+    "comm": true
   },
   "Nazir": {
     "file": "data/daf/Nazir.json",
     "amudim": 129,
-    "kb": 1076
+    "kb": 1076,
+    "comm": true
   },
   "Sotah": {
     "file": "data/daf/Sotah.json",
     "amudim": 96,
-    "kb": 1297
+    "kb": 1297,
+    "comm": true
   },
   "Gittin": {
     "file": "data/daf/Gittin.json",
     "amudim": 178,
-    "kb": 2245
+    "kb": 2245,
+    "comm": true
   },
   "Kiddushin": {
     "file": "data/daf/Kiddushin.json",
     "amudim": 162,
-    "kb": 2102
+    "kb": 2102,
+    "comm": true
   },
   "Bava Kamma": {
     "file": "data/daf/Bava_Kamma.json",
     "amudim": 236,
-    "kb": 3254
+    "kb": 3254,
+    "comm": true
   },
   "Bava Metzia": {
     "file": "data/daf/Bava_Metzia.json",
     "amudim": 235,
-    "kb": 2969
+    "kb": 2969,
+    "comm": true
   },
   "Bava Basra": {
     "file": "data/daf/Bava_Basra.json",
     "amudim": 350,
-    "kb": 3095
+    "kb": 3095,
+    "comm": true
   },
   "Sanhedrin": {
     "file": "data/daf/Sanhedrin.json",
     "amudim": 224,
-    "kb": 3400
+    "kb": 3400,
+    "comm": true
   },
   "Makkos": {
     "file": "data/daf/Makkos.json",
     "amudim": 46,
-    "kb": 642
+    "kb": 642,
+    "comm": true
   },
   "Shevuos": {
     "file": "data/daf/Shevuos.json",
     "amudim": 96,
-    "kb": 1221
+    "kb": 1221,
+    "comm": true
   },
   "Avodah Zarah": {
     "file": "data/daf/Avodah_Zarah.json",
     "amudim": 150,
-    "kb": 1691
+    "kb": 1691,
+    "comm": true
   },
   "Horayos": {
     "file": "data/daf/Horayos.json",
     "amudim": 25,
-    "kb": 432
+    "kb": 432,
+    "comm": true
   },
   "Zevachim": {
     "file": "data/daf/Zevachim.json",
     "amudim": 238,
-    "kb": 2865
+    "kb": 2865,
+    "comm": true
   },
   "Menachos": {
     "file": "data/daf/Menachos.json",
     "amudim": 217,
-    "kb": 2962
+    "kb": 2962,
+    "comm": true
   },
   "Chullin": {
     "file": "data/daf/Chullin.json",
     "amudim": 281,
-    "kb": 3390
+    "kb": 3390,
+    "comm": true
   },
   "Bechoros": {
     "file": "data/daf/Bechoros.json",
     "amudim": 119,
-    "kb": 1564
+    "kb": 1564,
+    "comm": true
   },
   "Arachin": {
     "file": "data/daf/Arachin.json",
     "amudim": 65,
-    "kb": 955
+    "kb": 955,
+    "comm": true
   },
   "Temurah": {
     "file": "data/daf/Temurah.json",
     "amudim": 65,
-    "kb": 935
+    "kb": 935,
+    "comm": true
   },
   "Kerisos": {
     "file": "data/daf/Kerisos.json",
     "amudim": 54,
-    "kb": 1010
+    "kb": 1010,
+    "comm": true
   },
   "Meilah": {
     "file": "data/daf/Meilah.json",
     "amudim": 41,
-    "kb": 386
+    "kb": 386,
+    "comm": true
   },
   "Tamid": {
     "file": "data/daf/Tamid.json",
     "amudim": 17,
-    "kb": 170
+    "kb": 170,
+    "comm": false
   },
   "Niddah": {
     "file": "data/daf/Niddah.json",
     "amudim": 143,
-    "kb": 2054
+    "kb": 2054,
+    "comm": true
   }
 }

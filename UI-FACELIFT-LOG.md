@@ -227,3 +227,87 @@ and transform changes do not re-measure. The skip link's *reveal* is therefore v
 by inspection of the served rule, not by measurement — everything else in these two
 cycles was measured. Worth knowing before trusting a future measurement of a `:focus` or
 `:hover` state in this environment.
+
+### Cycle 9 — the top bar was broken on every desktop page (2026-08-18)
+
+Grounded in a six-lens audit (states, a11y, responsive, motion, dead code, bug hunt) with
+every finding put to an adversarial verifier before it was allowed to count. 34 distinct
+findings, 15 verified; the ones below are the ones I then re-measured myself.
+
+**The top bar wrapped to two lines on every page except home.** Measured at 1280px: going
+from Today to any other route grew `.bar` from 65px to **89.03px** — the site's own Hebrew
+wordmark broke in half (34px → 68px) and the four nav labels split across two rows. Cause:
+the back button appears on every non-home route and asks for ~54px the 720px shell doesn't
+have, and nothing was protected against wrapping. Fixed with `white-space: nowrap` on the
+wordmark and the nav labels, `gap` 10px → 6px (the value `html.is-phone .bar` already used),
+and nav padding 9px → 6px. Now 65px and one row on every route, with 37.5px of slack left in
+the spacer.
+
+**And the sticky reading rail docked under it.** `--bar-h` was measured on load, on resize
+and in phone-view — never on navigation. So the rail stuck at a stale 65px while the real
+bar bottom sat at 89px: a 24px overlap band, on the rail that carries the daf title and the
+page-turn arrows. `updateBackBtn()` now re-measures; it is the one function every navigation
+path already calls. Verified: colhead `top` == bar bottom == 65px on the daf page.
+
+**Correctness the audit turned up, each re-read before fixing**
+- `announceAmud` pushed *"Reading position restored"* into the live region on **every** page
+  turn and picker jump. On a forward turn to an amud you have never seen, `restoreColScroll`
+  goes to the top — nothing is restored. It now announces what loaded.
+- The folio picker declared `aria-modal="false"` while being modal in every other respect —
+  full-viewport scrim, hard Tab trap, Escape to close — and never made `#app` inert, unlike
+  the menu and the reader. Both fixed; `#app`'s inert is left alone if a dialog that outranks
+  the picker is still up.
+- Closing the picker by its scrim was the one close path of five that stranded focus.
+- **The picker's "no match" state was invisible on every phone.** The message rendered into
+  the masechta pane, which a narrow panel hides (`display: none`, measured). Typing a typo
+  produced no feedback at all. It now also shows in the pane you are actually looking at,
+  scrolled into view — the grid is parked at the current daf, so the message needed pinning.
+- `pane.querySelectorAll(".jp-cell.jp-aim").forEach(n => n.classList.remove("aim"))` — the
+  class is `jp-aim`, so the aim highlight was **never cleared** and stale highlights piled up
+  across queries. Both call sites fixed. Verified: exactly one highlight after each query.
+- Today was the only route with no level-1 heading, so the app's own `focusPrimaryHeading()`
+  found nothing and silently did not move focus on the site's default page.
+- The section nav had no "you are here" at all. `aria-current` now follows the *section* —
+  a daf is still Shas, a parsha's shiurim are still Parsha — with a hairline under the label.
+- Sponsor form: changing the masechta updated state and repainted nothing.
+- Tamid took a **404 on every visit**: it has Gemara but no Rashi/Tosafos, and cycle 8's
+  guard keyed on whether a masechta has *text*. `_index.json` now carries a `comm` flag,
+  stamped from disk by `build/extract_commentary.py` (the script that actually knows). A
+  missing flag still means "ask", so an unstamped index behaves exactly as before.
+
+**Feel**
+- `.reader-bar .rd-ic`, `.tsize button`, `.bar .ic-btn` and `.menu-close` were the last flat
+  icon controls absent from the site's own press-state block — no tap feedback at all.
+- `.jp-x` and `.menu-close` declared no `transition`, so they snapped while their immediate
+  row-mates eased.
+- `.menu`'s slide was the only panel transform left on the browser-default `ease`.
+- `.prog-fill`'s `transition: width` could never fire — `[data-learn]` exists only on the daf
+  page (app.js:876) and that page has no progress bar, so nothing ever changed a bar's width
+  outside a full `innerHTML` swap. Replaced with a `@keyframes progGrow` entrance, which
+  keeps the correct width in the HTML at all times: no JS, no frame callback that could leave
+  the bar reading zero in a background tab.
+
+**Dead CSS removed** (each proved dead against every source, not just `app.js`): the `.editor`
+block (public editor removed in admin v2 — "editor" survives only in a comment), `.amud
+.amud-label`, `.boxcol-top` (`boxcol` is only ever used bare), `.reader-bar .rd-seg` (not one
+of the eight `rd-` classes app.js emits).
+
+**Regression checks** — 39/39 tests; playback verified across a picker jump (same `<audio>`
+node, still playing, clock 1.76s → 4.83s); the cycle-4 clipping sweep clean at 375/820/1280
+across every route (only hit is `.sr-only`, clipped by design); Tamid 26 still opens on 25b
+with all three amudim.
+
+### Open — needs the Rov, not a developer
+**Kinnim 25b and Tamid 25b are the same physical Vilna leaf under two identities.**
+`amudKeysFor("Kinnim", 25)` returns `["25a","25b"]` and `amudKeysFor("Tamid", 26)` returns
+`["25b","26a","26b"]`, so paging one amud at a time hits the same page twice — once blank
+under Kinnim, once with the Mishnah under Tamid. Real defect, verified live. **Not fixed on
+purpose:** the correct fix depends on where Kinnim's text actually ends in the Vilna Shas. If
+it ends on 25a, drop `25b` from Kinnim; if it runs onto 25b, then Tamid should not claim 25b
+and the fix is the exact opposite. Two opposite one-line changes, and guessing would encode a
+wrong claim about Shas pagination into a Torah site. Worth asking.
+
+### Deliberately not changed
+The sticky `.daf-colhead` animates `top` rather than `transform`, which the motion lens
+flagged as inconsistent with the bar. That is how it tracks `--bar-h` while staying
+`position: sticky`; converting it to a transform risks the dock the previous item just fixed.

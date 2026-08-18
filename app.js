@@ -288,9 +288,10 @@ async function loadDafText(masechta) {
 async function loadDafComm(masechta) {
   const key = fileKey(masechta);
   if (State.commCache[key]) return State.commCache[key];
-  // The index already knows which masechtos have no native text; asking for
-  // their commentary is a guaranteed 404 and a console error on every visit.
-  if (!State.dafIndex[masechta]) return (State.commCache[key] = {});
+  // The index knows which masechtos have no native text, and (once stamped by
+  // build/extract_commentary.py) which have text but no Rashi/Tosafos — Tamid.
+  // A missing flag means "not stamped yet", so we still ask rather than assume.
+  if (!State.dafIndex[masechta] || State.dafIndex[masechta].comm === false) return (State.commCache[key] = {});
   if (State.commPending[key]) return State.commPending[key];
   State.commPending[key] = fetch(`data/daf/${key}.comm.json`).then(r => r.ok ? r.json() : {})
     .then(d => { State.commCache[key] = d || {}; return State.commCache[key]; }).catch(() => ({}))
@@ -331,7 +332,7 @@ function renderShell() {
   <div class="sr-only" id="readStatus" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="reader" id="reader" role="dialog" aria-modal="true" aria-labelledby="rdTitle" hidden aria-hidden="true"></div>
   <div class="jp-scrim" id="jpScrim" hidden></div>
-  <aside class="jump-pop" id="dafJump" role="dialog" aria-modal="false" aria-label="Go to a daf" hidden></aside>`;
+  <aside class="jump-pop" id="dafJump" role="dialog" aria-modal="true" aria-label="Go to a daf" hidden></aside>`;
 
   $("#burger").onclick = openMenu; $("#mask").onclick = closeMenu;
   $("#searchBtn").onclick = () => route("search");
@@ -527,7 +528,7 @@ function goBack() {
   const [n, p] = parentRoute(State.route);
   route(n, p, { replace: true });
 }
-function updateBackBtn() { const b = $("#backBtn"); if (b) b.hidden = _navDepth <= 0 && State.route.name === "today"; }
+function updateBackBtn() { const b = $("#backBtn"); if (b) b.hidden = _navDepth <= 0 && State.route.name === "today"; setBarH(); }   // showing/hiding Back changes the bar's real height; the sticky rail docks to it
 // Remember the current page so a refresh returns to it (not Today). history.state
 // already survives reloads; sessionStorage is the fallback. Skipped inside the
 // phone-view iframe so it can't clobber the parent tab's saved page.
@@ -661,6 +662,22 @@ function pageTitle(r) {
   if (r.name === "masechta") return `${r.masechta} · Rabbi Shea Stern`;
   return "Rabbi Shea Stern · Daf Yomi";
 }
+// Which top-bar section a route belongs to. A daf is still "Shas" and a parsha's
+// shiurim are still "Parsha", so the nav marks the section you are inside rather
+// than only its landing page.
+const BAR_SECTION = {
+  browse: "browse", seder: "browse", masechta: "browse", daf: "browse",
+  parsha: "parsha", sefer: "parsha", parshaS: "parsha",
+  holidays: "holidays", holiday: "holidays", category: "holidays",
+  mystuff: "mystuff",
+};
+function syncBarNav(r) {
+  const sec = BAR_SECTION[r.name] || "";
+  $$(".bar-nav button").forEach(b => {
+    const on = b.dataset.route === sec;
+    if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+}
 function rerender({ skipSave = false } = {}) {
   closeJump();                                          // the picker is anchored to a rail this render may replace
   const v = $("#view"); if (!v) return;
@@ -672,7 +689,7 @@ function rerender({ skipSave = false } = {}) {
   resetReadMin();                                            // a fresh view starts with full top chrome
   const r = State.route;
   document.documentElement.classList.toggle("reading-view", r.name === "daf" || r.name === "parshaS");
-  document.title = pageTitle(r);
+  document.title = pageTitle(r); syncBarNav(r);
   const fn = { today: viewToday, browse: viewBrowse, seder: viewSeder, masechta: viewMasechta, daf: viewDaf, topics: viewTopics, parsha: viewParsha, sefer: viewSefer, parshaS: viewParshaShiurim, holidays: viewHolidays, holiday: viewHoliday, category: viewCategory, search: viewSearch, mystuff: viewMyStuff, sponsor: viewSponsor, about: viewAbout, donate: viewDonate }[r.name] || viewToday;
   v.innerHTML = `<div class="view">${fn(r)}</div>`;
   wireView(r);
@@ -754,7 +771,7 @@ function viewToday() {
     </div>
     <div class="today">
       <div class="eyebrow">Today's Daf</div>
-      <div class="he" lang="he">${esc(t.dy.he)} ${esc(heDaf(t.dy.daf))}</div>
+      <div class="he" lang="he" role="heading" aria-level="1">${esc(t.dy.he)} ${esc(heDaf(t.dy.daf))}</div>
       <div class="en">${esc(t.dy.masechta)} · Daf ${t.dy.daf}</div>
       <div class="date">${dateLine(todayStr())}</div>
       <div class="actions">${actions}</div>
@@ -1854,7 +1871,7 @@ function repairPagerFocus(box, activatedDir) {
   if (target && document.activeElement !== target) { try { target.focus({ preventScroll: true }); } catch { target.focus(); } }
 }
 function announceAmud(masechta, amud) {
-  const s = $("#readStatus"), text = `${masechta} ${amudLeaf(amud)}${amudSide(amud) === "right" ? "b" : "a"} loaded. Reading position restored.`;
+  const s = $("#readStatus"), text = `${masechta} ${amudLeaf(amud)}${amudSide(amud) === "right" ? "b" : "a"} loaded.`;   // an ordinary page turn restores nothing — don't claim it did
   if (s) s.textContent = text;
   const rs = $("#rdStatus"); if (rs) rs.textContent = text;
 }
@@ -2990,7 +3007,7 @@ function wireSponsor() {
     rerender();
   });
   const dt = $("#spDate"); if (dt) dt.onchange = () => { State.sponsor.date = dt.value; rerender(); };
-  const ms = $("#spMas"); if (ms) ms.onchange = () => { State.sponsor.masechta = ms.value; };
+  const ms = $("#spMas"); if (ms) ms.onchange = () => { State.sponsor.masechta = ms.value; rerender(); };
   // typed fields persist in State.sponsor — navigating away and back loses nothing
   const wireField = (id, key) => { const n = $(id); if (n) n.oninput = () => { State.sponsor[key] = n.value; const pv = $("#spPreview"); if (pv) pv.textContent = sponsorBody(); }; };
   wireField("#spFor", "forName"); wireField("#spFrom", "fromName"); wireField("#spEmail", "email");
@@ -3254,7 +3271,7 @@ function buildJump() {
       <div class="jp-pane jp-daf" id="jpDaf" role="group" aria-label="Daf"></div>
     </div>`;
   $("#jpClose").onclick = () => closeJump({ restoreFocus: true });
-  const scrim = $("#jpScrim"); if (scrim) scrim.onclick = () => closeJump();
+  const scrim = $("#jpScrim"); if (scrim) scrim.onclick = () => closeJump({ restoreFocus: true });
   const q = $("#jpQ");
   q.oninput = () => runJumpQuery(q.value);
   q.onkeydown = e => {
@@ -3338,6 +3355,7 @@ function openJump(trigger) {
   pop.classList.toggle("pick-daf", pop.classList.contains("jp-narrow"));
   renderJumpRight();                                   // re-measure scroll now the pane is actually visible
   jumpTrack(true);
+  $("#app")?.setAttribute("inert", "");                 // the scrim and the Tab trap already made this modal; the a11y tree has to agree
   const narrow = pop.classList.contains("jp-narrow");
   setTimeout(() => (narrow ? $("#jpDaf .jp-cell.jp-here .jp-n") || $("#jpDaf .jp-cell .jp-n") : $("#jpQ"))?.focus(), 0);
   announceJumpOpen(kind);
@@ -3349,6 +3367,7 @@ function closeJump({ restoreFocus = false } = {}) {
   const scrim = $("#jpScrim"); if (scrim) scrim.hidden = true;
   jumpTrack(false);
   $$("[data-dafjump][aria-expanded='true']").forEach(b => b.setAttribute("aria-expanded", "false"));
+  if (!Reader.open && !$("#menu")?.classList.contains("open")) $("#app")?.removeAttribute("inert");   // leave it set if a dialog that outranks us is still up
   const opener = Jump._opener; Jump._opener = null;
   if (restoreFocus && opener?.isConnected) { try { opener.focus({ preventScroll: true }); } catch { opener.focus(); } }
 }
@@ -3620,6 +3639,23 @@ function selectJumpMasechta(en) {
 }
 // "chullin 102b" · "חולין קב:" · "בבא מציעא 8" · a bare number inside the
 // masechta you're already in. A resolved reference aims the grid; Enter takes it.
+// The masechta/sefer pane carries the "no match" line, but a narrow panel shows
+// one pane at a time and hides that one — so the pane the reader is actually
+// looking at has to say it too. Inserted beside the grid, never over it, so the
+// list stays put and the next keystroke has something to highlight.
+function showJumpNoMatch(on, q) {
+  const pane = $("#jpDaf"); if (!pane) return;
+  const existing = pane.querySelector(".jp-nomatch");
+  if (!on) { existing?.remove(); return; }
+  const n = existing || document.createElement("p");
+  if (!existing) {
+    n.className = "jp-empty jp-nomatch";
+    const hint = pane.querySelector(".jp-hint");
+    if (hint) hint.after(n); else pane.prepend(n);
+    pane.scrollTop = 0;                                // the grid is parked at the current daf; the message sits above it
+  }
+  n.textContent = `Nothing matches \u201C${q}\u201D.`;
+}
 function runJumpQuery(q) {
   Jump.q = q || "";
   if (Jump.kind === "torah") return runTorahQuery();
@@ -3629,7 +3665,8 @@ function runJumpQuery(q) {
   // whole thing — "bava metzia 8b" must narrow to Bava Metzia, not empty the list.
   renderJumpMasechtos(hit ? hit.name : Jump.q, !!hit);
   const pane = $("#jpDaf"); if (!pane) return;
-  pane.querySelectorAll(".jp-cell.jp-aim").forEach(n => n.classList.remove("aim"));
+  pane.querySelectorAll(".jp-cell.jp-aim").forEach(n => n.classList.remove("jp-aim"));
+  showJumpNoMatch(!hit && !!Jump.q.trim(), Jump.q.trim());
   if (!hit || !hit.daf) return;
   const cell = pane.querySelector(`.jp-n[data-jdaf="${hit.daf}"]`)?.closest(".jp-cell");
   if (cell) { cell.classList.add("jp-aim"); pane.scrollTop = Math.max(0, cell.offsetTop - pane.clientHeight / 2); }
@@ -3641,7 +3678,8 @@ function runTorahQuery() {
   if (sefer && sefer !== Jump.sefer) { Jump.sefer = sefer; renderJumpParshiyos(); }
   renderJumpChumashim();
   const pane = $("#jpDaf"); if (!pane) return;
-  pane.querySelectorAll(".jp-cell.jp-aim").forEach(n => n.classList.remove("aim"));
+  pane.querySelectorAll(".jp-cell.jp-aim").forEach(n => n.classList.remove("jp-aim"));
+  showJumpNoMatch(!hit && !!Jump.q.trim(), Jump.q.trim());
   if (!hit) return;
   const cell = pane.querySelector(`.jp-n[data-jparsha="${CSS.escape(hit.parsha)}"]`)?.closest(".jp-cell");
   if (cell) { cell.classList.add("jp-aim"); pane.scrollTop = Math.max(0, cell.offsetTop - pane.clientHeight / 2); }

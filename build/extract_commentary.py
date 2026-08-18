@@ -104,6 +104,24 @@ def main():
         print(f"  {myname:16} {len(amudim):4} amudim  rashi:{nr:5} tosafos:{nt:5}  {kb:6} KB")
 
     print(f"\ncommentary -> {OUT}  ({total_kb/1024:.1f} MB total)")
+
+    # Tell the app which masechtos actually have a .comm.json. extract_daf_text.py
+    # owns the index but runs before this script, so it cannot know; without the
+    # flag the app fetches a file that isn't there (Tamid has Gemara but no
+    # Rashi/Tosafos) and takes a 404 on every visit. Stamped from disk, so it is
+    # correct even when this script is run with --only.
+    index_path = os.path.join(OUT, "_index.json")
+    if os.path.exists(index_path):
+        index = json.load(open(index_path))
+        for myname, entry in index.items():
+            if not isinstance(entry, dict):
+                continue
+            key = myname.replace(" ", "_")
+            entry["comm"] = os.path.exists(os.path.join(OUT, key + ".comm.json"))
+        json.dump(index, open(index_path, "w"), ensure_ascii=False, indent=2)
+        missing = [m for m, e in index.items() if isinstance(e, dict) and not e["comm"]]
+        print(f"index stamped: {len(index)} entries, no commentary for {missing or 'none'}")
+
     print("Source: Rashi + Tosafos, Vilna Edition (public domain), via Sefaria.")
 
 
