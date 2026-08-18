@@ -599,3 +599,76 @@ now unit-tested, and Tamid's three-amud daf 26 is encoded once for every caller.
 **Known limits:** the parsha rail (`parshaColHead`) does not carry the picker — see
 `DAF-PICKER-PLAN.md` §12 phase 3, which is deliberately not built: there is no in-place
 parsha swap, so a parsha jump would route and restart an in-page video.
+
+---
+
+## Feature build — the picker on the parsha rail (2026-08-18)
+
+Phase 3 of `DAF-PICKER-PLAN.md`, which the first build deliberately left out. The
+plan's objection was that a parsha jump would have to `route()` and restart an
+in-page video. Rather than ship that, the in-place parsha swap it was waiting for
+was built, so the Chumash rail now carries the same guarantee as the daf rail.
+
+**What shipped.** The Chumash running head opens the same panel: five seforim and
+their parshiyos. Choosing one re-hydrates the reading surface in place — no
+`route()`, so audio and video keep playing. The Torah reading position became a
+real snapshot (`sefer` + `parsha`), rides the URL as `&pread=Sefer|Parsha`, and is
+restored on reload, exactly as the daf's `&read=` does.
+
+**Files:** `jump-model.js` (+`torahIndex`, `torahNowTarget`, `secondaryLatest`),
+`app.js`, `styles.css`, `tests/jump-model.test.mjs` (+8), `index.html`.
+
+**No sedra calculation.** The daf side's button says "today's daf" because
+`DY.dafForDate` is exact. There is no equivalent for the parsha: computing the
+weekly sedra needs leap years, combined parshiyos and an Israel/diaspora split
+that this site does not model, and a wrong parsha on a Rov's page is not a risk
+worth taking for a convenience button. The Chumash button therefore offers the
+Rov's own most recent parsha shiur and calls it "Latest shiur" — real data,
+labelled as what it is. A true weekly-sedra calculation remains open work.
+
+**Automated:** 39 tests pass (25 new across both builds + 14 pre-existing).
+
+**Manual QA — verified in the browser:**
+1. Parsha jump with a shiur playing: the persistent `<audio>` is the same element,
+   same src, player bar up, `Player.lec` unchanged. ✔
+2. Page header stays on the parsha you were on; the rail and `&pread=` move. ✔
+3. Full-screen Torah reader carries the trigger; jumping there works and closing
+   the reader now brings the parsha home with it. ✔
+4. Typed queries: `shoftim`, `שופ`, `Eikev`, `Beha'aloscha`, `devarim`, `noach`
+   (swings across seforim). ✔
+5. Tamid's three-amud daf and the daf side's behaviour are unregressed. ✔
+
+**Responsive pass (all measured, both rails, with a shiur playing):**
+
+| Viewport | Panel | Layout |
+|---|---|---|
+| 320×568 | 300×344 | one pane, 3-across, clears player |
+| 390×844 | 370×520 | one pane, 4-across / 1-across list |
+| 744×1133 | 520×460 | two panes, 6-across |
+| 1280×900 | 600×360 | two panes, 7-across |
+| 844×390 (landscape) | 520×126 | two panes, find field hidden, clears player |
+
+No horizontal page scroll and no clipped names at any size.
+
+**Defects found and fixed:**
+- **`.today` class collision — this one was live in production.** The site has a
+  global `.today` card (`styles.css:161`, the home page's Today's Daf block). The
+  daf picker shipped this morning marked today's daf with a bare `today` class, so
+  that cell inherited the card's padding, borders and background — it rendered
+  ~2× the height of its neighbours. Every picker state class is now namespaced
+  (`jp-here`, `jp-today`, `jp-learned`, `jp-ungiven`, `jp-aim`).
+- Parsha rows were being re-columned by the daf grid's width and pointer rules
+  (equal specificity, later source order). A parsha row is now `display: block`,
+  and every daf-grid rule is scoped `:not(.jp-prow)`.
+- The panel's internal layout keyed off `html.is-phone`, which reaches to 960px,
+  so a tablet got the edge-to-edge phone panel. It now keys off the panel's own
+  measured width (`jp-narrow` / `jp-wide`) — the only signal that distinguishes a
+  phone, a tablet, and the desktop "Phone view" preview.
+- On a small screen the panel could only claim ~200px because the rail sat
+  mid-viewport. It now docks the rail first, and on a landscape phone also
+  collapses the site header, the same way reading does.
+- The 200px minimum height made the panel overlap the transport bar in landscape.
+  Lowered to 120px: a short panel that scrolls beats one sitting on play/pause.
+- `syncInpageTorah` bailed when the reader's parsha differed from the page's — it
+  was written when the reader could not change parsha. It now carries the parsha
+  home, as the daf reader always has.

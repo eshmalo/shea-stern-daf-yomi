@@ -167,3 +167,87 @@ test("no player and no today's daf yields nothing to point at", () => {
   assert.equal(JM.nowTarget({ playerUp: false, today: null }), null);
   assert.equal(JM.nowTarget({ playerUp: true, lecDaf: { masechta: "Nope", daf: 4 }, today: null }), null);
 });
+
+/* ---------- the Chumash side ---------- */
+
+// The same shape app.js hands in, trimmed to two seforim for the test.
+const CHUMASHIM = [
+  { en: "Bamidbar", he: "במדבר", parshiyos: [["Bamidbar", "במדבר"], ["Naso", "נשא"], ["Be'halot'cha", "בהעלותך"], ["Chukat", "חקת"], ["Matot", "מטות"], ["Masay", "מסעי"]] },
+  { en: "Devarim", he: "דברים", parshiyos: [["Devarim", "דברים"], ["V'etchanan", "ואתחנן"], ["Ekev", "עקב"], ["Re'eh", "ראה"], ["Shoftim", "שופטים"], ["Ki Tetzei", "כי תצא"], ["V'Zot Haberacha", "וזאת הברכה"]] },
+];
+const DISPLAY = { "Be'halot'cha": "Beha'aloscha", Chukat: "Chukas", Matot: "Matos", Masay: "Masei",
+  "V'etchanan": "Va'eschanan", Ekev: "Eikev", "Ki Tetzei": "Ki Seitzei", "V'Zot Haberacha": "V'Zos Habracha" };
+const T = JM.torahIndex(CHUMASHIM, DISPLAY);
+
+test("the Chumash index is flat, ordered, and carries both spellings", () => {
+  assert.equal(T.list.length, 13);
+  assert.equal(T.list[0].parsha, "Bamidbar");
+  assert.equal(T.byParsha["Ekev"].sefer, "Devarim");
+  assert.equal(T.byParsha["Ekev"].display, "Eikev");
+  assert.equal(T.byParsha["Ekev"].he, "עקב");
+  assert.equal(T.byParsha["Naso"].display, "Naso");     // no override means the key stands
+});
+
+test("a parsha is found by either spelling, by Hebrew, or by prefix", () => {
+  const p = s => T.find(s)?.parsha;
+  assert.equal(p("Shoftim"), "Shoftim");
+  assert.equal(p("shof"), "Shoftim");
+  assert.equal(p("שופטים"), "Shoftim");
+  assert.equal(p("שופ"), "Shoftim");
+  assert.equal(p("Eikev"), "Ekev");                     // the site's yeshivish spelling
+  assert.equal(p("Ekev"), "Ekev");                      // the library's internal key
+  assert.equal(p("Beha'aloscha"), "Be'halot'cha");
+  assert.equal(p("behalot"), "Be'halot'cha");           // punctuation is ignored
+  assert.equal(p("Ki Seitzei"), "Ki Tetzei");
+  assert.equal(p("V'Zos Habracha"), "V'Zot Haberacha");
+  assert.equal(T.find("zzz"), null);
+  assert.equal(T.find(""), null);
+});
+
+test("a sefer named on its own selects it without picking a parsha", () => {
+  assert.equal(T.findSefer("Devarim"), "Devarim");
+  assert.equal(T.findSefer("דברים"), "Devarim");
+  assert.equal(T.findSefer("bamid"), "Bamidbar");
+  assert.equal(T.findSefer("z"), null);                 // one letter is not a name
+  // "Devarim" is both a sefer and a parsha; the parsha lookup still resolves it
+  assert.equal(T.find("Devarim").parsha, "Devarim");
+});
+
+const latest = { sefer: "Devarim", parsha: "Shoftim" };
+const playingP = { sefer: "Devarim", parsha: "Ekev" };
+
+test("the Chumash button is the playing parsha, else the Rov's latest shiur", () => {
+  const a = JM.torahNowTarget({ playerUp: true, playing: playingP, latest, video: true });
+  assert.equal(a.kind, "now");
+  assert.equal(a.parsha, "Ekev");
+  assert.equal(a.video, true);
+  assert.equal(a.alsoLatest, false);
+
+  const b = JM.torahNowTarget({ playerUp: false, playing: playingP, latest });
+  assert.equal(b.kind, "latest");
+  assert.equal(b.parsha, "Shoftim");
+  assert.equal(b.alsoLatest, true);
+});
+
+test("playing the latest parsha shiur collapses the two into one button", () => {
+  const input = { playerUp: true, playing: latest, latest, paused: true };
+  const t = JM.torahNowTarget(input);
+  assert.equal(t.alsoLatest, true);
+  assert.equal(t.paused, true);
+  assert.equal(JM.secondaryLatest(input, t), null);
+});
+
+test("the latest shiur stays one tap away while something else plays", () => {
+  const input = { playerUp: true, playing: playingP, latest };
+  assert.deepEqual(JM.secondaryLatest(input, JM.torahNowTarget(input)), { kind: "latest", sefer: "Devarim", parsha: "Shoftim" });
+});
+
+test("the Chumash button knows when you are already there", () => {
+  const t = JM.torahNowTarget({ playerUp: true, playing: playingP, latest, reading: { kind: "torah", sefer: "Devarim", parsha: "Ekev" } });
+  assert.equal(t.here, true);
+});
+
+test("a shiur that names no parsha falls through to the latest", () => {
+  assert.equal(JM.torahNowTarget({ playerUp: true, playing: null, latest }).kind, "latest");
+  assert.equal(JM.torahNowTarget({ playerUp: false, latest: null }), null);
+});

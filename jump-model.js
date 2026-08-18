@@ -139,6 +139,50 @@
     return { masechta, daf, amud: keys.indexOf(want) >= 0 ? want : keys[0], name };
   }
 
+  /* ---------- the Chumash side ----------
+     The picker serves the parsha rail too, so the same shapes are needed for
+     Torah: a flat, searchable index of the parshiyos and the same
+     what-should-the-button-point-at question. The Chumash tables live in
+     app.js next to everything else that uses them, so they are handed in
+     rather than duplicated here — that keeps this module pure and keeps one
+     copy of the data. */
+
+  // chumashim: [{ en, he, parshiyos: [[en, he], …] }]   display: { internalEn: yeshivishEn }
+  function torahIndex(chumashim, display) {
+    const list = [];
+    (chumashim || []).forEach(s => (s.parshiyos || []).forEach(([en, he], i) => {
+      list.push({ sefer: s.en, seferHe: s.he, parsha: en, he, display: (display && display[en]) || en, order: list.length, inSefer: i });
+    }));
+    const byParsha = Object.fromEntries(list.map(p => [p.parsha, p]));
+    const norm = s => String(s == null ? "" : s).toLowerCase().replace(/['’`."]/g, "").replace(/\s+/g, " ").trim();
+    // Every way someone might name a parsha: the internal key, the yeshivish
+    // spelling the site shows, the Hebrew, or a prefix of any of them.
+    function find(text) {
+      const q = norm(text); if (!q) return null;
+      const raw = String(text == null ? "" : text).trim();
+      const exact = list.find(p => norm(p.parsha) === q || norm(p.display) === q || p.he === raw);
+      if (exact) return exact;
+      const he = raw.length >= 2 ? list.find(p => p.he.indexOf(raw) === 0) : null;
+      if (he) return he;
+      if (q.length >= 2) {
+        const pre = list.find(p => norm(p.parsha).indexOf(q) === 0 || norm(p.display).indexOf(q) === 0);
+        if (pre) return pre;
+        const mid = list.find(p => norm(p.parsha).includes(q) || norm(p.display).includes(q));
+        if (mid) return mid;
+      }
+      return null;
+    }
+    // A sefer named on its own selects it without picking a parsha.
+    function findSefer(text) {
+      const q = norm(text); if (!q || q.length < 2) return null;
+      const raw = String(text == null ? "" : text).trim();
+      const s = (chumashim || []).find(x => norm(x.en) === q || x.he === raw)
+        || (chumashim || []).find(x => norm(x.en).indexOf(q) === 0 || x.he.indexOf(raw) === 0);
+      return s ? s.en : null;
+    }
+    return { list, byParsha, find, findSefer };
+  }
+
   /* ---------- the picker's one built-in button ---------- */
 
   // What the button at the head of the picker points at: the daf now loaded in
@@ -165,8 +209,30 @@
     return { kind: "today", masechta: today.masechta, daf: +today.daf };
   }
 
+  // The Chumash answer to nowTarget. There is no "today's parsha" on this site:
+  // computing the weekly sedra needs a real calendar (leap years, combined
+  // parshiyos, Israel vs diaspora) that the site does not have, and guessing it
+  // on a Rov's page is not worth the risk. So the honest fallback is the Rov's
+  // own most recent parsha shiur — real data, labelled as what it is.
+  function torahNowTarget(input) {
+    const i = input || {};
+    let t = null;
+    if (i.playerUp && i.playing) t = { kind: "now", sefer: i.playing.sefer, parsha: i.playing.parsha, video: !!i.video, paused: !!i.paused };
+    else if (i.latest) t = { kind: "latest", sefer: i.latest.sefer, parsha: i.latest.parsha, video: false, paused: false };
+    if (!t) return null;
+    t.alsoLatest = !!(i.latest && i.latest.parsha === t.parsha);
+    t.here = !!(i.reading && i.reading.parsha === t.parsha);
+    return t;
+  }
+  function secondaryLatest(input, target) {
+    const latest = input && input.latest;
+    if (!target || target.kind !== "now" || target.alsoLatest || !latest) return null;
+    return { kind: "latest", sefer: latest.sefer, parsha: latest.parsha };
+  }
+
   root.DafJumpModel = Object.freeze({
     amudKeysFor, dafStep, amudStep, amudCatalog, isAdjacent, validDaf,
     gematriaValue, findMasechta, parseJumpQuery, nowTarget, secondaryToday,
+    torahIndex, torahNowTarget, secondaryLatest,
   });
 })(typeof window !== "undefined" ? window : globalThis);

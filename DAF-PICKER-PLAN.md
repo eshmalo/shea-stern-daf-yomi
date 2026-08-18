@@ -1,7 +1,8 @@
 # Folio picker — tap the running head to go to any daf
 
-**Status: BUILT and verified, 2026-08-18** — phases 0, 1, 2 and 4. Phase 3 (the parsha
-rail) is deliberately not built; see §12. Manual-QA record, and the five defects this
+**Status: BUILT and verified, 2026-08-18** — all five phases, including phase 3 (the
+parsha rail), which shipped in a second pass together with the in-place parsha swap
+this plan said it was waiting for. §12's caveat is therefore resolved, not accepted. Manual-QA record, and the five defects this
 build's own QA found and fixed: `QA-HARDENING-LOG.md`, "Feature build — folio picker".
 Everything below is the plan as written beforehand; where the build departed from it,
 a **Built:** note says how.

@@ -440,6 +440,11 @@ function normalizeTorahSnapshot(read) {
   if (!read || typeof read !== "object") return null;
   const mode = read.mode === "he" ? "he" : "daf", source = DAF_SOURCE_KEYS.has(read.source) ? read.source : "gemara";
   const out = { mode, source };
+  // Which parsha is on the reading surface. Like the daf's read snapshot this
+  // is independent of the page you are on, so the picker can move the text
+  // without touching the route — and therefore without stopping a shiur.
+  const known = CHUMASHIM.some(s => s.en === read.sefer && s.parshiyos.some(([en]) => en === read.parsha));
+  if (known) { out.sefer = read.sefer; out.parsha = read.parsha; }
   if (Number.isFinite(+read.y) && +read.y >= 0) out.y = +read.y;
   if (Number.isFinite(+read.at) && +read.at > 0) out.at = +read.at;
   if (read.anchor && /^\d+-\d+$/.test(String(read.anchor.ref || ""))) {
@@ -463,7 +468,10 @@ function hashFor(r) {
     case "sefer": return "#sefer=" + enc(r.sefer || "");
     case "parshaS": {
       let hash = "#parsha=" + enc(r.parsha || ""), torah = normalizeTorahSnapshot(r.torah);
-      if (torah) hash += "&pmode=" + enc(torah.mode) + "&psource=" + enc(torah.source);
+      if (torah) {
+        if (torah.parsha && torah.parsha !== r.parsha) hash += "&pread=" + enc(`${torah.sefer}|${torah.parsha}`);
+        hash += "&pmode=" + enc(torah.mode) + "&psource=" + enc(torah.source);
+      }
       return hash;
     }
     case "holidays": return "#yomtov";
@@ -563,8 +571,12 @@ function routeFromHash() {
   if (kind === "sefer") return { name: "sefer", sefer: val };
   if (kind === "parsha") {
     const out = { name: "parshaS", parsha: val };
-    const torah = normalizeTorahSnapshot({ mode: params.get("pmode"), source: params.get("psource") });
-    if (params.has("pmode") || params.has("psource")) out.torah = torah;
+    const bits = String(params.get("pread") || "").split("|");
+    const torah = normalizeTorahSnapshot({
+      mode: params.get("pmode"), source: params.get("psource"),
+      sefer: bits.length === 2 ? bits[0] : undefined, parsha: bits.length === 2 ? bits[1] : undefined,
+    });
+    if (params.has("pmode") || params.has("psource") || params.has("pread")) out.torah = torah;
     return out;
   }
   if (kind === "holiday") return { name: "holiday", series: val };
@@ -1565,7 +1577,7 @@ function commitDafReadState() {
 function commitTorahReadState() {
   if (Reader.open) { if (Reader.kind === "torah") commitReaderHistoryState(); return; }
   const box = $("#parshaText"); if (!box || State.route?.name !== "parshaS") return;
-  const torah = normalizeTorahSnapshot({ mode: box.dataset.mode, source: State._parCol, y: window.scrollY || 0, anchor: parshaScrollAnchor(box), at: Date.now() });
+  const torah = normalizeTorahSnapshot({ mode: box.dataset.mode, source: State._parCol, sefer: box.dataset.sefer, parsha: box.dataset.parsha, y: window.scrollY || 0, anchor: parshaScrollAnchor(box), at: Date.now() });
   State.route = { ...State.route, torah };
   try { history.replaceState({ ...(history.state || {}), route: State.route, sponsor: State.sponsor, depth: _navDepth, y: window.scrollY || 0, at: Date.now() }, "", urlFor(State.route)); } catch {}
   persistRoute();
@@ -2005,13 +2017,18 @@ function syncInpageRead(masechta, daf, amud, mode) {
   hydrateDaf();   // re-renders #dafText incl. the flip arrows; no separate UI step needed
 }
 async function syncInpageTorah(sefer, parsha, mode, anchor) {
-  const box = $("#parshaText"); if (!box || box.dataset.sefer !== sefer || box.dataset.parsha !== parsha) return;
+  const box = $("#parshaText"); if (!box) return;
   mode = mode || State._parMode || "daf"; State._parMode = mode;
   $$("#parshaMode button").forEach(x => { const on = x.dataset.pmode === mode; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
-  const needsPaint = box.dataset.mode !== mode;
+  // The reader can now move between parshiyos (the picker rides its rail too),
+  // so closing it carries the parsha home the way the daf reader always has —
+  // this used to bail on a mismatch, which left the page a parsha behind.
+  const moved = box.dataset.sefer !== sefer || box.dataset.parsha !== parsha;
+  if (moved) { box.dataset.sefer = sefer; box.dataset.parsha = parsha; }
+  const needsPaint = moved || box.dataset.mode !== mode;
   box.dataset.mode = mode;
   if (needsPaint) await hydrateParsha(); else applyDafCol(box);
-  restoreColScroll(State._parCol || "gemara", false, undefined, anchor || null);
+  restoreColScroll(State._parCol || "gemara", moved, undefined, moved ? null : (anchor || null));
   requestAnimationFrame(commitTorahReadState);
   // Closing the modal reveals a site header whose sticky offset settles over a
   // short CSS transition. Re-apply the semantic verse once that chrome is still
@@ -2170,12 +2187,14 @@ function renderTorahReader() {
   const body = $("#rdBody");
   let bodyControlIntent = null;
   const rememberControlIntent = e => {
-    const control = e.target.closest("[data-dcol]");
+    const control = e.target.closest("[data-dcol], [data-dafjump]");
     if (control) { bodyControlIntent = pagerIntent(control); lockReadMin(bodyControlIntent.fallbackY); }
   };
   body.onpointerdown = rememberControlIntent;
   body.onmousedown = e => { if (!bodyControlIntent) rememberControlIntent(e); if (e.target.closest("[data-dcol]")) e.preventDefault(); };
   body.onclick = e => {
+    const j = e.target.closest("[data-dafjump]");
+    if (j) { e.preventDefault(); bodyControlIntent = null; toggleJump(j); return; }
     const c = e.target.closest("[data-dcol]");
     if (c) { const intent = bodyControlIntent; bodyControlIntent = null; selectDafCol(c.dataset.dcol, intent); }
   };
@@ -2365,6 +2384,7 @@ const pDisp = en => PARSHA_DISPLAY[en] || en;
 const sDisp = en => SEFER_DISPLAY[en] || en;
 // Every parsha in Torah order, with its sefer — for prev/next navigation.
 const PARSHA_LIST = CHUMASHIM.flatMap(s => s.parshiyos.map(([en]) => ({ sefer: s.en, parsha: en })));
+const TORAH = JM.torahIndex(CHUMASHIM, PARSHA_DISPLAY);   // flat, searchable — the picker's Chumash side
 const parshaStep = (en, dir) => { const i = PARSHA_LIST.findIndex(p => p.parsha === en); return i < 0 ? null : PARSHA_LIST[i + dir] || null; };
 /* Chumash text (with Rashi + Onkelos), extracted from our own Sefaria mirror by
    build/extract_torah.py — loaded lazily per sefer, rendered like the daf. */
@@ -2478,6 +2498,10 @@ function viewParshaShiurim(r) {
   const admin = pageMediaHtml(pk) + worksheetsHtml(pk);   // gate the empty-state on what actually rendered
   const read = normalizeTorahSnapshot(r.torah), mode = read?.mode || State._parMode || "daf";
   State._parMode = mode; State._parCol = read?.source || State._parCol || "gemara";
+  // The parsha being READ can differ from the parsha this page is about, exactly
+  // as the daf page's folio can sit anywhere in Shas while its shiur plays.
+  const readSefer = read?.sefer && read?.parsha ? read.sefer : (sef ? sef.en : "");
+  const readParsha = read?.sefer && read?.parsha ? read.parsha : r.parsha;
   const text = sef ? `
     <div class="daf-toolbar">
       ${parshaModeSegHtml("parshaMode", mode, "pmode")}
@@ -2485,7 +2509,7 @@ function viewParshaShiurim(r) {
       <button class="fs-btn" id="parshaFsBtn" aria-label="Read Torah full screen" title="Read full screen — a focused source at a time">${svgExpand(14)}<span class="fs-lbl">Full screen</span></button>
     </div>
     <div class="daf-read">
-      <div id="parshaText" role="region" aria-label="Torah text" aria-busy="true" data-sefer="${esc(sef.en)}" data-parsha="${esc(r.parsha)}" data-mode="${mode}"><div class="daf-loading">Loading the parsha…</div></div>
+      <div id="parshaText" role="region" aria-label="Torah text" aria-busy="true" data-sefer="${esc(readSefer)}" data-parsha="${esc(readParsha)}" data-mode="${mode}"><div class="daf-loading">Loading the parsha…</div></div>
     </div>` : "";
   return crumbs([["Chumash", "parsha"], [sef ? sef.he : "", "sefer", { sefer: sef ? sef.en : "" }]], esc(parshaHe(r.parsha))) +
     boxHead(esc(parshaHe(r.parsha)), pDisp(r.parsha), false, sef ? ["sefer", { sefer: sef.en }] : ["parsha", {}]) +
@@ -2507,7 +2531,7 @@ const PARSHA_COL_ARIA = { tosafos: 'פירוש רש"י', gemara: "חומש", ras
 function parshaColHead(parsha, chapters, mode) {
   const opts = chapters.map(n => `<option value="${n}">פרק ${heNum(n)}</option>`).join("");
   return `<div class="daf-colhead parsha-colhead mode-${mode}">
-    <div class="daf-flip-row"><span class="daf-flip-lbl" lang="he">${esc(parshaHe(parsha))}</span><button class="rail-fs" data-parsha-fullscreen aria-label="Read Torah full screen" title="Read full screen">${svgExpand(14)}</button></div>
+    <div class="daf-flip-row"><span class="daf-flip-lbl" lang="he" role="heading" aria-level="2" aria-label="${esc(parshaHe(parsha))}"><button type="button" class="folio-jump" data-dafjump aria-haspopup="dialog" aria-expanded="false" aria-controls="dafJump" title="Go to another parsha" aria-label="${esc(pDisp(parsha))} — go to another parsha"><span class="folio-current">${esc(parshaHe(parsha))}</span><span class="folio-caret" aria-hidden="true"></span></button></span><button class="rail-fs" data-parsha-fullscreen aria-label="Read Torah full screen" title="Read full screen">${svgExpand(14)}</button></div>
     ${mode === "daf" ? `<div class="daf-cols-row" role="group" aria-label="Torah source — tap a name or swipe">${dafColsInner(PARSHA_COL_LABELS, activeTorahSource(), null, PARSHA_COL_ARIA)}</div>` : ""}
     <label class="chapter-jump"><span>Jump to</span><select data-chapter-jump aria-label="Jump to chapter" lang="he" dir="rtl">${opts}</select></label>
   </div>`;
@@ -3204,7 +3228,10 @@ const Player = {
      · its dismiss layer is transparent. The site's .mask (40% black + blur)
        would dim the picture, which is the one thing this must not do.
    ===================================================================== */
-const Jump = { open: false, mas: null, q: "", _opener: null, _raf: 0, _tracking: false, _anchor: "" };
+const Jump = { open: false, kind: "daf", mas: null, sefer: null, q: "", _opener: null, _raf: 0, _tracking: false, _anchor: "" };
+// Which text the picker is steering. The Chumash rail carries the same trigger,
+// so the panel serves both — same chrome, same button, different contents.
+const jumpKind = () => Reader.open ? (Reader.kind === "torah" ? "torah" : "daf") : ($("#parshaText") ? "torah" : "daf");
 
 function buildJump() {
   const pop = $("#dafJump"); if (!pop) return;
@@ -3226,41 +3253,87 @@ function buildJump() {
   q.onkeydown = e => {
     if (e.key !== "Enter") return;
     e.preventDefault();
-    const hit = JM.parseJumpQuery(q.value, { masechta: Jump.mas });
-    if (hit && hit.daf) { jumpTo(hit.masechta, hit.daf, hit.amud); return; }
+    if (Jump.kind === "daf") {
+      const hit = JM.parseJumpQuery(q.value, { masechta: Jump.mas });
+      if (hit && hit.daf) { jumpTo(hit.masechta, hit.daf, hit.amud); return; }
+    } else {
+      const hit = TORAH.find(q.value);
+      if (hit) { jumpToParsha(hit.sefer, hit.parsha); return; }
+    }
     const first = $("#jpDaf .jp-cell .jp-n"); if (first) first.click();
   };
-  $("#jpMas").onclick = e => { const b = e.target.closest("[data-jmas]"); if (b) selectJumpMasechta(b.dataset.jmas); };
+  $("#jpMas").onclick = e => {
+    const b = e.target.closest("[data-jmas]"); if (b) { selectJumpMasechta(b.dataset.jmas); return; }
+    const s = e.target.closest("[data-jsef]"); if (s) selectJumpSefer(s.dataset.jsef);
+  };
   $("#jpDaf").onclick = e => {
     if (e.target.closest("[data-jback]")) { pop.classList.remove("pick-daf"); $("#jpMas .jp-mi[aria-current='true']")?.focus(); return; }
-    const c = e.target.closest("[data-jdaf]"); if (c) jumpTo(c.dataset.jmasechta, +c.dataset.jdaf, c.dataset.jamud);
+    const c = e.target.closest("[data-jdaf]"); if (c) { jumpTo(c.dataset.jmasechta, +c.dataset.jdaf, c.dataset.jamud); return; }
+    const q = e.target.closest("[data-jparsha]"); if (q) jumpToParsha(q.dataset.jsefer, q.dataset.jparsha);
   };
 }
 
 /* ---------- which surface the picker is steering ---------- */
-const jumpSurface = () => Reader.open && Reader.kind === "daf" ? $("#rdBody") : $("#dafText");
+const jumpSurface = () => Reader.open ? $("#rdBody") : ($("#parshaText") || $("#dafText"));
 const jumpRail = () => jumpSurface()?.querySelector(":scope > .daf-colhead") || null;
 function jumpReading() {
-  if (Reader.open && Reader.kind === "daf") return { masechta: Reader.masechta, daf: +Reader.daf, amud: Reader.amud || amudKeysFor(Reader.masechta, +Reader.daf)[0] };
+  if (jumpKind() === "torah") {
+    if (Reader.open) return Reader.parsha ? { kind: "torah", sefer: Reader.sefer, parsha: Reader.parsha } : null;
+    const box = $("#parshaText"); if (!box || !box.dataset.parsha) return null;
+    return { kind: "torah", sefer: box.dataset.sefer, parsha: box.dataset.parsha };
+  }
+  if (Reader.open && Reader.kind === "daf") return { kind: "daf", masechta: Reader.masechta, daf: +Reader.daf, amud: Reader.amud || amudKeysFor(Reader.masechta, +Reader.daf)[0] };
   const box = $("#dafText"); if (!box || !box.dataset.mas) return null;
-  return { masechta: box.dataset.mas, daf: +box.dataset.daf, amud: box.dataset.amud || amudKeysFor(box.dataset.mas, +box.dataset.daf)[0] };
+  return { kind: "daf", masechta: box.dataset.mas, daf: +box.dataset.daf, amud: box.dataset.amud || amudKeysFor(box.dataset.mas, +box.dataset.daf)[0] };
+}
+// The parsha of whatever the transport is holding, and the parsha of the Rov's
+// most recent parsha shiur. There is no "this week's parsha" on this site —
+// computing the sedra needs a real calendar the site does not have — so the
+// picker offers the latest shiur and says so, rather than guessing.
+function playingParsha() {
+  const lec = Player.lec; if (!lec) return null;
+  const hit = TORAH.list.find(p => parshaMatches(lec.series, p.parsha) || parshaMatches(lec.title, p.parsha));
+  return hit ? { sefer: hit.sefer, parsha: hit.parsha } : null;
+}
+let _latestParsha = null, _latestParshaFor = -1;
+function latestParshaShiur() {
+  if (_latestParshaFor === State.all.length) return _latestParsha;
+  let best = null, key = "";
+  for (const l of parshaShiurim()) {
+    const k = l.recorded || l.posted || ""; if (!k || k <= key) continue;
+    const hit = TORAH.list.find(p => parshaMatches(l.series, p.parsha));
+    if (hit) { best = { sefer: hit.sefer, parsha: hit.parsha }; key = k; }
+  }
+  _latestParsha = best; _latestParshaFor = State.all.length;
+  return best;
 }
 const scrollJumpHome = () => setDafScroll(dafTopScroll());
-const isPhoneLayout = () => document.documentElement.classList.contains("is-phone");
+const jumpNarrow = () => !!$("#dafJump")?.classList.contains("jp-narrow");   // the PANEL is narrow, which is not the same question as "is this a phone"
 
 /* ---------- open / close ---------- */
 function toggleJump(trigger) { if (Jump.open) closeJump({ restoreFocus: true }); else openJump(trigger); }
 function openJump(trigger) {
   const pop = $("#dafJump"), scrim = $("#jpScrim"); if (!pop || !scrim) return;
-  const read = jumpReading(); if (!read || !DY.BYEN[read.masechta]) return;
-  Jump.open = true; Jump._opener = trigger || null; Jump.mas = read.masechta; Jump.q = "";
+  const kind = jumpKind(), read = jumpReading();
+  if (!read || (kind === "daf" ? !DY.BYEN[read.masechta] : !TORAH.byParsha[read.parsha])) return;
+  Jump.open = true; Jump.kind = kind; Jump._opener = trigger || null; Jump.q = "";
+  if (kind === "torah") { Jump.sefer = read.sefer || TORAH.byParsha[read.parsha].sefer; } else Jump.mas = read.masechta;
   pop.hidden = false; scrim.hidden = false;
-  pop.classList.toggle("pick-daf", isPhoneLayout());   // phones open straight on the grid of the masechta you're in
   trigger?.setAttribute("aria-expanded", "true");
   $("#jpQ").value = "";
-  renderJumpNow(); renderJumpMasechtos(""); renderJumpDapim();
-  positionJump(); jumpTrack(true);
-  setTimeout(() => (isPhoneLayout() ? $("#jpDaf .jp-cell.here .jp-n") || $("#jpDaf .jp-cell .jp-n") : $("#jpQ"))?.focus(), 0);
+  $("#jpQ").placeholder = kind === "torah" ? "shoftim · ‏שופטים‎ · devarim" : "chullin 102b · ‏חולין קב‎ · 102";
+  $("#dafJump").setAttribute("aria-label", kind === "torah" ? "Go to a parsha" : "Go to a daf");
+  renderJumpNow(); renderJumpLeft(""); renderJumpRight();
+  dockRailForJump();                                   // on a small screen, give the list every pixel it can have
+  positionJump();                                      // also sizes the panel, which decides one-pane vs two
+  // Narrow enough for one pane at a time? Then open straight on the list you're
+  // already inside — the common case is one tap deep, not two.
+  pop.classList.toggle("pick-daf", pop.classList.contains("jp-narrow"));
+  renderJumpRight();                                   // re-measure scroll now the pane is actually visible
+  jumpTrack(true);
+  const narrow = pop.classList.contains("jp-narrow");
+  setTimeout(() => (narrow ? $("#jpDaf .jp-cell.jp-here .jp-n") || $("#jpDaf .jp-cell .jp-n") : $("#jpQ"))?.focus(), 0);
+  announceJumpOpen(kind);
 }
 function closeJump({ restoreFocus = false } = {}) {
   const pop = $("#dafJump"); if (!pop || !Jump.open) return;
@@ -3284,6 +3357,32 @@ function jumpTrack(on) {
   const tick = () => { if (!Jump.open) { Jump._raf = 0; return; } positionJump(); Jump._raf = requestAnimationFrame(tick); };
   Jump._raf = requestAnimationFrame(tick);
 }
+// The panel can only grow downward from the rail, so on a short screen the
+// rail's own position decides how much list you get. When the room below it is
+// tight, dock the rail under the top bar first — the same place a page flip
+// parks it. The shiur is untouched either way; only the page scrolls.
+function jumpRoomBelow(rail) {
+  const r = rail.getBoundingClientRect();
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  const player = $("#player"), bar = player && !player.classList.contains("hidden") ? player.offsetHeight : 0;
+  return vh - r.bottom - 14 - bar;
+}
+function dockRailForJump() {
+  const rail = jumpRail(); if (!rail) return;
+  if (jumpRoomBelow(rail) >= 300) return;                         // already roomy — don't move the page
+  const dock = () => {
+    const delta = rail.getBoundingClientRect().top - pagerStickyViewportTop(rail);
+    if (delta > .5) setDafScroll(curDafScroll() + Math.ceil(delta));
+    lockReadMin(curDafScroll());
+  };
+  dock();
+  // Still cramped — a phone on its side, say. Collapse the site header the same
+  // way reading does; it is worth ~50px, which is a row and a half of list.
+  if (jumpRoomBelow(rail) < 220 && !Reader.open && !document.documentElement.classList.contains("dy-min")) {
+    document.documentElement.classList.add("dy-min");
+    dock();
+  }
+}
 function positionJump() {
   const pop = $("#dafJump"); if (!pop || !Jump.open) return;
   const rail = jumpRail(); if (!rail) { closeJump(); return; }
@@ -3297,12 +3396,16 @@ function positionJump() {
   if (anchor === Jump._anchor) return;                            // nothing moved — don't touch the DOM
   Jump._anchor = anchor;
   const pad = 10, w = pop.offsetWidth;
+  pop.classList.toggle("jp-narrow", w < 470);          // one pane at a time
+  pop.classList.toggle("jp-wide", w >= 560);           // room for a seven-across grid
   pop.style.top = Math.round(r.bottom - 1) + "px";                // pinned to the rail's bottom hairline: it can only grow DOWN
   pop.style.left = Math.round(Math.min(Math.max(pad, lr.left + lr.width / 2 - w / 2), Math.max(pad, vw - w - pad))) + "px";
   // Report the room below the rail as a variable; the stylesheet keeps the cap,
   // so a very tall window doesn't turn the panel into a full-height wall. The
   // transport bar is subtracted so the two never overlap.
-  pop.style.setProperty("--jp-room", Math.max(200, Math.round(vh - r.bottom - 14 - bar)) + "px");
+  // Floor it low enough that a landscape phone still clears the transport bar:
+  // a short panel that scrolls beats one that sits on top of play/pause.
+  pop.style.setProperty("--jp-room", Math.max(120, Math.round(vh - r.bottom - 14 - bar)) + "px");
 }
 
 /* ---------- the one built-in button ---------- */
@@ -3317,7 +3420,40 @@ function jumpNowInput() {
     reading: jumpReading(),
   };
 }
-function renderJumpNow() {
+function torahNowInput() {
+  const bar = $("#player");
+  const m = Player.media;
+  return {
+    playerUp: !!(bar && !bar.classList.contains("hidden") && Player.lec),
+    playing: playingParsha(), latest: latestParshaShiur(),
+    video: !!Player.isVideo, paused: !!(m && (m.paused || m.ended)),
+    reading: jumpReading(),
+  };
+}
+function renderJumpNow() { return Jump.kind === "torah" ? renderTorahNow() : renderDafNow(); }
+function renderTorahNow() {
+  const btn = $("#jpNow"), chip = $("#jpChip"); if (!btn || !chip) return;
+  const input = torahNowInput(), t = JM.torahNowTarget(input);
+  if (!t) { btn.hidden = true; chip.hidden = true; return; }
+  btn.hidden = false;
+  const kicker = t.here ? "You're reading this"
+    : t.kind === "latest" ? "Latest shiur"
+    : t.alsoLatest ? (t.paused ? "Paused · latest shiur" : "Now playing · latest shiur")
+    : (t.paused ? "Paused at" : "Now playing");
+  const icon = t.here ? "✓" : t.kind === "latest" ? "✦" : (t.video ? svgVideo(14) : "♪");
+  btn.innerHTML = `<span class="jp-ic" aria-hidden="true">${icon}</span><span class="jp-tx"><span class="jp-k">${esc(kicker)}</span><span class="jp-v"><span class="jp-he" lang="he">${esc(parshaHe(t.parsha))}</span> <span class="jp-en">${esc(pDisp(t.parsha))}</span></span></span>`;
+  btn.setAttribute("aria-label", `${kicker} — parshas ${pDisp(t.parsha)}`);
+  btn.onclick = () => { if (t.here) { closeJump({ restoreFocus: true }); scrollJumpHome(); return; } jumpToParsha(t.sefer, t.parsha); };
+  const second = JM.secondaryLatest(input, t);
+  chip.hidden = !second;
+  if (second) {
+    chip.innerHTML = `<span lang="he">${esc(parshaHe(second.parsha))}</span>`;
+    chip.title = `Latest shiur — ${pDisp(second.parsha)}`;
+    chip.setAttribute("aria-label", `Latest shiur — parshas ${pDisp(second.parsha)}`);
+    chip.onclick = () => jumpToParsha(second.sefer, second.parsha);
+  }
+}
+function renderDafNow() {
   const btn = $("#jpNow"), chip = $("#jpChip"); if (!btn || !chip) return;
   const input = jumpNowInput(), t = JM.nowTarget(input);
   if (!t) { btn.hidden = true; chip.hidden = true; return; }
@@ -3350,6 +3486,61 @@ function syncJumpNow() { if (Jump.open) renderJumpNow(); }
 // understood, so the list stays browsable even though "daf 8 bava metzia"
 // matches no name by substring. A query that resolved nothing keeps the honest
 // empty state.
+const renderJumpLeft = (filter, keepAllIfEmpty) => Jump.kind === "torah" ? renderJumpChumashim(filter) : renderJumpMasechtos(filter, keepAllIfEmpty);
+const renderJumpRight = () => Jump.kind === "torah" ? renderJumpParshiyos() : renderJumpDapim();
+
+// The Chumash pane: five seforim, the one you're reading marked. Short enough
+// that it never needs filtering of its own — the field aims at parshiyos.
+function renderJumpChumashim(filter) {
+  const box = $("#jpMas"); if (!box) return;
+  const read = jumpReading(), latest = latestParshaShiur();
+  box.innerHTML = CHUMASHIM.map(s => {
+    const picked = s.en === Jump.sefer;
+    const here = read && TORAH.byParsha[read.parsha]?.sefer === s.en;
+    const hasLatest = latest && TORAH.byParsha[latest.parsha]?.sefer === s.en;
+    return `<button type="button" class="jp-mi" data-jsef="${esc(s.en)}" aria-current="${picked}" aria-label="${esc(sDisp(s.en))}${here ? " — the sefer you're reading" : ""}">` +
+      `<span class="jp-mi-en">${esc(sDisp(s.en))}</span>` +
+      (hasLatest ? `<span class="jp-tag" lang="he" title="The Rov's latest parsha shiur is in this sefer">שיעור</span>` : "") +
+      (here ? `<span class="jp-dot" aria-hidden="true">●</span>` : "") +
+      `<span class="jp-mi-he" lang="he">${esc(s.he)}</span></button>`;
+  }).join("");
+}
+// The parsha pane: names, not numbers, so it is a list rather than a grid.
+function renderJumpParshiyos() {
+  const box = $("#jpDaf"), sef = CHUMASH_BY_EN[Jump.sefer]; if (!box || !sef) return;
+  const read = jumpReading(), latest = latestParshaShiur();
+  const back = `<button type="button" class="jp-back" data-jback aria-label="Back to the Chumash">‹</button>`;
+  const rows = sef.parshiyos.map(([en, he]) => {
+    const cls = [];
+    if (read && read.parsha === en) cls.push("jp-here");
+    if (latest && latest.parsha === en) cls.push("jp-today");
+    if (!shiurimForParsha(en).length && !adminPageMedia(`parsha:${en}`)) cls.push("jp-ungiven");
+    return `<div class="jp-cell jp-prow${cls.length ? " " + cls.join(" ") : ""}">` +
+      `<button type="button" class="jp-n" data-jparsha="${esc(en)}" data-jsefer="${esc(sef.en)}"` +
+      ` aria-label="Parshas ${esc(pDisp(en))}${cls.includes("jp-today") ? ", the Rov's latest parsha shiur" : ""}"${cls.includes("jp-here") ? ' aria-current="page"' : ""}>` +
+      `<span class="jp-p-he" lang="he">${esc(he)}</span><span class="jp-p-en">${esc(pDisp(en))}</span></button></div>`;
+  }).join("");
+  box.innerHTML = `<div class="jp-hint">${back}<span lang="he">${esc(sef.he)}</span></div>
+    <div class="jp-grid jp-plist">${rows}</div>
+    <div class="jp-legend"><i><span class="jp-sw jp-here"></span>reading</i><i><span class="jp-sw jp-today"></span>latest shiur</i><i class="dim">faint · no shiur yet</i></div>`;
+  const focus = box.querySelector(".jp-cell.jp-here") || box.querySelector(".jp-cell.jp-today");
+  if (focus) box.scrollTop = Math.max(0, focus.offsetTop - box.clientHeight / 2);
+}
+function selectJumpSefer(en) {
+  if (!CHUMASH_BY_EN[en]) return;
+  Jump.sefer = en;
+  $("#dafJump")?.classList.add("pick-daf");
+  renderJumpChumashim(); renderJumpParshiyos();
+  if (jumpNarrow()) setTimeout(() => $("#jpDaf .jp-cell .jp-n")?.focus(), 0);
+}
+function announceJumpOpen(kind) {
+  const s = $("#readStatus"); if (s) s.textContent = kind === "torah" ? "Parsha picker open." : "Daf picker open.";
+}
+function announceParsha(parsha) {
+  const text = `Parshas ${pDisp(parsha)} loaded.`;
+  const s = $("#readStatus"); if (s) s.textContent = text;
+  const rs = $("#rdStatus"); if (rs) rs.textContent = text;
+}
 function renderJumpMasechtos(filter, keepAllIfEmpty) {
   const box = $("#jpMas"); if (!box) return;
   const raw = (filter || "").trim(), low = raw.toLowerCase();
@@ -3393,24 +3584,24 @@ function renderJumpDapim() {
   for (let d = m.firstDaf; d <= m.lastDaf; d++) {
     const keys = amudKeysFor(m.en, d), strips = keys.slice(1);
     const cls = [];
-    if (read && read.masechta === m.en && +read.daf === d) cls.push("here");
-    if (today && today.masechta === m.en && today.daf === d) cls.push("today");
-    if (L[dafKey(m.en, d)]) cls.push("learned");
-    if (!shiurFor(m.en, d) && !adminPageMedia(`daf:${m.en}:${d}`)) cls.push("ungiven");
+    if (read && read.masechta === m.en && +read.daf === d) cls.push("jp-here");
+    if (today && today.masechta === m.en && today.daf === d) cls.push("jp-today");
+    if (L[dafKey(m.en, d)]) cls.push("jp-learned");
+    if (!shiurFor(m.en, d) && !adminPageMedia(`daf:${m.en}:${d}`)) cls.push("jp-ungiven");
     const g = window.HebCal ? window.HebCal.gematria(d) : d;
     // Tamid daf 26 carries three amudim (its Mishnah opens on Vilna 25b), so
     // the cell is built from amudKeysFor and grows a strip per extra amud.
     const wide = strips.length > 1 ? ` style="grid-template-columns:1fr repeat(${strips.length},26px)"` : "";
     cells += `<div class="jp-cell${cls.length ? " " + cls.join(" ") : ""}"${wide}>` +
       `<button type="button" class="jp-n" data-jdaf="${d}" data-jmasechta="${esc(m.en)}" data-jamud="${esc(keys[0])}"` +
-      ` aria-label="${esc(m.en)} daf ${d}${keys[0] === "25b" ? ", opens on 25b" : ", amud alef"}${cls.includes("learned") ? ", learned" : ""}${cls.includes("today") ? ", today's daf" : ""}"${cls.includes("here") ? ' aria-current="page"' : ""}>${esc(String(g))}</button>` +
+      ` aria-label="${esc(m.en)} daf ${d}${keys[0] === "25b" ? ", opens on 25b" : ", amud alef"}${cls.includes("jp-learned") ? ", learned" : ""}${cls.includes("jp-today") ? ", today's daf" : ""}"${cls.includes("jp-here") ? ' aria-current="page"' : ""}>${esc(String(g))}</button>` +
       strips.map(k => `<button type="button" class="jp-b" data-jdaf="${d}" data-jmasechta="${esc(m.en)}" data-jamud="${esc(k)}" lang="he" aria-label="${esc(m.en)} daf ${d}, amud ${k.endsWith("b") ? "beis" : "alef"}">${k.endsWith("b") ? "ב" : "א"}</button>`).join("") +
       `</div>`;
   }
   box.innerHTML = `<div class="jp-hint">${back}<span>tap the daf for <b lang="he">א</b> · tap the edge for <b lang="he">ב</b></span></div>
     <div class="jp-grid">${cells}</div>
-    <div class="jp-legend"><i><span class="jp-sw here"></span>reading</i><i><span class="jp-sw today"></span>today</i><i><span class="jp-sw ok">✓</span>learned</i><i class="dim">faint · no shiur yet</i></div>`;
-  const focus = box.querySelector(".jp-cell.here") || box.querySelector(".jp-cell.today");
+    <div class="jp-legend"><i><span class="jp-sw jp-here"></span>reading</i><i><span class="jp-sw jp-today"></span>today</i><i><span class="jp-sw ok">✓</span>learned</i><i class="dim">faint · no shiur yet</i></div>`;
+  const focus = box.querySelector(".jp-cell.jp-here") || box.querySelector(".jp-cell.jp-today");
   if (focus) box.scrollTop = Math.max(0, focus.offsetTop - box.clientHeight / 2);
 }
 function selectJumpMasechta(en) {
@@ -3418,22 +3609,35 @@ function selectJumpMasechta(en) {
   Jump.mas = en;
   $("#dafJump")?.classList.add("pick-daf");
   renderJumpMasechtos(Jump.q); renderJumpDapim();
-  if (isPhoneLayout()) setTimeout(() => $("#jpDaf .jp-cell .jp-n")?.focus(), 0);
+  if (jumpNarrow()) setTimeout(() => $("#jpDaf .jp-cell .jp-n")?.focus(), 0);
 }
 // "chullin 102b" · "חולין קב:" · "בבא מציעא 8" · a bare number inside the
 // masechta you're already in. A resolved reference aims the grid; Enter takes it.
 function runJumpQuery(q) {
   Jump.q = q || "";
+  if (Jump.kind === "torah") return runTorahQuery();
   const hit = JM.parseJumpQuery(Jump.q, { masechta: Jump.mas });
   if (hit && hit.masechta !== Jump.mas) { Jump.mas = hit.masechta; renderJumpDapim(); }
   // Filter the list on the part of the query that named a masechta, never on the
   // whole thing — "bava metzia 8b" must narrow to Bava Metzia, not empty the list.
   renderJumpMasechtos(hit ? hit.name : Jump.q, !!hit);
   const pane = $("#jpDaf"); if (!pane) return;
-  pane.querySelectorAll(".jp-cell.aim").forEach(n => n.classList.remove("aim"));
+  pane.querySelectorAll(".jp-cell.jp-aim").forEach(n => n.classList.remove("aim"));
   if (!hit || !hit.daf) return;
   const cell = pane.querySelector(`.jp-n[data-jdaf="${hit.daf}"]`)?.closest(".jp-cell");
-  if (cell) { cell.classList.add("aim"); pane.scrollTop = Math.max(0, cell.offsetTop - pane.clientHeight / 2); }
+  if (cell) { cell.classList.add("jp-aim"); pane.scrollTop = Math.max(0, cell.offsetTop - pane.clientHeight / 2); }
+}
+// A parsha name, a prefix of one, or a sefer. Naming a parsha in another sefer
+// swings the whole panel there, so "shoftim" works from anywhere in the Chumash.
+function runTorahQuery() {
+  const hit = TORAH.find(Jump.q), sefer = hit ? hit.sefer : TORAH.findSefer(Jump.q);
+  if (sefer && sefer !== Jump.sefer) { Jump.sefer = sefer; renderJumpParshiyos(); }
+  renderJumpChumashim();
+  const pane = $("#jpDaf"); if (!pane) return;
+  pane.querySelectorAll(".jp-cell.jp-aim").forEach(n => n.classList.remove("aim"));
+  if (!hit) return;
+  const cell = pane.querySelector(`.jp-n[data-jparsha="${CSS.escape(hit.parsha)}"]`)?.closest(".jp-cell");
+  if (cell) { cell.classList.add("jp-aim"); pane.scrollTop = Math.max(0, cell.offsetTop - pane.clientHeight / 2); }
 }
 
 /* ---------- the jump itself ---------- */
@@ -3466,6 +3670,50 @@ async function jumpTo(masechta, daf, amud) {
     }
   }
   if (!adjacent) offerJumpPage(masechta, daf);
+}
+// The Chumash half of the jump. There is no page-turn animation on the parsha
+// side — its pages were never modelled as leaves of a sefer — so every parsha
+// change arrives with the same quiet fade the column switcher uses. What it
+// shares with the daf is the thing that matters: it re-hydrates the reading
+// surface in place and never calls route(), so a shiur is never interrupted.
+async function jumpToParsha(sefer, parsha) {
+  const p = TORAH.byParsha[parsha]; if (!p) return;
+  sefer = CHUMASH_BY_EN[sefer] ? sefer : p.sefer;
+  const from = jumpReading();
+  closeJump({ restoreFocus: true });
+  if (from && from.parsha === parsha) { scrollJumpHome(); return; }
+  await torahGoTo(sefer, parsha);
+  offerJumpParshaPage(parsha);
+}
+async function torahGoTo(sefer, parsha) {
+  if (Reader.open && Reader.kind === "torah") {
+    const body = $("#rdBody"); if (!body) return;
+    saveColScroll(Reader.source || "gemara");
+    Reader.sefer = sefer; Reader.parsha = parsha; Reader._restoreScroll = true;
+    syncTorahReaderChrome();
+    if (await fillTorahReaderBody(sefer, parsha, Reader.mode, null)) {
+      restartAnim(body, "col-switched"); announceParsha(parsha); commitReaderHistoryState();
+    }
+    return;
+  }
+  const box = $("#parshaText"); if (!box) return;
+  const intent = pagerIntent(box.querySelector(":scope > .daf-colhead") || undefined);
+  saveColScroll(State._parCol || "gemara");
+  holdPagerIntent(intent);
+  box.dataset.sefer = sefer; box.dataset.parsha = parsha;
+  if (!await hydrateParsha()) return;
+  restartAnim(box, "col-switched");
+  restoreColScroll(State._parCol || "gemara", true, intent.fallbackY, null, intent.preserveRail, false, intent);
+  await settlePagerIntent(box, intent, () => box.isConnected && box.dataset.parsha === parsha);
+  announceParsha(parsha);
+}
+// Same opt-in escape hatch the daf side offers: the page stayed put, and taking
+// the route is a deliberate second tap.
+function offerJumpParshaPage(parsha) {
+  if (Reader.open || State.route?.parsha === parsha) return;
+  const node = toast(`Reading <b lang="he">${esc(parshaHe(parsha))}</b> · <button type="button" class="toast-act">Open its shiur page</button>`, 6500);
+  const act = node?.querySelector(".toast-act");
+  if (act) act.onclick = () => route("parshaS", { parsha });
 }
 // A long jump deliberately leaves the PAGE where it was — that separation is
 // the feature, and it is why the shiur survives. The route is offered as one
