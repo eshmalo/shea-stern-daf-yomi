@@ -21,7 +21,9 @@ cycle table says what is done, what is open, and what was deliberately rejected.
 |---|---|---|
 | 1 | Audit sweep — gather real defects across every surface | done |
 | 2 | Touch feel: press states, tap highlight, hit areas, scrollbars | done |
-| 3 | Motion & effects — transitions, easing, reduced-motion parity | next |
+| 3 | Make the picker native; motion audit | done |
+| 4 | Typography & rhythm — scale, spacing, eyebrows, empty/loading states | next |
+| 5 | Surface pass — cards, rules, ornament, the Today page hierarchy | planned |
 
 ## Findings
 
@@ -77,3 +79,30 @@ the gap rather than stealing each other's taps.
 - Shortening the parsha rail's trigger to claw that back. Measurement showed the rail
   is 62px whatever the trigger does — its 44px fullscreen button and the select set the
   height — so the trigger stays 38px and matches the daf rail.
+
+### Cycle 3 — the picker becomes native, and a motion audit that mostly said "leave it" (2026-08-18)
+
+**Motion audit — no mass rewrite.** 96 transitions cluster at .12/.13/.14s: three
+spellings of one duration. Unifying them into tokens would be a large mechanical diff
+for something nobody can see, so it was left. No `transition: all` anywhere. Fifteen
+keyframes, all reachable. Reduced-motion is already complete — a global
+`*, *::before, *::after` reset at `styles.css:1343` covers everything.
+
+**Removed my own cycle-2 rule.** I had cancelled the 1px press for reduced-motion
+users. That was wrong: a press is tactile feedback, not vestibular motion, the global
+reset already makes it instant, and cancelling it left those users with no feedback at
+all on raised controls. Reverted.
+
+**Made the picker native.** The site's two list idioms (`.row`, `.drow`) are already
+identical and good — a 2px accent rule that scales in on hover. The picker's own rows
+were the inconsistent ones, so they now use the same device, and the current row's
+duplicate left border was dropped in favour of it. Sponsor cards gained the same lift
+`.navbox` has, since they are the same kind of selectable card.
+
+### Still open
+- Cycle 4: typography rhythm — the type scale is consistent but eyebrow labels,
+  empty states and the "Loading the daf…" line are plainer than the rest.
+- Cycle 5: the Today page's two primary buttons read at the same weight, so the
+  hierarchy between "Sponsor today's daf" and "Read the daf" is ambiguous.
+- Not a bug, worth knowing: the parsha rail is 62px against the daf rail's 53px,
+  set by its 44px fullscreen button and the chapter select.

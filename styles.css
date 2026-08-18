@@ -573,8 +573,13 @@ html.is-phone .daf-colhead .col-tab:disabled { opacity: .3; cursor: default; bor
 .jp-mi-en { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-family: var(--sans); font-size: 9.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint); }
 .jp-mi-he { flex: none; font-family: var(--serif-he); direction: rtl; font-size: 16.5px; }
+.jp-mi { position: relative; }
+.jp-mi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: var(--accent); transform: scaleY(0); transform-origin: center; transition: transform .15s; }
 .jp-mi:hover { background: var(--paper-2); }
-.jp-mi[aria-current="true"] { border-left-color: var(--accent); background: var(--accent-soft); }
+.jp-mi:hover::before { transform: scaleY(1); }
+.jp-mi[aria-current="true"]::before { transform: scaleY(1); }
+.jp-mi[aria-current="true"] { background: var(--accent-soft); }
 .jp-mi[aria-current="true"] .jp-mi-he { color: var(--accent); font-weight: 700; }
 .jp-mi.thin .jp-mi-he { color: var(--ink-faint); }        /* no native text for this masechta */
 .jp-tag { flex: none; font-family: var(--serif-he); font-size: 10px; line-height: 1.5; color: var(--gold);
@@ -717,8 +722,8 @@ html.is-phone.is-narrow .jump-pop {
 
 /* ---------- Sponsor ---------- */
 .sp-opts { display: grid; gap: 10px; margin: 8px 0 16px; }
-.sp-opt { -webkit-appearance: none; appearance: none; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--hair-2); border-radius: 5px; padding: 14px 16px; background: var(--paper); text-align: left; color: var(--ink); font: inherit; transition: border-color .14s, background .14s; }
-.sp-opt:hover { border-color: var(--ink-soft); }
+.sp-opt { -webkit-appearance: none; appearance: none; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--hair-2); border-radius: 5px; padding: 14px 16px; background: var(--paper); text-align: left; color: var(--ink); font: inherit; transition: border-color .14s, background .14s, transform .14s, box-shadow .14s; }
+.sp-opt:hover { border-color: var(--ink-soft); transform: translateY(-1px); box-shadow: 0 5px 14px -8px rgba(33,30,24,.34); }
 .sp-opt.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 .sp-opt b { font-size: 16.5px; font-weight: 600; } .sp-opt span { display: block; } .sp-opt > span span { font-family: var(--sans); font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
 .sp-opt .price { font-size: 18px; color: var(--accent); font-weight: 600; flex: none; margin-left: 12px; }
@@ -867,12 +872,6 @@ a, button, [role="button"], input, select, textarea, summary, .navbox, .drow, .r
 /* the trigger and the site's own rail controls press like the flat family */
 .folio-jump:active { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent-2); }
 .rail-fs:active { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
-@media (prefers-reduced-motion: reduce) {
-  .btn:active, .fs-btn:active, .learn-toggle:active, .sp-opt:active, .jp-now:active,
-  .jp-chip:active, .tog:active, .drow-play:active, .row .row-play:active, .row .row-fav:active,
-  .copy-btn:active, .shiur-disclosure > summary:active { transform: none; }
-}
-
 /* Hit area without visual weight: a few controls are drawn small on purpose
    (the top-bar sections, the round row buttons, the folio head). They keep
    their size and gain the target a thumb expects. */
