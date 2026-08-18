@@ -43,7 +43,17 @@ const State = {
 const fmtDur = s => { s = Math.round(s || 0); if (!s) return ""; const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h ? `${h}h ${m}m` : `${m} min`; };
 const clock = s => { s = Math.max(0, Math.round(s || 0)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
 const getStore = k => { try { const v = JSON.parse(localStorage.getItem(k)); return (v && typeof v === "object" && !Array.isArray(v)) ? v : {}; } catch { return {}; } };
+const STORE_FAIL = "Couldn't save — your browser's storage is full or blocked.";
 const setStore = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
+// Every network call gets a deadline. A request that never settles is worse than one
+// that fails: the loading shell has nothing to fall back to and the reader waits on it
+// forever. The corpus files run to ~3.7MB, so those get a generous one — the point is to
+// end a dead connection, not to punish a slow but working download on a phone.
+const NET_TIMEOUT = 15000, NET_TIMEOUT_BIG = 60000;
+function fetchT(url, opts, ms = NET_TIMEOUT) {
+  const c = new AbortController(), t = setTimeout(() => c.abort(), ms);
+  return fetch(url, { ...(opts || {}), signal: c.signal }).finally(() => clearTimeout(t));
+}
 const dafKey = (m, d) => `${m}#${d}`;
 const fileKey = m => m.replace(/ /g, "_");
 const todayStr = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`; };
@@ -82,7 +92,7 @@ async function boot() {
   const cached = readCache();
   let seed = cached;
   if (!seed) {
-    try { const s = await fetch(CFG.snapshot).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }); seed = { speaker: s.speaker, lectures: s.lectures }; }
+    try { const s = await fetchT(CFG.snapshot).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }); seed = { speaker: s.speaker, lectures: s.lectures }; }
     catch { seed = { speaker: { name: "Rabbi Shea Stern" }, lectures: [] }; }
   }
   State.speaker = seed.speaker; State.all = seed.lectures || [];
@@ -96,7 +106,7 @@ async function boot() {
 // layered on top. The old device-local "Editor mode" preview is gone — a stale
 // copy of it used to silently mask real content updates, so we clear it here.
 async function loadContent() { try { localStorage.removeItem(CFG.contentLocalKey); } catch {} return loadJson(CFG.contentUrl); }
-async function loadJson(u) { try { return await fetch(u).then(r => r.ok ? r.json() : {}); } catch { return {}; } }
+async function loadJson(u) { try { return await fetchT(u).then(r => r.ok ? r.json() : {}); } catch { return {}; } }
 
 // Admin-managed media overrides + worksheet attachments (uploaded by the Rov via
 // /admin/) live in site/admin-data.json on the media CDN. Minute-stamped query
@@ -105,7 +115,7 @@ async function loadAdminData() {
   const base = String(State.content?.options?.mediaBaseUrl || "").replace(/\/+$/, "");
   if (!base) return {};
   try {
-    const r = await fetch(`${base}/site/admin-data.json?t=${Math.floor(Date.now() / 60000)}`, { cache: "no-store" });
+    const r = await fetchT(`${base}/site/admin-data.json?t=${Math.floor(Date.now() / 60000)}`, { cache: "no-store" });
     if (!r.ok) return {};
     const d = await r.json();
     return (d && typeof d === "object" && !Array.isArray(d)) ? d : {};
@@ -197,8 +207,8 @@ function shiurFor(masechta, daf) { const a = State.byDaf.get(dafKey(masechta, da
 async function refreshLive(prev, fromCache) {
   try {
     const [spk, data] = await Promise.all([
-      fetch(`${CFG.api}/speakers/${CFG.speakerId}`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${CFG.api}/speakers/${CFG.speakerId}/lectures?limit=2000&offset=0`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+      fetchT(`${CFG.api}/speakers/${CFG.speakerId}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetchT(`${CFG.api}/speakers/${CFG.speakerId}/lectures?limit=2000&offset=0`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
     ]);
     const fresh = (data.lecture || []).filter(x => x && typeof x === "object").map(leanFromApi).sort((a, b) => (b.posted || "").localeCompare(a.posted || "") || (+b.id || 0) - (+a.id || 0));
     if (!fresh.length && prev.length) throw new Error("empty");
@@ -206,7 +216,7 @@ async function refreshLive(prev, fromCache) {
     const prevIds = new Set(prev.map(l => l.id));
     const added = fresh.filter(l => !prevIds.has(l.id));
     State.all = fresh; buildIndex(); writeCache(); markNew();
-    if (!Reader.open && State.route.name !== "daf") rerender();   // don't yank the view out from under an active read (daf text is catalog-independent)
+    if (!Reader.open && State.route.name !== "daf" && State.route.name !== "parshaS") rerender();   // don't yank the view out from under an active read (the text is catalog-independent) — both reading surfaces, as everywhere else in this file
     if (added.length && fromCache) toast(`${added.length} new shiur${added.length > 1 ? "im" : ""} added`);
     setStatus("live");
   } catch { setStatus("err"); }
@@ -221,7 +231,7 @@ function markNew() {
 }
 const favs = () => getStore(CFG.favKey);
 const isFav = id => !!favs()[id];
-function toggleFav(id) { const f = favs(); if (f[id]) delete f[id]; else f[id] = Date.now(); setStore(CFG.favKey, f); }
+function toggleFav(id) { const f = favs(); if (f[id]) delete f[id]; else f[id] = Date.now(); return setStore(CFG.favKey, f); }   // false = storage blocked/full; the caller must not claim it saved
 function noteProgress(id) { const p = getStore(CFG.progKey); p[id] = Date.now(); setStore(CFG.progKey, p); }
 
 /* ---------- learned dapim (tracked per DAF, Shas-wide, in localStorage) ---------- */
@@ -230,9 +240,12 @@ const isLearned = (m, d) => !!learnedAll()[dafKey(m, d)];
 function setLearned(m, d, on) {
   const L = learnedAll(), k = dafKey(m, d);
   if (on) L[k] = Date.now(); else delete L[k];
-  setStore(CFG.learnedKey, L);
+  return setStore(CFG.learnedKey, L);
 }
-function toggleLearned(m, d) { const on = !isLearned(m, d); setLearned(m, d, on); return on; }
+// Returns both what the button should now show and whether it actually persisted —
+// in Safari private mode every write throws, and a whole session of marking dapim
+// learned would otherwise vanish on the next visit having reported success each time.
+function toggleLearned(m, d) { const on = !isLearned(m, d); return { on, saved: setLearned(m, d, on) }; }
 function markShiurLearned(lec) { const k = lec && lec._dk; if (k && k.daf) setLearned(k.masechta, k.daf, true); }
 function learnedInMasechta(en) { const L = learnedAll(); let n = 0; for (const k in L) if (k.slice(0, en.length + 1) === en + "#") n++; return n; }
 let _shasTotal = 0;
@@ -279,7 +292,7 @@ async function loadDafText(masechta) {
   if (State.dafCache[key]) return State.dafCache[key];
   if (State.dafPending[key]) return State.dafPending[key];
   const info = State.dafIndex[masechta]; if (!info) return null;
-  State.dafPending[key] = fetch(`data/daf/${key}.json`).then(r => r.ok ? r.json() : null)
+  State.dafPending[key] = fetchT(`data/daf/${key}.json`, null, NET_TIMEOUT_BIG).then(r => r.ok ? r.json() : null)
     .then(d => { if (d) State.dafCache[key] = d; return d; }).catch(() => null)
     .finally(() => { delete State.dafPending[key]; });
   return State.dafPending[key];
@@ -293,7 +306,7 @@ async function loadDafComm(masechta) {
   // A missing flag means "not stamped yet", so we still ask rather than assume.
   if (!State.dafIndex[masechta] || State.dafIndex[masechta].comm === false) return (State.commCache[key] = {});
   if (State.commPending[key]) return State.commPending[key];
-  State.commPending[key] = fetch(`data/daf/${key}.comm.json`).then(r => r.ok ? r.json() : {})
+  State.commPending[key] = fetchT(`data/daf/${key}.comm.json`, null, NET_TIMEOUT_BIG).then(r => r.ok ? r.json() : {})
     .then(d => { State.commCache[key] = d || {}; return State.commCache[key]; }).catch(() => ({}))
     .finally(() => { delete State.commPending[key]; });
   return State.commPending[key];
@@ -324,7 +337,7 @@ function renderShell() {
       <span class="fhe" lang="he">${esc(mh.hebrew || "שיעורי הדף היומי")}</span>
       ${esc(mh.english || State.speaker?.name || "Rabbi Shea Stern")} · ${esc(mh.subtitle || "Daf Yomi")}
     </footer>
-    <div class="player hidden" id="player"></div>
+    <div class="player hidden" id="player" inert></div>
   </div>
   <div class="mask" id="mask"></div>
   <aside class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Site menu" inert aria-hidden="true"></aside>
@@ -2093,7 +2106,7 @@ function restoreReaderFromSnapshot(snapshot, { push = false } = {}) {
     // Only a spot from within the last hour reopens mid-daf; an older sitting starts at the top.
     if (freshPos(read)) ensureColScroll()[`r:${read.masechta}:${read.amud}:${read.mode}:${read.source}`] = { y: read.y || 0, at: +read.at };
   } else {
-    if (State.route?.name !== "parshaS" || State.route.parsha !== saved.parsha) return false;
+    if (State.route?.name !== "parshaS") return false;   // the reader may have been jumped to another parsha; the base route legitimately lags, exactly as the daf branch allows
     Reader.kind = "torah"; Reader.masechta = null; Reader.daf = null; Reader.amud = null;
     Reader.sefer = saved.sefer; Reader.parsha = saved.parsha; Reader.mode = "daf"; Reader.inlineMode = saved.inlineMode;
     Reader.source = saved.source; Reader._sourceChanged = saved.sourceChanged;
@@ -2343,6 +2356,15 @@ function viewMyStuff() {
 }
 /* ---------- progress backup / restore (all dy_* personal keys) ---------- */
 const BK_KEYS = [CFG.favKey, CFG.progKey, CFG.notesKey, CFG.learnedKey, CFG.posKey];
+// A backup file can be hand-edited, truncated mid-download, or written by an older build
+// with a different entry shape. Merge only what this version understands: an unchecked
+// position entry reaches the Home page's Continue card as "NaN:NaN", and a learned key
+// with an out-of-range daf inflates the Shas progress count past its own total.
+function okBackupEntry(store, key, v) {
+  if (store === CFG.posKey) return !!v && typeof v === "object" && !Array.isArray(v) && Number.isFinite(+v.t) && +v.t >= 0;
+  if (store === CFG.learnedKey) { const i = key.lastIndexOf("#"); return i > 0 && Number.isFinite(+v) && JM.validDaf(key.slice(0, i), +key.slice(i + 1)); }
+  return Number.isFinite(+v) || (!!v && typeof v === "object" && !Array.isArray(v));
+}
 function exportProgress() {
   const out = { site: "monseydafyomi", saved: todayStr(), data: {} };
   for (const k of BK_KEYS) out.data[k] = getStore(k);
@@ -2359,19 +2381,20 @@ function importProgress(file) {
     try {
       const d = JSON.parse(rd.result);
       if (!d || d.site !== "monseydafyomi" || !d.data || typeof d.data !== "object") throw new Error("bad");
-      let n = 0;
+      let n = 0, bad = 0;
       for (const k of BK_KEYS) {
         const inc = d.data[k];
         if (!inc || typeof inc !== "object" || Array.isArray(inc)) continue;
         const cur = getStore(k);                        // merge — restoring on a used device loses nothing
         const ts = v => (v && typeof v === "object") ? (+v.at || 0) : (+v || 0);   // values are timestamps (favs/progress/learned) or {t,d,at} (positions)
         for (const kk in inc) {
+          if (!okBackupEntry(k, kk, inc[kk])) { bad++; continue; }
           if (!(kk in cur)) { cur[kk] = inc[kk]; n++; continue; }
           if (ts(inc[kk]) > ts(cur[kk])) cur[kk] = inc[kk];   // keep whichever side is newer — a stale backup never rewinds this device
         }
         setStore(k, cur);
       }
-      toast(`Progress restored ✓ (${n} new item${n === 1 ? "" : "s"})`);
+      toast(`Progress restored ✓ (${n} new item${n === 1 ? "" : "s"}${bad ? ` · ${bad} unreadable entr${bad === 1 ? "y" : "ies"} skipped` : ""})`);
       rerender();
     } catch { toast("That file isn't a Daf Yomi backup."); }
   };
@@ -2416,7 +2439,7 @@ async function loadTorah(sefer) {
   State.torahCache = State.torahCache || {};
   if (State.torahCache[sefer]) return State.torahCache[sefer];
   if (!CHUMASH_BY_EN[sefer]) return null;
-  try { const d = await fetch(`data/torah/${sefer}.json`).then(r => r.ok ? r.json() : null); if (d) State.torahCache[sefer] = d; return d; }
+  try { const d = await fetchT(`data/torah/${sefer}.json`, null, NET_TIMEOUT_BIG).then(r => r.ok ? r.json() : null); if (d) State.torahCache[sefer] = d; return d; }
   catch { return null; }
 }
 const normName = s => (s || "").toLowerCase().replace(/[^a-z]/g, "");
@@ -2883,7 +2906,7 @@ async function shareDaf(id) {
 async function downloadFile(url, name) {
   toast("Downloading…");
   try {
-    const r = await fetch(url); if (!r.ok) throw new Error(r.status);
+    const r = await fetchT(url, null, NET_TIMEOUT_BIG); if (!r.ok) throw new Error(r.status);
     const b = await r.blob();
     const u = URL.createObjectURL(b);
     const a = document.createElement("a"); a.href = u; a.download = name || "worksheet";
@@ -2984,17 +3007,17 @@ function wireView(r) {
     if (!saved) q.focus();   // don't pop the phone keyboard over restored results
   }
   v.querySelectorAll("[data-fav]").forEach(b => b.onclick = e => {   // in-place — a rerender would kill a playing in-page video
-    e.stopPropagation(); toggleFav(+b.dataset.fav);
+    e.stopPropagation(); const saved = toggleFav(+b.dataset.fav);
     const on = isFav(+b.dataset.fav);
     b.setAttribute("aria-pressed", on); b.textContent = on ? "★ Saved" : "☆ Save";
-    toast(on ? "Saved to My Learning ★" : "Removed from saved");
+    toast(saved ? (on ? "Saved to My Learning ★" : "Removed from saved") : STORE_FAIL);
   });
   v.querySelectorAll("[data-learn]").forEach(b => b.onclick = e => {
     e.stopPropagation();
-    const [m, ds] = b.dataset.learn.split("|"), d = +ds, on = toggleLearned(m, d);
+    const [m, ds] = b.dataset.learn.split("|"), d = +ds, { on, saved } = toggleLearned(m, d);
     b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); b.textContent = on ? "✓ Learned" : "Mark as learned";
     const meta = b.parentElement.querySelector(".learn-meta"); if (meta) { const mm = DY.BYEN[m]; meta.textContent = `${m}: ${learnedInMasechta(m)} / ${mm ? mm.dapim : "?"} dapim learned`; }
-    toast(on ? `Marked ${esc(m)} ${d} as learned ✓` : `Unmarked ${esc(m)} ${d}`);
+    toast(saved ? (on ? `Marked ${esc(m)} ${d} as learned ✓` : `Unmarked ${esc(m)} ${d}`) : STORE_FAIL);
   });
   wireSponsor();
 }
@@ -3024,10 +3047,10 @@ function wireRows(scope) {
   scope.querySelectorAll("[data-play]").forEach(b => b.onclick = e => { e.stopPropagation(); playId(+b.dataset.play); });
   scope.querySelectorAll("[data-rowdaf]").forEach(b => b.onclick = e => { e.stopPropagation(); route("daf", { id: b.dataset.rowdaf }); });
   scope.querySelectorAll("[data-rowfav]").forEach(b => b.onclick = e => {
-    e.stopPropagation(); toggleFav(+b.dataset.rowfav);
+    e.stopPropagation(); const saved = toggleFav(+b.dataset.rowfav);
     const on = isFav(+b.dataset.rowfav);
     b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); b.textContent = on ? "★" : "☆";
-    toast(on ? "Saved to My Learning ★" : "Removed from saved");
+    toast(saved ? (on ? "Saved to My Learning ★" : "Removed from saved") : STORE_FAIL);
   });
 }
 function playId(id) {
@@ -3203,7 +3226,7 @@ const Player = {
     v.playbackRate = this.speed; v.src = url;
     this.show(); this.bar(); v.play().catch(() => {});
   },
-  show() { $("#player").classList.remove("hidden"); $("#app")?.classList.add("player-active"); document.documentElement.classList.add("player-on"); },
+  show() { $("#player").classList.remove("hidden"); $("#player").removeAttribute("inert"); $("#app")?.classList.add("player-active"); document.documentElement.classList.add("player-on"); },
   toggle() {
     const m = this.media; if (!m) return;
     if (m.ended && this._next) { const n = this._next; this._next = null; if (n.ovPk) playOverride(n.ovPk, "audio"); else playId(n.id); return; }   // ▶ after the end plays the next daf
@@ -3214,7 +3237,8 @@ const Player = {
   hide() {
     const m = this.media;
     if (m && this.lec) { const cur = m.currentTime || 0, dur = m.duration || 0; if (dur && cur > 8 && cur < dur - 8) savePos(this.lec.id, cur, dur); }
-    $("#player").classList.add("hidden"); $("#app")?.classList.remove("player-active"); document.documentElement.classList.remove("player-on");
+    $("#player").classList.add("hidden"); $("#player").setAttribute("inert", "");   // slid away by transform, so it keeps its box — inert is what takes it out of the reader's Tab trap
+    $("#app")?.classList.remove("player-active"); document.documentElement.classList.remove("player-on");
     try { m && m.pause(); } catch {}
     if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = "none"; navigator.mediaSession.metadata = null; } catch {} }
     this._elCur = this._elDur = this._elSeek = null;
@@ -3825,7 +3849,7 @@ function toast(html, ms = 4000) { const w = $("#toasts"); if (!w) return null; c
 
 function dialogFocusables(root) {
   return root ? [...root.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
-    .filter(n => !n.hidden && n.getAttribute("aria-hidden") !== "true" && n.getClientRects().length) : [];
+    .filter(n => !n.hidden && n.getAttribute("aria-hidden") !== "true" && !n.closest("[inert]") && n.getClientRects().length) : [];   // inert keeps its box, so querySelectorAll still finds it — the trap must skip what the browser will refuse to focus
 }
 function trapDialogTab(e, root) {
   if (e.key !== "Tab") return false;

@@ -465,3 +465,70 @@ and 375px: **45.7px and 43.2px against 54px** — 8px of headroom, no clipping, 
 overflow, no document overflow. Left alone. Two vendor-prefix fallbacks
 (`-webkit-sticky`, `-webkit-overflow-scrolling`) were also flagged as inert; they are, but
 they cost nothing and removing them only risks old iOS, so they stay.
+
+### Cycle 13 — the Pass-2 hardening audits that were planned and never run (2026-08-18)
+
+`QA-HARDENING-LOG.md` contained a five-section Pass-2 plan written after Pass 1 and never
+executed. Ran all five as independent lenses, each finding put to an adversarial verifier,
+then re-read by me before anything was touched. **5 confirmed, 0 refuted.**
+
+**The XSS sweep (P2-A) found nothing** — every `innerHTML` sink and template interpolation
+traced back to `esc()`/`safeEn()` or a provably safe source. That is a real result, not an
+empty one: owner-editable content, third-party TorahAnytime titles, admin upload filenames
+and URL parameters all reach the DOM escaped.
+
+**Progress that silently never saved (high).** `setStore` has always returned a success
+boolean — the in-app editor used it — but every user-facing writer threw it away.
+`toggleFav`, `setLearned` and `noteProgress` ignored it, and the click handlers then fired
+an unconditional success toast. In Safari private mode, or on a device whose quota is full,
+every tap of *Mark as learned* flipped the button, showed "Marked Chullin 110 as learned ✓",
+and wrote nothing — for a whole session, with the progress bar and My Learning agreeing all
+the way, until the next visit when it was all gone. The boolean now propagates and the toast
+branches. Measured with `Storage.prototype.setItem` forced to throw: it now says *"Couldn't
+save — your browser's storage is full or blocked."* while still flipping the button, since
+the in-memory state is correct for the rest of the session.
+
+**A corrupted backup could poison the Home page (medium).** `importProgress` validated only
+the top-level buckets, never the individual entries, so a hand-edited or truncated backup
+with `{t:"abc"}` sailed in and the Continue card rendered **"NaN:NaN"** — `clock("abc")`
+returns exactly that, verified by running it. An out-of-range learned key like
+`Berachos#99999` was likewise counted, inflating Shas progress past its own total. Entries
+are now shape-checked per store, and the toast reports what it skipped: *"Progress restored
+✓ (2 new items · 2 unreadable entries skipped)"*.
+
+**The catalog refresh could yank the parsha out from under a reader (medium).** `refreshLive`
+guarded only `name !== "daf"`, though every other reading-surface check in the file tests
+`"daf" || "parshaS"` (lines 617, 645, 691, 1752…). A user who opened a parsha in the first
+second or two after load could have it replaced by a loading placeholder, and an open picker
+slammed shut mid-query.
+
+**The reader could strand you on the wrong parsha (high).** Jumping to another parsha from
+inside the full-screen reader updates `Reader.parsha` but deliberately leaves the base route
+and hash alone. The torah restore branch required `State.route.parsha === saved.parsha`,
+which that jump makes false — so a reload reopened nothing and showed the *original* parsha,
+silently. The daf branch never had that clause. Removed, making the two symmetric.
+
+**A dismissed player stayed in the reader's Tab trap (medium).** `.player.hidden` slides the
+bar away with `transform`, so it keeps its layout box and `getClientRects()` stays non-empty
+— and the player is reparented inside `#reader` while the reader is open. Tabbing could land
+on the off-screen ✕ of a bar the user had already closed. Fixed at the source: a hidden
+player is now `inert`. That alone was not enough — `dialogFocusables` still *listed* those
+controls, so the trap would compute a `last` element the browser then refuses to focus, so it
+now skips `[inert]` subtrees too. Deliberately not a viewport check, which would have dropped
+legitimately scrolled-out-of-view controls inside the reader.
+
+**No fetch had a deadline.** Ten call sites, no `AbortController` anywhere: a hung request
+left the boot shell, the daf, or "Downloading…" waiting forever. All now route through one
+`fetchT` helper. The naive version of this fix would have been worse than the bug — the
+corpus files run to 3.7MB — so it is tiered: 15s for the small boot/API JSON where a hang is
+fatal, 60s for corpus and downloads, to end a dead connection without punishing a slow but
+working one on a phone. Every call site already handled rejection, so aborts introduce no
+unhandled failures.
+
+**Verification note.** The reader-restore fix is confirmed by invoking
+`restoreReaderFromSnapshot` directly — it returns `true` and reopens on Noach with its 64,649
+characters, where the old clause returned `false`. The *automatic* boot path could not be
+exercised: this browser pane runs pages with `visibilityState: "hidden"`, where
+`requestAnimationFrame` never fires, and that restore is scheduled inside a rAF callback. On
+a real foreground reload it runs immediately; a tab restored hidden simply reopens it when
+the user looks. Same class of caveat as the cycle-8 skip link.
