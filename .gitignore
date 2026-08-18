@@ -43,6 +43,11 @@ media/.stream_tmp/
 # daily-run marker for update_all.py (once/day Sefaria gate)
 build/.sefaria_last_run
 
+# fetch_library.py writes this as a marker "for CI to read" — but there is no
+# workflow that reads it (Pages deploys via the built-in builder). It is rewritten
+# on every hourly refresh, so tracking it left the working tree permanently dirty.
+build/NEW_LECTURES.txt
+
 # --- logo_audit caches + scratch (regenerable); keep the tool + the JSON deliverables ---
 build/.logo_score_cache.json
 build/.logo_res_cache.json
