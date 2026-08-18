@@ -16,11 +16,35 @@ test("Tamid daf 26 is a three-amud page — its Mishnah opens on Vilna 25b", () 
   assert.deepEqual(JM.amudKeysFor("Chullin", 102), ["102a", "102b"]);
 });
 
+test("Vilna 25b belongs to Tamid alone — Kinnim ends on 25a", () => {
+  // The Meilah volume is continuously paginated: Meilah's hadran is on 22a,
+  // Kinnim runs 22a-25a, Tamid opens on 25b. Daf Yomi names daf 25 for Kinnim,
+  // so 25b sits inside "Kinnim's" daf — but only one of them may claim the leaf
+  // or the reader meets it twice, blank under Kinnim then again under Tamid.
+  assert.deepEqual(JM.amudKeysFor("Kinnim", 25), ["25a"]);
+  assert.deepEqual(JM.amudKeysFor("Kinnim", 24), ["24a", "24b"]);
+  assert.deepEqual(JM.amudStep("Kinnim", 25, "25a", 1), { masechta: "Tamid", daf: 26, amud: "25b" });
+  assert.deepEqual(JM.amudStep("Tamid", 26, "25b", -1), { masechta: "Kinnim", daf: 25, amud: "25a" });
+  assert.equal(JM.amudCatalog("Kinnim").filter(a => a === "25b").length, 0);
+  assert.equal(JM.amudCatalog("Tamid").filter(a => a === "25b").length, 1);
+  // and no physical leaf in Shas answers to two masechtos. Masechtos that share
+  // a continuously-paginated volume share an `hb` id, so that is the grouping
+  // that makes "same leaf" mean the same printed page.
+  const seen = new Map();
+  for (const m of DY.SHAS) for (const a of JM.amudCatalog(m.en)) {
+    const leaf = `${m.hb}#${a}`;
+    assert.equal(seen.has(leaf), false, `${a} claimed by both ${seen.get(leaf)} and ${m.en}`);
+    seen.set(leaf, m.en);
+  }
+});
+
 test("a page list built for the picker never loses an amud", () => {
   // the grid is built from amudKeysFor, so every masechta's catalogue must be
   // exactly two per daf — except Tamid, which carries one more
   for (const m of DY.SHAS) {
-    const expected = (m.lastDaf - m.firstDaf + 1) * 2 + (m.en === "Tamid" ? 1 : 0);
+    // Tamid carries one extra (25b); Kinnim gives that same leaf up, so the pair
+    // nets to zero and the rest of Shas is exactly two amudim per daf.
+    const expected = (m.lastDaf - m.firstDaf + 1) * 2 + (m.en === "Tamid" ? 1 : 0) - (m.en === "Kinnim" ? 1 : 0);
     assert.equal(JM.amudCatalog(m.en).length, expected, m.en);
   }
   assert.equal(JM.amudCatalog("Tamid")[0], "25b");

@@ -297,15 +297,60 @@ node, still playing, clock 1.76s → 4.83s); the cycle-4 clipping sweep clean at
 across every route (only hit is `.sr-only`, clipped by design); Tamid 26 still opens on 25b
 with all three amudim.
 
-### Open — needs the Rov, not a developer
-**Kinnim 25b and Tamid 25b are the same physical Vilna leaf under two identities.**
-`amudKeysFor("Kinnim", 25)` returns `["25a","25b"]` and `amudKeysFor("Tamid", 26)` returns
-`["25b","26a","26b"]`, so paging one amud at a time hits the same page twice — once blank
-under Kinnim, once with the Mishnah under Tamid. Real defect, verified live. **Not fixed on
-purpose:** the correct fix depends on where Kinnim's text actually ends in the Vilna Shas. If
-it ends on 25a, drop `25b` from Kinnim; if it runs onto 25b, then Tamid should not claim 25b
-and the fix is the exact opposite. Two opposite one-line changes, and guessing would encode a
-wrong claim about Shas pagination into a Torah site. Worth asking.
+### Cycle 10 — the Kinnim/Tamid leaf, researched and settled (2026-08-18)
+
+Cycle 9 left this open on the grounds that the fix direction depended on where
+Kinnim's text actually ends in the Vilna Shas, and that guessing would encode a wrong
+claim about Shas pagination into a Torah site. Researched; the answer is not close.
+
+**Four independent sources agree.** Two are in this repo:
+- `data/daf/Meilah.json` ends at **22a**, and its last line is Meilah's own hadran —
+  `הדרן עלך השליח שעשה שליחותו וסליקא לה מסכת מעילה`. Meilah closes on 22a.
+- `data/daf/Tamid.json` begins at **25b**, and that amud carries Tamid's opening
+  Mishnah, `בשלשה מקומות הכהנים שומרים בבית המקדש`. Tamid opens on 25b.
+
+Two are external:
+- Sefaria's index API for Tamid gives its first chapter as `Tamid 25b:1-28b:7`.
+- Wikipedia's Kinnim article states the tractate "occupies folios 22a-25a".
+
+So the Meilah volume runs Meilah 2a–22a, **Kinnim 22a–25a**, Tamid 25b–33b, Middos
+34a–37b. **Kinnim ends on 25a. Vilna 25b is Tamid's.** `amudKeysFor("Kinnim", 25)`
+now returns `["25a"]`, and the duplicate stop is gone.
+
+Walking the boundary one amud at a time was
+`Kinnim 24b → Kinnim 25a → Kinnim 25b (blank) → Tamid 25b (the same page, with the
+Mishnah) → Tamid 26a`. It is now
+`Kinnim 24b → Kinnim 25a → Tamid 25b → Tamid 26a`. Measured in the app: from Kinnim
+25a, **one** press of the forward arrow lands on Tamid 26 amud 25b with its text.
+
+**22b deliberately left alone.** The mirror rule would be wrong. 22b is Kinnim's page,
+it is already reachable exactly once (inside Meilah's daf 22, which is what Daf Yomi
+calls that daf), and no second masechta claims it. Adding it to Kinnim 23 would create
+a *new* duplicate; removing it from Meilah 22 would make the leaf unreachable. The
+Tamid rule exists to expose real text that would otherwise be stranded, not to model
+the volume's pagination exhaustively — that is now written into the function.
+
+**A second bug the fix exposed.** With Kinnim 25b gone, the step across the boundary
+became cross-masechta, and `samePhysicalLeaf` required `from.masechta === to.masechta`
+— so the app animated a *shift* (facing pages across the fold) where 25a and 25b are
+physically the front and back of one leaf. The guard was there for a good reason
+(Chullin 25a and Berachos 25a are not the same paper), but the right test is the
+printed **volume**, not the masechta: the four masechtos of this volume share an `hb`
+id. `samePhysicalLeaf` now compares volumes, falling back to the masechta name when
+the Shas table is not loaded — so `reader-model.js` keeps working standalone, which is
+how its own test suite loads it. Verified: `Kinnim 25a → Tamid 25b` is a `turn`,
+`Tamid 25b → Tamid 26a` is still a `shift`, `Chullin 25a → Berachos 25b` is still a
+`shift`.
+
+**Tests.** 39 → 41. One asserts no physical leaf in Shas answers to two masechtos,
+grouped by `hb` so "same leaf" means the same printed page (`hb: 36` is the only
+shared-pagination volume). An existing test — "equal folio numbers in different
+masechtos are never the same leaf" — was asserting `Kinnim 25b` vs `Tamid 25b`, a
+state that can no longer exist; it now tests Chullin vs Berachos, which is the case it
+was really guarding. Both new assertions were negative-tested by reverting each fix in
+turn (2 failures and 1 failure respectively, 0 with them restored), so neither is
+vacuous. Stale `Kinnim|25|25b` bookmarks fall back to 25a — `normalizeReadSnapshot`
+already validated the amud against `amudKeysFor`.
 
 ### Deliberately not changed
 The sticky `.daf-colhead` animates `top` rather than `transform`, which the motion lens

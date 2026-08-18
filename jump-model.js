@@ -10,10 +10,27 @@
 
   /* ---------- the physical page ---------- */
 
-  // The amudim of one daf, in printed order. Tamid's opening Mishnah sits on
-  // Vilna 25b, so daf 26 there is a THREE-amud page — never build a page list
-  // as [d + "a", d + "b"] or that amud becomes unreachable.
+  // The amudim of one daf, in printed order.
+  //
+  // The Meilah volume is one continuously-paginated unit and its masechtos do
+  // not begin on daf boundaries: Meilah runs to 22a (its hadran is printed
+  // there), Kinnim occupies 22a–25a, and Tamid opens on 25b. Daf Yomi still
+  // counts whole dapim, so it calls daf 25 "Kinnim" and daf 26 "Tamid" — which
+  // leaves Vilna 25b, where Tamid's opening Mishnah is printed, sitting inside
+  // the daf named for Kinnim.
+  //
+  // So daf 26 of Tamid is a THREE-amud page (never build a list as
+  // [d + "a", d + "b"] or that Mishnah becomes unreachable), and daf 25 of
+  // Kinnim must give 25b up. If both claim it, one physical leaf answers to two
+  // names and a reader paging one amud at a time hits it twice — blank under
+  // Kinnim, then again with the text under Tamid.
+  //
+  // 22b needs no matching rule. It is Kinnim's page, it is reachable exactly
+  // once (inside Meilah's daf 22, which is what Daf Yomi calls it), and no
+  // second masechta claims it. The Tamid rule exists to expose real text, not
+  // to model the volume's pagination exhaustively.
   function amudKeysFor(masechta, daf) {
+    if (masechta === "Kinnim" && +daf === 25) return ["25a"];   // Kinnim ends on 25a; 25b is Tamid's
     const k = [daf + "a", daf + "b"];
     if (masechta === "Tamid" && +daf === 26) k.unshift("25b");
     return k;
