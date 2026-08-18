@@ -851,6 +851,49 @@ html.force-phone #app { box-shadow: 0 0 0 1px rgba(33,30,24,.1), 0 24px 70px -20
 footer { margin-top: auto; text-align: center; font-family: var(--sans); font-size: 12px; color: var(--ink-faint); padding: 34px 22px 30px; line-height: 1.8; border-top: 1px solid var(--hair); }
 footer .fhe { font-family: var(--serif-he); direction: rtl; font-size: 17px; color: var(--ink-soft); display: block; margin-bottom: 4px; }
 footer a { color: var(--ink-soft); }
+/* A keyboard user meets the bar, the sections and the search button before any
+   daf. One link, invisible until it is focused. */
+.skip-link { position: fixed; left: 50%; top: 0; transform: translate(-50%, -140%);
+  z-index: 90; background: var(--accent); color: #fff; font-family: var(--sans);
+  font-size: 13px; letter-spacing: .04em; padding: 10px 18px; border-radius: 0 0 6px 6px;
+  text-decoration: none; transition: transform .16s ease; }
+.skip-link:focus { transform: translate(-50%, 0); color: #fff; text-decoration: none; }
+main#view:focus { outline: none; }
+
+/* =====================================================================
+   PRINT — a daf printed should be a daf, not a screenshot of an app.
+   Everything that operates the site goes; the paper and its text stay.
+   ===================================================================== */
+@media print {
+  @page { margin: 14mm 12mm; }
+  html, body { background: #fff !important; }
+  body { font-size: 11pt; }
+  #app { max-width: none; box-shadow: none; padding-bottom: 0; background: #fff; }
+  /* the chrome */
+  .bar, .player, .menu, .mask, .jump-pop, .jp-scrim, .toast-wrap, .skip-link,
+  .daf-toolbar, .crumbs, .daf-daynav, .daynav, .pageflip, .rail-fs, .fs-btn,
+  .daf-progress, .sponsor-strip, .adjacent, .cont-row, .section, footer,
+  .daf-media, #videoSlot, .worksheets, .chapter-jump, .daf-cols-row,
+  .folio-jump .folio-caret { display: none !important; }
+  /* the sticky reading rail becomes a printed running head */
+  .daf-colhead { position: static !important; border: 0; box-shadow: none;
+    background: none; min-height: 0; padding: 0 0 6px; margin-bottom: 8px;
+    border-bottom: 1px solid #999; }
+  .folio-jump { padding: 0; min-height: 0; background: none !important; color: #000; }
+  /* the wide reading breakout is a screen device; on paper it is just the page */
+  .daf-read.has-spread { width: auto !important; left: auto !important; transform: none !important; }
+  .leaf-book, .dafpage { box-shadow: none !important; border-color: #999 !important; }
+  .dafpage { break-inside: avoid; }
+  .amud { break-inside: auto; }
+  /* the reader overlay prints as the page it is showing */
+  .reader { position: static !important; height: auto !important; }
+  .reader-bar { display: none !important; }
+  .reader-body { overflow: visible !important; height: auto !important; }
+  /* colour costs ink and the rubric survives as weight */
+  .daf-he, .daf-en, .gem, .comm, .tg { color: #000 !important; }
+  a { color: #000; text-decoration: none; }
+}
+
 /* =====================================================================
    TOUCH & PRESS — the half of the design you feel rather than see.
    Hover never fires on a touch screen, and until now most of this site

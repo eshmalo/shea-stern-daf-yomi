@@ -288,6 +288,9 @@ async function loadDafText(masechta) {
 async function loadDafComm(masechta) {
   const key = fileKey(masechta);
   if (State.commCache[key]) return State.commCache[key];
+  // The index already knows which masechtos have no native text; asking for
+  // their commentary is a guaranteed 404 and a console error on every visit.
+  if (!State.dafIndex[masechta]) return (State.commCache[key] = {});
   if (State.commPending[key]) return State.commPending[key];
   State.commPending[key] = fetch(`data/daf/${key}.comm.json`).then(r => r.ok ? r.json() : {})
     .then(d => { State.commCache[key] = d || {}; return State.commCache[key]; }).catch(() => ({}))
@@ -301,6 +304,7 @@ async function loadDafComm(masechta) {
 function renderShell() {
   const mh = State.content.masthead || {};
   document.body.innerHTML = `<div id="app">
+    <a class="skip-link" href="#view">Skip to the daf</a>
     <header class="bar">
       <button class="ic-btn back" id="backBtn" aria-label="Back" hidden>‹</button>
       <button class="ic-btn" id="burger" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">☰</button>
@@ -314,7 +318,7 @@ function renderShell() {
       </nav>
       <button class="ic-btn" id="searchBtn" aria-label="Search">⌕</button>
     </header>
-    <main id="view"></main>
+    <main id="view" tabindex="-1"></main>
     <footer>
       <span class="fhe" lang="he">${esc(mh.hebrew || "שיעורי הדף היומי")}</span>
       ${esc(mh.english || State.speaker?.name || "Rabbi Shea Stern")} · ${esc(mh.subtitle || "Daf Yomi")}

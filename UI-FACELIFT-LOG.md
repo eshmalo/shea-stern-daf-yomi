@@ -25,6 +25,8 @@ cycle table says what is done, what is open, and what was deliberately rejected.
 | 4 | Sizing systems — content-driven grid, the grid min-width trap | done |
 | 5 | Typography — one eyebrow scale; empty & loading states | done |
 | 6 | Today page hierarchy — the primary action leads | done |
+| 7 | Sharing & the home screen — OG cards, manifest, icons | done |
+| 8 | Print, skip link, and a guaranteed 404 | done |
 
 ## Findings
 
@@ -188,3 +190,40 @@ word and it goes back.
   (`class="editor` appears 0× in app.js). Left alone — a separate cleanup, not a facelift.
 - The parsha rail is 62px against the daf rail's 53px, set by its 44px fullscreen button
   and the chapter select. Not a bug; noted so nobody re-measures it a third time.
+
+### Cycle 7 — what a shared link looks like (2026-08-18)
+
+The site has a Share button, and sharing is how a daf actually travels between people.
+Until now a shared link previewed as a **bare URL** in WhatsApp, iMessage and Telegram:
+no Open Graph tags at all. Added og:/twitter: cards using `assets/artwork-512.png` — the
+same square the OS Now Playing card already uses, so nothing new was invented. Hash
+routes are invisible to crawlers, so the card describes the site rather than the daf;
+per-daf cards would need server-side rendering.
+
+Also a **web app manifest** and an apple-touch-icon. This is a site opened every single
+day, and added to a home screen it was a generic bookmark that opened inside browser
+chrome. It now has its own icon, its own name (`הדף היומי`), and opens standalone.
+
+### Cycle 8 — printing, keyboards, and a 404 on every visit
+
+**Print.** There were no print styles at all, so printing a daf produced a screenshot of
+an application: top bar, transport, toolbars and all. `@media print` now drops everything
+that operates the site and keeps the paper — the sticky rail becomes a plain printed
+running head, the wide-reading breakout collapses back to the page, rubric colour gives
+way to weight, and `.dafpage` avoids breaking across sheets.
+
+**Skip link.** A keyboard user met the bar, four section buttons and search before any
+daf. One link, invisible until focused. It was written `position: absolute` first, which
+is the common form — but absolute is relative to `#app`, so focusing it mid-page revealed
+it above the fold where nobody could see it. It is `position: fixed` now.
+
+**A 404 on every visit to a text-less masechta.** `loadDafComm` fired a request for
+commentary the index already said did not exist — a guaranteed 404 and a console error
+for Shekalim, Kinnim and Middos. Guarded with the same check `loadDafText` already used.
+
+### Verification note
+The browser pane defers layout and cannot focus the document, so `:focus` never matches
+and transform changes do not re-measure. The skip link's *reveal* is therefore verified
+by inspection of the served rule, not by measurement — everything else in these two
+cycles was measured. Worth knowing before trusting a future measurement of a `:focus` or
+`:hover` state in this environment.
