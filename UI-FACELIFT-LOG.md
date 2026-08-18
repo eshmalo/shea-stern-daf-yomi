@@ -22,8 +22,9 @@ cycle table says what is done, what is open, and what was deliberately rejected.
 | 1 | Audit sweep — gather real defects across every surface | done |
 | 2 | Touch feel: press states, tap highlight, hit areas, scrollbars | done |
 | 3 | Make the picker native; motion audit | done |
-| 4 | Typography & rhythm — scale, spacing, eyebrows, empty/loading states | next |
-| 5 | Surface pass — cards, rules, ornament, the Today page hierarchy | planned |
+| 4 | Sizing systems — content-driven grid, the grid min-width trap | done |
+| 5 | Typography & rhythm — eyebrows, empty/loading states | next |
+| 6 | Surface pass — cards, rules, ornament, the Today page hierarchy | planned |
 
 ## Findings
 
@@ -106,3 +107,34 @@ duplicate left border was dropped in favour of it. Sponsor cards gained the same
   hierarchy between "Sponsor today's daf" and "Read the daf" is ambiguous.
 - Not a bug, worth knowing: the parsha rail is 62px against the daf rail's 53px,
   set by its 44px fullscreen button and the chapter select.
+
+### Cycle 4 — sizing that works itself out (2026-08-18)
+
+Owner spotted daf numbers and the ב strip being hidden for lack of room, and asked
+for a system rather than more hand-tuning. Both bugs found were the same shape: a
+size decided somewhere that had no idea how wide the content was.
+
+**1. The daf grid was told its column count.** `jp-narrow`/`jp-wide` set 3, 4, 6 or 7
+columns from the *panel's* width — but the grid lives in the 56%-wide pane, so a 600px
+panel produced 42px cells: 26px of amud strip and **16px left for a label needing 29px**.
+
+Replaced every hardcoded column count with one rule that has no breakpoints:
+
+```css
+.jp-grid { grid-template-columns: repeat(auto-fill, minmax(var(--jp-cell-min), 1fr)); }
+```
+
+`--jp-cell-min` (68px) is the widest gematria in Shas — three Hebrew glyphs, ~29px —
+plus the strip plus air. The strip is a token beside it, so a coarse pointer widens
+both together and they can never drift apart. Same panel now: 4 columns of 76px,
+**50px for that 29px label**. At 320px it settles to 3 columns of 90px by itself.
+
+**2. The Today page scrolled sideways at 320px** — 387px of content in a 320px window,
+on the site's most-visited page. `.cont-row` is a grid item, so `min-width: auto` refused
+to shrink below its content and `width: 100%` could not override it; the ellipsis already
+on `.cont-main b` never got the chance to fire. One `min-width: 0` fixes it.
+
+**The conformity check.** `scrollWidth` does not catch this class of bug — centered text
+overflows its box and reports no scroll. The sweep now measures each leaf's actual text
+ink with a Range against its content box, and runs over all 15 routes. Result at 320px
+and 375px: clean, no clipping and no horizontal overflow anywhere.
