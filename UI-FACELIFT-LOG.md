@@ -532,3 +532,51 @@ exercised: this browser pane runs pages with `visibilityState: "hidden"`, where
 `requestAnimationFrame` never fires, and that restore is scheduled inside a rAF callback. On
 a real foreground reload it runs immediately; a tab restored hidden simply reopens it when
 the user looks. Same class of caveat as the cycle-8 skip link.
+
+---
+
+## Open items — verified status as of cycle 13 (2026-08-18)
+
+The two "Still open" blocks earlier in this file (after cycles 3 and 6) are **superseded**.
+They are left in place as the historical record, but several entries were fixed by later
+cycles and one carried stale numbers. This section is the authoritative list; everything
+below was re-checked against the deployed site, not carried forward on trust.
+
+**Closed since those blocks were written**
+- Dead `.editor` CSS — removed in cycle 9, along with `.amud-label`, `.boxcol-top`, `.rd-seg`.
+- Today's two primary buttons reading at the same weight — cycle 6. Verified live: today's
+  daf shows `▶ Listen` solid against `Watch` and `Read the daf` outlined, a clear hierarchy.
+  (Cycle 6 changed the *no-shiur* branch, which today's daf does not exercise.)
+- The a11y tail from Pass 3/4 — `lang="he"` (80 uses), the menu close button, and
+  `aria-hidden` on decorative glyphs are all present.
+- P4C-2 "surface errors visibly" — cycle 12 gave media failure a message, cycle 13 gave
+  storage failure one.
+- P4C-7 `loadJson` boot timeout — cycle 13; every fetch now has a deadline.
+- S1-3/S1-4, S2-6, S3-4/S3-5 — covered by the Pass-2 audits in cycle 13, which found and
+  fixed what was actually real in those areas. S5-2 is moot: the public editor is gone.
+
+**Corrected**
+- The parsha rail is **5px** taller than the daf rail (106 vs 101 measured on production),
+  not the 9px the cycle-3 note recorded. Still not a bug; recorded so the number stops
+  drifting.
+
+**Genuinely open**
+- *Owner decisions:* the `היום` chip; whether "which dapim the Rov has given" earns its own
+  glyph; the toast after a long jump; and cycle 6's Today reorder is reversible on request.
+- *Service worker* for offline use — the QA log's reviewer leaned yes; it is a real fit for a
+  daily-use app with a static corpus, but it has cache-versioning pitfalls that must align
+  with the `?v=` buster. Owner-approved enhancement, not something to slip in.
+- *Per-daf share cards* would need server-side rendering; hash routes are invisible to
+  crawlers, so the card describes the site.
+- *A media **stall** timeout (P4C-10)* — cycle 13 added total-duration deadlines, which is
+  the right shape for JSON but does not catch a media stream that connects and then stalls
+  mid-playback. Distinct problem, still open.
+- *Build-side (P4A-1…7):* `<span>`-strip and unclosed-tag normalisation belongs in
+  `build/extract_daf_text.py` so rebuilds are clean at source (the app-side `safeEn` guard
+  covers it either way); text-vs-commentary stripping is inconsistent; the corpus rebuild is
+  not automated in `update_all.py`; `errors="replace"` should be strict.
+- *Typography:* empty states and the "Loading the daf…" line are still plainer than the rest
+  of the type system.
+- *Cosmetic exposure:* the public repo serves `build/*.py` and the internal logs. No secrets
+  (verified across 255 commits, and GitHub secret scanning is now on with zero alerts), but
+  hiding them would mean restructuring a working deploy.
