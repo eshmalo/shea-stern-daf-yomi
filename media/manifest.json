@@ -9447,5 +9447,24 @@
     "title": "Daf 112 Chullin",
     "video": "media/470341.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "470742": {
+    "audio": "media/470742.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 113 Chullin",
+    "video": "media/470742.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "470743": {
+    "audio": "media/470743.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parasha Ki Teitzei: Tefilla the Real Battle",
+    "video": "media/470743.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "470745": {
+    "audio": "media/470745.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 114 Chullin"
   }
 }
