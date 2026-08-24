@@ -9466,5 +9466,12 @@
     "audio": "media/470745.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 114 Chullin"
+  },
+  "470929": {
+    "audio": "media/470929.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 114 Chullin",
+    "video": "media/470929.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
