@@ -9501,5 +9501,24 @@
     "title": "Daf 119 Chullin",
     "video": "media/471996.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "472351": {
+    "audio": "media/472351.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 120 Chullin",
+    "video": "media/472351.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "472352": {
+    "audio": "media/472352.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 121 Chullin"
+  },
+  "472354": {
+    "audio": "media/472354.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parasha Ki Tavo: NO-Every day Nissim Happen! \u05d7\u05d6\u05d5\"\u05d0",
+    "video": "media/472354.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
