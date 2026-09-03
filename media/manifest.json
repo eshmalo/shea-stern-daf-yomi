@@ -9548,5 +9548,12 @@
     "title": "Daf 125 Chullin",
     "video": "media/475743.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "476025": {
+    "audio": "media/476025.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 126 CHullin",
+    "video": "media/476025.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
