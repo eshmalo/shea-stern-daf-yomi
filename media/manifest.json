@@ -9567,5 +9567,17 @@
     "audio": "media/476438.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 128 Chullin"
+  },
+  "476607": {
+    "audio": "media/476607.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 128 CHullin"
+  },
+  "476608": {
+    "audio": "media/476608.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 129 Chullin",
+    "video": "media/476608.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
