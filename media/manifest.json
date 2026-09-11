@@ -9600,5 +9600,24 @@
     "title": "Daf 132 Chullin",
     "video": "media/477401.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "478008": {
+    "audio": "media/478008.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Simchah or Fear: \u05d7\u05d3\u05d5\u05ea \u05d4' \u05de\u05e2\u05d5\u05d6\u05db\u05dd",
+    "video": "media/478008.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "478022": {
+    "audio": "media/478022.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 134 Chullin  ",
+    "video": "media/478022.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "478023": {
+    "audio": "media/478023.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 135 Chullin  "
   }
 }
