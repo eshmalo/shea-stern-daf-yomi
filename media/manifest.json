@@ -9671,5 +9671,12 @@
     "title": "Daf 142 Chullin",
     "video": "media/479685.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "479705": {
+    "audio": "media/479705.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 2 Bechorot",
+    "video": "media/479705.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
