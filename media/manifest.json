@@ -9742,5 +9742,29 @@
     "title": "Daf 13 Bechorot",
     "video": "media/481175.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "481410": {
+    "audio": "media/481410.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 14 bechorot",
+    "video": "media/481410.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "481416": {
+    "audio": "media/481416.mp3",
+    "intro_trimmed": 7.5,
+    "title": "\u05d5\u05d4\u05d9\u05d9\u05ea \u05d0\u05da \u05e9\u05de\u05d7-\u05e9\u05de\u05d9\u05e0\u05d9 \u05e2\u05e6\u05e8\u05ea \u05e8\u05e7 \u05e9\u05de\u05d7\u05d4",
+    "video": "media/481416.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "481418": {
+    "audio": "media/481418.mp3",
+    "intro_trimmed": 7.5,
+    "title": "daf 15 Bechorot"
+  },
+  "481419": {
+    "audio": "media/481419.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 16 Bechorot"
   }
 }
