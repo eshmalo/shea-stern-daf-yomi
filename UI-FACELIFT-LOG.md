@@ -582,7 +582,9 @@ below was re-checked against the deployed site, not carried forward on trust.
   hiding them would mean restructuring a working deploy. *Update 2026-10-07:* one alert has
   been open since 2026-09-17 (#1, "VolcEngine Access Key ID" in `data/library.json`). It is a
   false positive on a TorahAnytime stream URL, and push protection blocked publishing on it
-  from 09-11 to 09-17. See the README receipts.
+  from 09-11 to 09-17. See the README receipts. The updater now recovers from such a block
+  by itself (squashes its unpushed `auto:` commits into one fresh commit of the current data
+  and pushes once); dismissing alert #1 is left to the owner.
 
 ---
 

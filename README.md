@@ -87,17 +87,28 @@ Each run does three things, in order:
 2. **Sefaria texts, at most once per UTC day.** `build/fetch_sefaria.py --prefixes json/,schemas/`
    mirrors into `~/Desktop/AI Workspace/Sefaria-Export`. A successful mirror does **not**
    rebuild `data/daf/*.json`; that is still a manual `extract_daf_text.py` run (an open item).
-3. **Publish.** It stages **only** `data/library.json`, `data/orig_audio.json` and
-   `media/manifest.json`, then commits `auto: refresh library + media manifest`, runs
+3. **Publish.** It stages and commits **only** `data/library.json`, `data/orig_audio.json`
+   and `media/manifest.json` as `auto: refresh library + media manifest`, fetches, runs
    `git pull --rebase --autostash`, and pushes `origin main`. GitHub Pages redeploys on that
    push. If an earlier push failed, the next run retries it even when no new data arrived
    (fixed 2026-10-07; before that, a stranded commit waited for the next data change.
    TorahAnytime rotates the tokenized audio/video URLs in `library.json` about every three
    hours, so that was usually within three hours, not until the next new shiur).
+   - **Push protection.** If GitHub push protection rejects the push (as it did 09-11 → 09-17,
+     see the receipts), retrying cannot help, because every later push still carries the
+     flagged commit. So when every unpushed commit is an `auto:` data commit, the job runs
+     `git reset --soft origin/main`, recommits the *current* data files as one fresh `auto:`
+     commit, and pushes once. If that is rejected too (the current URLs still match), it logs
+     "rejected the fresh commit too … Stopping (no loop)" and the next run squashes again
+     with newer data. Added 2026-10-07; tested in `tests/test_update_all_publish.py`.
+   - **Only its own commits.** It pushes only when every unpushed commit is an `auto:` data
+     commit. Otherwise it logs "unpushed non-data commits; not pushing" and leaves them
+     alone (no rebase, no squash) until someone pushes or removes them by hand.
 
 **Hand edits in the live checkout** (`~/dev/shea-stern-daf-yomi`) are never staged by the
-job, but its rebase runs in that checkout. Make code changes in a separate clone or worktree,
-push them, and let the job's `pull --rebase` bring them in.
+job, but its rebase runs in that checkout, and a hand *commit* there stops publishing (see
+above). Make code changes in a separate clone or worktree, push them, and let the job's
+`pull --rebase` bring them in.
 
 ```bash
 launchctl list | grep sheastern                                         # loaded? (PID "-" between runs is normal)
@@ -183,6 +194,7 @@ comparison that led to R2, kept for the record.
 python3 -m http.server 4322          # then open http://localhost:4322
 node --test tests/*.test.mjs         # reader, jump/picker, stall watchdog (59 tests)
 python3 admin-api/test_lambda_function.py   # admin API, S3 faked in-memory (53 tests)
+python3 tests/test_update_all_publish.py    # updater publish(): local bare repo + fake GH013 hook (13 tests)
 ```
 
 Media streams from R2, which supports Range requests, so seeking works on a plain static
@@ -224,7 +236,7 @@ data/orig_audio.json  per-daf original recordings   data/daf/*.json  data/torah/
 media/manifest.json   our trimmed copies (relative paths, resolved against mediaBaseUrl)
 admin/ · admin-api/   the Rov's editor + its Lambda backend
 build/                pipelines, launchd plist, local logs (git-ignored)
-tests/                node --test suites
+tests/                node --test suites; test_update_all_publish.py (the updater's publish)
 ```
 
 *Talmud text: William Davidson Edition, via Sefaria. The Hebrew is public domain; the
