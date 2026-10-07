@@ -9780,5 +9780,12 @@
     "title": "Daf 18 Bechorot",
     "video": "media/481847.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "482022": {
+    "audio": "media/482022.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 19 Bechorot",
+    "video": "media/482022.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
