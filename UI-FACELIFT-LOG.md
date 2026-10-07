@@ -579,7 +579,10 @@ below was re-checked against the deployed site, not carried forward on trust.
   of the type system.
 - *Cosmetic exposure:* the public repo serves `build/*.py` and the internal logs. No secrets
   (verified across 255 commits, and GitHub secret scanning is now on with zero alerts), but
-  hiding them would mean restructuring a working deploy.
+  hiding them would mean restructuring a working deploy. *Update 2026-10-07:* one alert has
+  been open since 2026-09-17 (#1, "VolcEngine Access Key ID" in `data/library.json`). It is a
+  false positive on a TorahAnytime stream URL, and push protection blocked publishing on it
+  from 09-11 to 09-17. See the README receipts.
 
 ---
 

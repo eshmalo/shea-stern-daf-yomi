@@ -91,7 +91,9 @@ Each run does three things, in order:
    `media/manifest.json`, then commits `auto: refresh library + media manifest`, runs
    `git pull --rebase --autostash`, and pushes `origin main`. GitHub Pages redeploys on that
    push. If an earlier push failed, the next run retries it even when no new data arrived
-   (fixed 2026-10-07; before that, a stranded commit waited for the next new shiur).
+   (fixed 2026-10-07; before that, a stranded commit waited for the next data change.
+   TorahAnytime rotates the tokenized audio/video URLs in `library.json` about every three
+   hours, so that was usually within three hours, not until the next new shiur).
 
 **Hand edits in the live checkout** (`~/dev/shea-stern-daf-yomi`) are never staged by the
 job, but its rebase runs in that checkout. Make code changes in a separate clone or worktree,
@@ -109,14 +111,16 @@ python3 build/update_all.py --no-media                                  # catalo
 | When (UTC) | Log | What it records |
 |---|---|---|
 | 2026-07-30 18:54 | `build/refresh.log` | First run in this log, already on the cloud path: "cloud configured -> uploading new shiurim to bucket/CDN (intro-trim + de-watermark)" |
-| 2026-09-11 → 2026-09-23 02:08 | `build/update_all.log` | 99 runs logged "push failed". `launchd.err.log` shows git could not get GitHub credentials from the keychain ("could not read Username … Device not configured"). None since. |
+| 2026-09-11 09:35 → 09-17 10:45 | `build/update_all.log`, `launchd.err.log` | 96 runs logged "push failed": **GitHub push protection** rejected every push because a TorahAnytime stream URL in `data/library.json` (commit `d5a11af`) matched the "VolcEngine Access Key ID" pattern. It is a false positive (the match sits inside a `proxier.torahanytime.com` URL). Publishing was stuck for six days. The commit got through at 09-17 11:45 and left secret-scanning alert #1 open. |
+| 2026-09-22 20:07, 23:07, 09-23 02:08 | `build/update_all.log`, `launchd.err.log` | 3 more "push failed": git could not get GitHub credentials from the keychain ("failed to get: -25293", "could not read Username … Device not configured"). None since. |
 | 2026-10-06 16:25–16:26 | `build/refresh.log` | 1 new shiur (481847, Bechoros 18) → "cloud pass exit (audio 0, video 0)" → "manifest now holds 1477 self-hosted shiurim". The R2 object answered HTTP 200 (49.3 MB) on 2026-10-07. |
 | 2026-10-07 00:29:05 | `build/update_all.log` | Sefaria mirror `exit 0` |
 | 2026-10-07 01:29:10 | `build/update_all.log` | "publish: pushed data refresh (the live site redeploys)" (commit `0ff3918`) |
-| 2026-10-07 03:29:12 | `build/update_all.log` | Latest hourly run checked: lectures 0, sefaria skipped (already ran today), "no data changes" |
+| 2026-10-07 03:29:12 | `build/update_all.log` | lectures 0, sefaria skipped (already ran today), "no data changes" |
+| 2026-10-07 04:29:23 | `build/update_all.log` | "publish: pushed data refresh" (commit `e26708d`, the parent of `402df5d`) |
 
 **Snapshot on 2026-10-07:**
-- `data/library.json` lists **1,506** lectures (`generated_at` 2026-10-06).
+- `data/library.json` lists **1,506** lectures (`generated_at` 2026-10-07; it is rewritten on every refresh).
 - `media/manifest.json` has **1,477** entries: 1,476 with audio and 1,196 with video, every
   video with a delogo box.
 - 29 catalog lectures have no manifest entry.
@@ -194,7 +198,9 @@ worksheets (`site/admin-data.json`) do **not** load on localhost. That is expect
   scripts.
 - Never committed (`.gitignore`): `build/cloud.config` (R2 keys), `admin-api/.secrets*`,
   `*.log`, media binaries, and caches.
-- GitHub secret scanning is on.
+- GitHub secret scanning and push protection are on. One alert is open: #1, "VolcEngine
+  Access Key ID" in `data/library.json` (2026-09-17). It is a false positive on a TorahAnytime
+  stream URL (see the receipts) and should be dismissed as such.
 - The public repo, and therefore the site, also serves `build/*.py` and the Markdown work
   logs. That is cosmetic and contains no secrets. See the open items.
 
