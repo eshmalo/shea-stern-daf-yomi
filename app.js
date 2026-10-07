@@ -32,6 +32,9 @@ const safeHe = s => esc(s).replace(/&lt;(\/?(?:big|strong|b|i|em|br))&gt;/gi, "<
 const DY = window.DafYomi;
 const RM = window.DafReaderModel;
 const JM = window.DafJumpModel;
+// Stall watchdog (stall-model.js). If that script failed to load, playback must
+// still work — it just goes unwatched, exactly as before the watchdog existed.
+const SW = window.DafStallWatch || { create: () => ({ starve() {}, data() {}, advance() {}, resume() {}, idle() {}, reset() {} }) };
 
 const State = {
   speaker: null, all: [], content: {}, media: {}, admin: {}, dafIndex: {}, dafCache: {}, commCache: {}, dafPending: {}, commPending: {},
@@ -3162,17 +3165,29 @@ const Player = {
   // once; every handler no-ops unless that element is the active `media`.
   _bind(m) {
     if (m._pbound) return; m._pbound = true;
-    m.addEventListener("timeupdate", () => { if (this.media === m) this.tick(); });
+    m.addEventListener("timeupdate", () => { if (this.media === m) { this.tick(); this._sw().advance(m.currentTime); } });
+    // Stall watchdog: a stream that connects and then goes silent never raises
+    // `error` — the element just waits. Watch only while playback is wanted.
+    const starve = () => { if (this.media === m && !m.paused && !m.ended) this._sw().starve(m.currentTime); };
+    m.addEventListener("waiting", starve);
+    m.addEventListener("stalled", starve);
+    m.addEventListener("progress", () => { if (this.media === m) this._sw().data(); });
+    m.addEventListener("playing", () => { if (this.media === m) this._sw().resume(); });
     m.addEventListener("loadedmetadata", () => {
       if (this.media !== m) return;
-      if (this._resumeTo) { try { m.currentTime = this._resumeTo; toast(`Resumed from ${clock(this._resumeTo)}`); } catch {} this._resumeTo = 0; }
+      const rc = this._recoverTo; this._recoverTo = null;
+      if (rc) {   // a reconnect (or a switch to the hosted copy) picks up where the listener was
+        const t = rc.t + (rc.local && !this.local ? (this.lec?.introTrimmed || INTRO_SEC) : 0);   // the hosted copy still carries the intro our copy cut
+        try { m.currentTime = t; } catch {}
+        this._resumeTo = 0;
+      } else if (this._resumeTo) { try { m.currentTime = this._resumeTo; toast(`Resumed from ${clock(this._resumeTo)}`); } catch {} this._resumeTo = 0; }
       else if (this._skipPending && !this.local) { try { m.currentTime = this.lec?.introTrimmed || INTRO_SEC; } catch {} }   // TA fallback still carries the intro
       this._skipPending = false; this.tick();
     });
     m.addEventListener("play", () => { pauseAllExcept(m); if (this.media === m) this.ctrls(); });   // one voice, unconditionally — even a stale in-page video restarted via its native controls silences everything else
-    m.addEventListener("pause", () => { if (this.media === m) this.ctrls(); });
+    m.addEventListener("pause", () => { if (this.media === m) { this._sw().idle(); this.ctrls(); } });
     m.addEventListener("ratechange", () => { if (this.media === m && this.speed !== m.playbackRate) { this.speed = m.playbackRate; this.ctrls(); } });   // keep the bar's speed in sync with the native video menu (and vice-versa)
-    m.addEventListener("ended", () => { if (this.media === m && this.lec) { clearPos(this.lec.id); markShiurLearned(this.lec); this._onEnded(); } });
+    m.addEventListener("ended", () => { if (this.media === m) this._sw().idle(); if (this.media === m && this.lec) { clearPos(this.lec.id); markShiurLearned(this.lec); this._onEnded(); } });
     m.addEventListener("error", () => {
       if (this.media !== m) return;
       // Teardown looks like an error: rerender() strips src and calls load() on
@@ -3180,18 +3195,54 @@ const Player = {
       // a shiur that failed, and neither should say anything to anyone.
       if (m.error && m.error.code === m.error.MEDIA_ERR_ABORTED) return;
       if (!m.getAttribute("src") && !m.currentSrc) return;
-      // One silent retry: a local file that won't play falls back to the hosted audio.
-      if (this.lec && this.local && !this.isVideo && this.lec.audio) {
-        this.local = false; this._skipPending = true;
-        this.audio.src = this.lec.audio; this.audio.play().catch(() => {}); this.bar();
-        return;
-      }
+      this._sw().idle();
+      // One silent retry: a local file that won't play falls back to the hosted audio
+      // — at the same point in the shiur when it failed partway through.
+      if (this._toHosted(m.currentTime || 0)) return;
       // Nothing left to try. Say so — a bar that sits there never playing reads
       // as the site being broken, and the listener has no way to tell.
       this.local = false;
       toast("This shiur wouldn't load. Check your connection and try again.");
       this.hide();
     });
+  },
+  _sw() { return this._stall || (this._stall = SW.create(e => this._onStall(e), { isStarved: () => this._starved() })); },
+  // Really starved, not just a `stalled` that fired while playback ran on from its
+  // buffer: wanted to play, and holding less than HAVE_FUTURE_DATA.
+  _starved() { const m = this.media; return !!m && !m.paused && !m.ended && m.readyState < 3; },
+  // Our own copy (R2) -> the hosted TorahAnytime audio, keeping the listener's place.
+  // Audio only, and only from our copy: the same rule the error path has always used.
+  _toHosted(at) {
+    if (!(this.lec && this.local && !this.isVideo && this.lec.audio)) return false;
+    this.local = false;
+    if (at > 0) this._recoverTo = { t: at, local: true }; else this._skipPending = true;
+    this.audio.src = this.lec.audio; this.audio.playbackRate = this.speed;   // a new src resets the rate to 1
+    this.audio.play().catch(() => {}); this.bar();
+    return true;
+  },
+  // Reconnect the same source at the same spot: load() opens a fresh request, and
+  // loadedmetadata seeks back via _recoverTo.
+  _reload(m, at) {
+    if (at > 0 && !this._resumeTo) this._recoverTo = { t: at, local: this.local };   // a still-pending resume point outranks a position that never loaded
+    try { m.load(); } catch {}
+    m.playbackRate = this.speed;                                   // load() resets the rate to 1
+    m.play().catch(() => {});
+  },
+  // The watchdog says playback has been starved with no data for its whole window.
+  _onStall(e) {
+    const m = this.media;
+    if (!m || m.paused || m.ended || !(m.currentSrc || m.getAttribute("src"))) return;
+    if (this.isVideo && !m.isConnected) return;                    // an in-page video already torn down
+    const at = m.currentTime || 0, dur = m.duration || 0;
+    // A reload zeroes currentTime: keep the place on disk in case it all goes wrong.
+    if (this.lec && dur && isFinite(dur) && at > 8 && at < dur - 8) savePos(this.lec.id, at, dur);
+    if (e.action === "reload") { this._reload(m, at); return; }
+    if (this._toHosted(at)) return;
+    // Nothing left to try. Stop and say so, but keep the bar and the place:
+    // the connection may well come back, and ▶ reconnects straight away.
+    this._sw().reset(); this._gaveUp = true;
+    try { m.pause(); } catch {}
+    toast("The shiur stopped loading — the connection may have dropped. Press ▶ to try again.", 6000);
   },
   // End of a shiur: say the daf was marked learned, and offer the next one —
   // the daily catch-up loop shouldn't end in silence.
@@ -3214,6 +3265,7 @@ const Player = {
   },
   playAudio(lec, url, local) {
     this.lec = lec; this.local = !!local; this.isVideo = false; this.media = this.audio; this._next = null;
+    this._sw().reset(); this._recoverTo = null; this._gaveUp = false;
     this._skipPending = !local; this._resumeTo = resumePoint(lec.id); this._lastSave = 0;
     pauseAllExcept(this.audio);
     this.audio.src = url || lec.audio; this.audio.playbackRate = this.speed;
@@ -3221,6 +3273,7 @@ const Player = {
   },
   playVideo(v, lec, url, local) {
     this.lec = lec; this.local = !!local; this.isVideo = true; this.media = v; this._next = null;
+    this._sw().reset(); this._recoverTo = null; this._gaveUp = false;
     this._skipPending = !local; this._resumeTo = resumePoint(lec.id); this._lastSave = 0;
     this._bind(v); pauseAllExcept(v);
     v.playbackRate = this.speed; v.src = url;
@@ -3230,6 +3283,7 @@ const Player = {
   toggle() {
     const m = this.media; if (!m) return;
     if (m.ended && this._next) { const n = this._next; this._next = null; if (n.ovPk) playOverride(n.ovPk, "audio"); else playId(n.id); return; }   // ▶ after the end plays the next daf
+    if (m.paused && this._gaveUp) { this._gaveUp = false; this._reload(m, m.currentTime || 0); return; }   // after a stall gave up: reconnect now, don't wait out another window
     m.paused ? m.play().catch(() => {}) : m.pause();
   },
   skip(s) { const m = this.media; if (!m) return; m.currentTime = Math.max(0, Math.min(m.duration || 1e9, m.currentTime + s)); },
@@ -3240,6 +3294,7 @@ const Player = {
     $("#player").classList.add("hidden"); $("#player").setAttribute("inert", "");   // slid away by transform, so it keeps its box — inert is what takes it out of the reader's Tab trap
     $("#app")?.classList.remove("player-active"); document.documentElement.classList.remove("player-on");
     try { m && m.pause(); } catch {}
+    this._sw().idle(); this._gaveUp = false;
     if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = "none"; navigator.mediaSession.metadata = null; } catch {} }
     this._elCur = this._elDur = this._elSeek = null;
     this.isVideo = false;

@@ -87,6 +87,18 @@ def mark_sefaria():
         pass
 
 
+def unpushed(g):
+    """Commits on local main that origin/main (as of the last fetch/push) lacks.
+    A failed push leaves exactly that: the data commit exists locally, and the
+    remote-tracking ref stays behind it. Local-only — no network call."""
+    try:
+        out = subprocess.run(g + ["rev-list", "--count", "origin/main..HEAD"],
+                             capture_output=True, text=True, timeout=30)
+        return int(out.stdout.strip() or 0) if out.returncode == 0 else 0
+    except Exception:
+        return 0
+
+
 def publish():
     """Push the refreshed catalog + media manifest to GitHub so the LIVE site
     (GitHub Pages) serves them — this is what makes a newly-posted shiur appear
@@ -99,8 +111,14 @@ def publish():
             log("publish: not a git checkout — skipped"); return 0
         subprocess.call(g + ["add", "--"] + [p for p in paths if os.path.exists(os.path.join(HERE, p))])
         if subprocess.call(g + ["diff", "--cached", "--quiet"]) == 0:
-            log("publish: no data changes"); return 0
-        if subprocess.call(g + ["commit", "-q", "-m", "auto: refresh library + media manifest"]) != 0:
+            # Nothing new to commit — but a push that failed on an earlier run
+            # (e.g. the login keychain was locked) left its commit stranded here.
+            # Before this check, such a commit waited for the NEXT data change
+            # (receipt: 2026-09-23 02:08 push failed, 03:08 "no data changes").
+            if not unpushed(g):
+                log("publish: no data changes"); return 0
+            log("publish: no new data, but an earlier refresh never reached GitHub — retrying the push")
+        elif subprocess.call(g + ["commit", "-q", "-m", "auto: refresh library + media manifest"]) != 0:
             log("publish: commit failed"); return 1
         # --autostash: media work in flight leaves other files dirty; rebase must
         # not abort on them.

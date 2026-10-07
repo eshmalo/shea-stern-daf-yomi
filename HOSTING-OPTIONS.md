@@ -1,13 +1,11 @@
 # Hosting & storage options — going live
 
-> ## 📌 TODO (deferred): Deploy live on Cloudflare R2 + Pages
-> Deploy the full self-hosted library live on **Cloudflare R2 + Pages**. Audio (all
-> 1,389 shiurim, ~37 GB) is already trimmed and local; the ~221 GB video goes
-> straight to R2. **Blocked on:** user creating the Cloudflare account / R2 bucket
-> + API token + public URL and entering payment. **When ready:** fill
-> `build/cloud.config`, run `backfill_cloud.py --all` (audio) + the video backfill
-> to R2, set `mediaBaseUrl`, optionally move the app to Cloudflare Pages. Migration
-> steps are in the [Migration plan](#migration-plan-when-you-say-go--r2-path) below.
+> **Status (2026-10-07): done — this page is the historical comparison.** The R2 path
+> below was taken: media has streamed from the R2 public bucket since 2026-06-21 (commit
+> `8a1b92d`; `data/content.json` → `options.mediaBaseUrl`). The app itself stayed on
+> **GitHub Pages** (custom domain `monseydafyomi.com`) rather than moving to Cloudflare
+> Pages. New shiurim go straight to R2 hourly via `build/update_all.py` →
+> `refresh.py` → `stream_to_cloud.py`. Current state and receipts: [README.md](README.md).
 
 
 Research + recommendation for serving the Daf Yomi site in production.

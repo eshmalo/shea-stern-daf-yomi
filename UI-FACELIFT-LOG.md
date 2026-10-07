@@ -568,9 +568,9 @@ below was re-checked against the deployed site, not carried forward on trust.
   with the `?v=` buster. Owner-approved enhancement, not something to slip in.
 - *Per-daf share cards* would need server-side rendering; hash routes are invisible to
   crawlers, so the card describes the site.
-- *A media **stall** timeout (P4C-10)* — cycle 13 added total-duration deadlines, which is
-  the right shape for JSON but does not catch a media stream that connects and then stalls
-  mid-playback. Distinct problem, still open.
+- ~~*A media **stall** timeout (P4C-10)*~~ — **closed 2026-10-07**, see "Cycle 14" below.
+  (Cycle 13's total-duration deadlines were the right shape for JSON but could not catch a
+  media stream that connects and then stalls mid-playback.)
 - *Build-side (P4A-1…7):* `<span>`-strip and unclosed-tag normalisation belongs in
   `build/extract_daf_text.py` so rebuilds are clean at source (the app-side `safeEn` guard
   covers it either way); text-vs-commentary stripping is inconsistent; the corpus rebuild is
@@ -580,3 +580,41 @@ below was re-checked against the deployed site, not carried forward on trust.
 - *Cosmetic exposure:* the public repo serves `build/*.py` and the internal logs. No secrets
   (verified across 255 commits, and GitHub secret scanning is now on with zero alerts), but
   hiding them would mean restructuring a working deploy.
+
+---
+
+## Cycle 14 (2026-10-07) — P4C-10: a stream that stalls mid-shiur recovers
+
+**The defect.** A media stream that connects, plays, and then goes silent never raises
+`error`: the element sits in `waiting` with `paused === false` and a frozen clock. Reproduced
+before the fix with a test server that hangs mid-file: the clock stayed at 18.87s for 25s
+*after the network came back* — no message, no retry, nothing the listener could do but
+reload the page.
+
+**The fix.** `stall-model.js` (new, pure, injectable timers) decides; `Player` in `app.js`
+acts. 20s of wanted-but-starved playback with no `progress` bytes and no playback-sized
+playhead step → reconnect at the same spot (`load()` + seek back via `_recoverTo`, speed
+restored — `load()` resets `playbackRate`), twice; then our R2 copy falls back to the hosted
+TorahAnytime audio at the same point (+ the intro that copy carries); then stop with a toast
+and keep the bar — ▶ reconnects immediately. Guards: a seek (including the reconnect's own
+seek back) is a jump, not progress; a `stalled` that fires while playback runs on from its
+buffer is dropped at the deadline (`readyState >= HAVE_FUTURE_DATA`); attempts are forgiven
+only after 10s of real playback past where the trouble began, so a connection that dies
+right after every reconnect cannot loop. The hard-`error` fallback now shares `_toHosted`,
+so it too keeps the listener's place (it used to restart the shiur) and the speed.
+
+**Automated:** `tests/stall-model.test.mjs` (+15) — 59 pass in total.
+
+**Manual QA — browser preview against a hanging-stream test server, 2026-10-07:**
+1. Production defaults (20s): stalled at 18.94s → reconnect fired 20.0s later → resumed at
+   18.94s and played on; attempts forgiven. ✔
+2. Dead origin (3s window for speed): reconnect ×2 → exhausted → hosted copy loaded at
+   26.37s (= 18.87 + 7.5 intro), 1.5× speed kept, no toast (silent, like the error path). ✔
+3. Video, dead origin: ×2 → exhausted → paused at 16.34s, bar kept, toast shown, place
+   saved; network back + ▶ → reconnected at once and resumed at 16.34s. ✔
+4. Normal playback with ±seeks and a 25s pause: no watchdog fire. ✔
+5. A real shiur from R2 (481847, the Rov's original Bechoros 18 recording) plays. ✔
+Caveat: the preview browser pauses muted media in a hidden page and the OS media session
+can pause playback on its own, so the checks ran unmuted at volume 0.
+
+`index.html` cache-buster → `20261007a`.
