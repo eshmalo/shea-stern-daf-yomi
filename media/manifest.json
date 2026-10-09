@@ -9794,5 +9794,19 @@
     "title": "Daf 20 Bechorot",
     "video": "media/482252.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "482512": {
+    "audio": "media/482512.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 21 Bechorot",
+    "video": "media/482512.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "482513": {
+    "audio": "media/482513.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parasha Breishit: 6 Days-6Thasand yers",
+    "video": "media/482513.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
