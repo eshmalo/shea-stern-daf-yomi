@@ -9848,5 +9848,24 @@
     "title": "Daf 27 Bechorot",
     "video": "media/483707.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "484034": {
+    "audio": "media/484034.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 28 Bechorot",
+    "video": "media/484034.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "484035": {
+    "audio": "media/484035.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parasha Noach: Noach Noach Double Name!",
+    "video": "media/484035.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "484036": {
+    "audio": "media/484036.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 29 Bechorot"
   }
 }
