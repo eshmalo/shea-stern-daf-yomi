@@ -9902,5 +9902,24 @@
     "title": "Daf 34 Bechorot",
     "video": "media/485275.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "485613": {
+    "audio": "media/485613.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 35 Bechorot",
+    "video": "media/485613.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "485614": {
+    "audio": "media/485614.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 36 Bechorot"
+  },
+  "485618": {
+    "audio": "media/485618.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parashah Lech Lecha: Hashems Hand not Avraham!",
+    "video": "media/485618.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
