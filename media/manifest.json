@@ -9921,5 +9921,12 @@
     "title": "Parashah Lech Lecha: Hashems Hand not Avraham!",
     "video": "media/485618.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "485860": {
+    "audio": "media/485860.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 37 Bechorot",
+    "video": "media/485860.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
