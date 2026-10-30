@@ -9956,5 +9956,19 @@
     "title": "Daf 41 Bechorot",
     "video": "media/487007.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "487450": {
+    "audio": "media/487450.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 42 Bechorot",
+    "video": "media/487450.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "487451": {
+    "audio": "media/487451.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parasha Veyeira: Avrohom Avinu not a Malach!",
+    "video": "media/487451.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
