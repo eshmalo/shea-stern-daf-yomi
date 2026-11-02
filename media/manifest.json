@@ -9977,5 +9977,12 @@
     "title": "Daf 44 Bechorot",
     "video": "media/487708.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "488045": {
+    "audio": "media/488045.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 45 Bechorot",
+    "video": "media/488045.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
