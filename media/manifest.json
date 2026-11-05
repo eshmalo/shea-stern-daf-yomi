@@ -10005,5 +10005,12 @@
     "title": "Sanhedrin Daf 81",
     "video": "media/355883.mp4",
     "delogo": "x=1:y=576:w=192:h=142"
+  },
+  "489201": {
+    "audio": "media/489201.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 48 Bechorot",
+    "video": "media/489201.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
