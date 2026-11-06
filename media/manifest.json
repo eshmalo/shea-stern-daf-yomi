@@ -10012,5 +10012,20 @@
     "title": "Daf 48 Bechorot",
     "video": "media/489201.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "489578": {
+    "audio": "media/489578.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 49 Bechorot"
+  },
+  "489580": {
+    "audio": "media/489580.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 50 Bechorot"
+  },
+  "489582": {
+    "audio": "media/489582.mp3",
+    "intro_trimmed": 7.5,
+    "title": "BEROCHOS: Parasha Chayei Sarah"
   }
 }
