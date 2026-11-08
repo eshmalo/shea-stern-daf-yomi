@@ -10027,5 +10027,12 @@
     "audio": "media/489582.mp3",
     "intro_trimmed": 7.5,
     "title": "BEROCHOS: Parasha Chayei Sarah"
+  },
+  "489880": {
+    "audio": "media/489880.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 51 and Berocho Of Geonim Bechorot",
+    "video": "media/489880.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
