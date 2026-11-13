@@ -10062,5 +10062,19 @@
     "title": "Daf 55 Bechorot",
     "video": "media/491211.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "491593": {
+    "audio": "media/491593.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Selling Life \u05de\u05db\u05e8\u05d4 \u05db\u05d9\u05d5\u05dd Parasha Toldot",
+    "video": "media/491593.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "491597": {
+    "audio": "media/491597.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 56 Bechorot",
+    "video": "media/491597.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
