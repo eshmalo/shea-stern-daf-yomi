@@ -10076,5 +10076,10 @@
     "title": "Daf 56 Bechorot",
     "video": "media/491597.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "491620": {
+    "audio": "media/491620.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 57 Bechorot"
   }
 }
