@@ -10109,5 +10109,19 @@
     "title": "Daf 61 Bechorot",
     "video": "media/492594.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "493246": {
+    "audio": "media/493246.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parasha Vayetzei: A Yid Thanks!",
+    "video": "media/493246.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "493247": {
+    "audio": "media/493247.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 3 Arachin",
+    "video": "media/493247.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
