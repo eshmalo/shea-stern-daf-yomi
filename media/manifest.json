@@ -10128,5 +10128,12 @@
     "audio": "media/493343.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 4 arachin"
+  },
+  "493480": {
+    "audio": "media/493480.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 5 Arachin and Summary",
+    "video": "media/493480.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
