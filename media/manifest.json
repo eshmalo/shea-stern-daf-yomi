@@ -10142,5 +10142,10 @@
     "title": "Daf 6 Arachin and Taanaim History",
     "video": "media/493722.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "493981": {
+    "audio": "media/493981.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 7"
   }
 }
