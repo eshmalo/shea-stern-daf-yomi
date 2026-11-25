@@ -10147,5 +10147,12 @@
     "audio": "media/493981.mp3",
     "intro_trimmed": 7.5,
     "title": "Daf 7"
+  },
+  "494291": {
+    "audio": "media/494291.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 8",
+    "video": "media/494291.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
