@@ -10154,5 +10154,12 @@
     "title": "Daf 8",
     "video": "media/494291.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "494570": {
+    "audio": "media/494570.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 9",
+    "video": "media/494570.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
   }
 }
