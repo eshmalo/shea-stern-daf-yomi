@@ -10161,5 +10161,24 @@
     "title": "Daf 9",
     "video": "media/494570.mp4",
     "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "494896": {
+    "audio": "media/494896.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 10 Arachin ",
+    "video": "media/494896.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "494900": {
+    "audio": "media/494900.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Parasha Vayishlach: Content in Gashmiyus-Striving in Ruchniyus",
+    "video": "media/494900.mp4",
+    "delogo": "x=1:y=288:w=96:h=71"
+  },
+  "494912": {
+    "audio": "media/494912.mp3",
+    "intro_trimmed": 7.5,
+    "title": "Daf 11 Arachin"
   }
 }
